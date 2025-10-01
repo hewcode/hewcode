@@ -9,17 +9,22 @@ use Illuminate\Support\Collection;
 class Filter
 {
     public string $label;
+
     public string $name;
+
     public string $field;
+
     public string $type = 'text';
+
     public array $rules = [];
+
     public ?Closure $filterUsing = null;
 
     protected mixed $resolvedState = null;
 
     public static function make(string $name): static
     {
-        return (new static())->name($name);
+        return (new static)->name($name);
     }
 
     public function label(string $label): static
@@ -69,7 +74,6 @@ class Filter
 
         return $this;
     }
-
 
     public function validate(): void
     {
@@ -123,8 +127,9 @@ class Filter
             if (is_array($value)) {
                 if (is_array($itemValue)) {
                     // If both are arrays, check for intersection
-                    return !empty(array_intersect($itemValue, $value));
+                    return ! empty(array_intersect($itemValue, $value));
                 }
+
                 // If filter value is array but item value isn't, check if item value is in filter array
                 return in_array($itemValue, $value);
             }

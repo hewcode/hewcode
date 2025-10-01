@@ -5,12 +5,13 @@ namespace Hewcode\Hewcode\Http\Controllers;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\ResourceController;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use RuntimeException;
+
 use function Hewcode\Hewcode\generateComponentHash;
 
 class ActionController extends Controller
@@ -36,7 +37,7 @@ class ActionController extends Controller
 
         // Validate component hash
         $expectedHash = generateComponentHash($component, $routeName);
-        if (!hash_equals($expectedHash, $request->input('hash'))) {
+        if (! hash_equals($expectedHash, $request->input('hash'))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid component hash',

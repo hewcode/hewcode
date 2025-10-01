@@ -3,34 +3,52 @@
 namespace Hewcode\Hewcode\Lists\Schema;
 
 use Closure;
-use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 abstract class Column implements WithVisibility
 {
-    use HasVisibility, EvaluatesClosures;
+    use EvaluatesClosures, HasVisibility;
 
     protected string $name;
+
     protected string $label;
+
     protected bool $sortable = false;
+
     protected bool $searchable = false;
+
     protected ?Closure $getStateUsing = null;
+
     protected ?Closure $formatStateUsing = null;
+
     protected ?string $sortField = null;
+
     protected ?string $searchField = null;
+
     protected bool $wrap = false;
+
     protected bool $badge = false;
+
     protected ?string $badgeVariant = null;
+
     protected ?Closure $colorUsing = null;
+
     protected ?Closure $beforeUsing = null;
+
     protected ?Closure $afterUsing = null;
+
     protected ?Closure $omitUsing = null;
+
     protected ?Model $model = null;
+
     protected bool $labelExplicitlySet = false;
+
     protected bool $togglable = false;
+
     protected bool $isToggledHiddenByDefault = false;
 
     public function __construct(string $name)
@@ -96,7 +114,6 @@ abstract class Column implements WithVisibility
         return $this;
     }
 
-
     public function wrap(bool $wrap = true): static
     {
         $this->wrap = $wrap;
@@ -158,7 +175,7 @@ abstract class Column implements WithVisibility
         $this->model = $model;
 
         // If no label was explicitly set, try to resolve it from locale
-        if (!$this->labelExplicitlySet && $model) {
+        if (! $this->labelExplicitlySet && $model) {
             $this->resolveLocaleLabel();
         }
 
@@ -167,7 +184,7 @@ abstract class Column implements WithVisibility
 
     protected function resolveLocaleLabel(): void
     {
-        if (!$this->model) {
+        if (! $this->model) {
             return;
         }
 
@@ -227,7 +244,6 @@ abstract class Column implements WithVisibility
     {
         return $this->searchField ?? $this->name;
     }
-
 
     public function shouldWrap(): bool
     {

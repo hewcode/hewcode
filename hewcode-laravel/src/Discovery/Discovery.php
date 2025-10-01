@@ -3,20 +3,21 @@
 namespace Hewcode\Hewcode\Discovery;
 
 use Exception;
-use ReflectionClass;
-use ReflectionException;
-use ReflectionMethod;
-use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Contracts\Discoverable;
+use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Illuminate\Contracts\Support\Arrayable;
-use RuntimeException;
 use InvalidArgumentException;
+use ReflectionClass;
+use ReflectionException;
+use RuntimeException;
 
 class Discovery implements Arrayable
 {
     protected ?object $controller;
+
     protected array $data = [];
+
     protected ?array $only = null;
 
     public static function for($controller): static

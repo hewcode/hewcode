@@ -10,7 +10,9 @@ use InvalidArgumentException;
 trait InteractsWithModel
 {
     protected mixed $record = null;
+
     protected ?object $model = null;
+
     protected ?Closure $resolveRecordUsing = null;
 
     protected function resolve(int|string|array $ids): mixed
@@ -19,7 +21,7 @@ trait InteractsWithModel
 
         if ($this->resolveRecordUsing) {
             if ($isArray) {
-                return collect($ids)->map(fn($id) => ($this->resolveRecordUsing)($id));
+                return collect($ids)->map(fn ($id) => ($this->resolveRecordUsing)($id));
             } else {
                 return ($this->resolveRecordUsing)($ids);
             }

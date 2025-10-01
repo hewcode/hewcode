@@ -2,12 +2,13 @@
 
 namespace Hewcode\Hewcode\Lists\Drivers;
 
-use Illuminate\Support\Collection;
 use Hewcode\Hewcode\Lists\Filters\Filter;
+use Illuminate\Support\Collection;
 
 class IterableDriver implements ListingDriver
 {
     protected Collection $data;
+
     protected Collection $originalData;
 
     public function __construct(iterable $data)
@@ -25,7 +26,7 @@ class IterableDriver implements ListingDriver
         $this->data = $this->data->filter(function ($item) use ($searchTerm, $searchableFields) {
             foreach ($searchableFields as $field) {
                 $value = data_get($item, $field);
-                
+
                 if (is_string($value) && str_contains(strtolower($value), strtolower($searchTerm))) {
                     return true;
                 }
@@ -46,10 +47,11 @@ class IterableDriver implements ListingDriver
     {
         if ($filter->filterUsing) {
             $this->data = $filter->filterUsing->__invoke($this->data);
+
             return $this->data;
         }
 
-        if (!$filter->filled()) {
+        if (! $filter->filled()) {
             return $this->data;
         }
 
@@ -57,14 +59,13 @@ class IterableDriver implements ListingDriver
         $filter->validate();
 
         $this->data = $filter->modifyCollection($this->data, $value);
-        
+
         return $this->data;
     }
 
-
     public function applySort(?string $sortField, ?string $sortDirection, array $sortableFields): void
     {
-        if (!$sortField || !array_key_exists($sortField, $sortableFields)) {
+        if (! $sortField || ! array_key_exists($sortField, $sortableFields)) {
             return;
         }
 
@@ -72,7 +73,7 @@ class IterableDriver implements ListingDriver
 
         $this->data = $this->data->sortBy(function ($item) use ($sortField) {
             return data_get($item, $sortField);
-        }, SORT_REGULAR, !$ascending);
+        }, SORT_REGULAR, ! $ascending);
     }
 
     public function paginate(int $perPage): array

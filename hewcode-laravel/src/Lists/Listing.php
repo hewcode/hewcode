@@ -3,65 +3,81 @@
 namespace Hewcode\Hewcode\Lists;
 
 use BadMethodCallException;
+use Closure;
+use Hewcode\Hewcode\Actions\Action;
+use Hewcode\Hewcode\Actions\BulkAction;
+use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
+use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\InteractsWithActions;
 use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\HasVisibility;
-use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Hewcode\Hewcode\Lists\Drivers\EloquentDriver;
 use Hewcode\Hewcode\Lists\Drivers\IterableDriver;
 use Hewcode\Hewcode\Lists\Drivers\ListingDriver;
-use Hewcode\Hewcode\Actions\Action;
-use Hewcode\Hewcode\Actions\BulkAction;
+use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Lists\Filters\Filter;
 use Hewcode\Hewcode\Lists\Schema\Column;
 use Illuminate\Database\Eloquent\Builder;
-use Closure;
 use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
-use Hewcode\Hewcode\Lists\Expose as ListingExpose;
-use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
-use Hewcode\Hewcode\Contracts\Discoverable;
 use ReflectionException;
-use Illuminate\Support\Facades\Hash;
+
 use function Hewcode\Hewcode\generateComponentHash;
 
 class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibility
 {
-    use InteractsWithModel;
-    use InteractsWithActions;
-    use HasVisibility;
     use EvaluatesClosures;
+    use HasVisibility;
+    use InteractsWithActions;
+    use InteractsWithModel;
 
     protected ListingDriver $driver;
+
     public ?string $component = null;
+
     /** @var array<Column> */
     public array $columns = [];
+
     /** @var array<Column>|null */
     private ?array $cachedColumns = null;
+
     public ?array $defaultSort = null;
+
     /** @var array<Filter> */
     public array $filters = [];
+
     /** @var array<Action> */
     public array $actions = [];
+
     /** @var array<BulkAction> */
     public array $bulkActions = [];
+
     public int $perPage = 15;
+
     protected ?Closure $bgColorUsing = null;
 
     // URL persistence settings
     protected bool $persistFiltersInUrl = false;
+
     protected bool $persistSortInUrl = false;
+
     protected bool $persistColumnsInUrl = false;
+
     protected bool $persistSearchInUrl = false;
 
     // Session persistence settings
     protected bool $persistFiltersInSession = false;
+
     protected bool $persistSortInSession = false;
+
     protected bool $persistColumnsInSession = false;
+
     protected bool $persistSearchInSession = false;
+
     protected ?string $sessionKey = null;
 
     public static function make(): self
@@ -78,7 +94,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
             }
         }
 
-        if (!$caller) {
+        if (! $caller) {
             throw new BadMethodCallException('Lists\Listing::make() must be called from a method with the #[Listing] attribute');
         }
 
@@ -92,7 +108,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
             if (empty($listingAttributes) && empty($actionsAttributes)) {
                 throw new BadMethodCallException(
                     sprintf(
-                        'Lists\Listing::make() can only be called from methods with the #[Listing] or #[Actions] attribute. ' .
+                        'Lists\Listing::make() can only be called from methods with the #[Listing] or #[Actions] attribute. '.
                         'Method %s::%s() is missing the required attribute.',
                         $caller['class'],
                         $caller['function']
@@ -103,7 +119,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
             throw new BadMethodCallException('Unable to validate calling method for Lists\Listing::make()');
         }
 
-        return new self();
+        return new self;
     }
 
     public function component(string $component): static
@@ -291,7 +307,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
     {
         if ($this->cachedColumns === null) {
             $this->cachedColumns = collect($this->columns)
-                ->filter(fn(Column $column) => $column->isVisible())
+                ->filter(fn (Column $column) => $column->isVisible())
                 ->values()
                 ->all();
         }
@@ -301,7 +317,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
 
     private function getSessionKey(): string
     {
-        return $this->sessionKey ?? 'chisel_listing_' . static::class;
+        return $this->sessionKey ?? 'chisel_listing_'.static::class;
     }
 
     private function getColumnVisibilityObject(): array
@@ -315,7 +331,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
         if (empty($visibleColumnsArray)) {
             foreach ($this->columns as $column) {
                 if ($column->isTogglable()) {
-                    $columnVisibility[$column->getName()] = !$column->isToggledHiddenByDefault();
+                    $columnVisibility[$column->getName()] = ! $column->isToggledHiddenByDefault();
                 }
             }
         } else {
@@ -332,6 +348,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
     private function getFromSession(string $key, mixed $default = null): mixed
     {
         $sessionKey = $this->getSessionKey();
+
         return session()->get("{$sessionKey}.{$key}", $default);
     }
 
@@ -362,6 +379,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
             if ($clearType === true || $clearType === 'filters' && $key === 'filter' ||
                 $clearType === 'columns' && $key === 'columns') {
                 $this->putInSession($key, null);
+
                 return $default;
             }
         }
@@ -377,15 +395,15 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
 
     private function prepareData(): void
     {
-        if (!isset($this->driver)) {
+        if (! isset($this->driver)) {
             throw new BadMethodCallException('You must call either query() or data() before calling toData()');
         }
 
         $visibleColumns = collect($this->getCachedColumns());
 
         $searchableFields = $visibleColumns
-            ->filter(fn(Column $column) => $column->isSearchable())
-            ->map(fn(Column $column) => $column->getSearchField())
+            ->filter(fn (Column $column) => $column->isSearchable())
+            ->map(fn (Column $column) => $column->getSearchField())
             ->toArray();
 
         if ($searchTerm = $this->getRequestOrSession('search')) {
@@ -403,8 +421,8 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
         $this->driver->applyFilters($this->filters);
 
         $sortableFields = $visibleColumns
-            ->filter(fn(Column $column) => $column->isSortable())
-            ->mapWithKeys(fn(Column $column) => [$column->getSortField() => $column->getLabel()])
+            ->filter(fn (Column $column) => $column->isSortable())
+            ->mapWithKeys(fn (Column $column) => [$column->getSortField() => $column->getLabel()])
             ->toArray();
 
         $sortField = $this->getRequestOrSession('sort', $this->defaultSort[0] ?? null);
@@ -422,8 +440,8 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
         $visibleColumns = $this->getCachedColumns();
 
         $sortableFields = collect($visibleColumns)
-            ->filter(fn(Column $column) => $column->isSortable())
-            ->map(fn(Column $column) => $column->getSortField())
+            ->filter(fn (Column $column) => $column->isSortable())
+            ->map(fn (Column $column) => $column->getSortField())
             ->toArray();
 
         return [
@@ -436,15 +454,15 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
                     $data[$column->getName()] = $column->getValue($record);
 
                     if ($before = $column->getBeforeContent($record)) {
-                        $data[$column->getName() . '_before'] = $before;
+                        $data[$column->getName().'_before'] = $before;
                     }
 
                     if ($after = $column->getAfterContent($record)) {
-                        $data[$column->getName() . '_after'] = $after;
+                        $data[$column->getName().'_after'] = $after;
                     }
 
                     if ($color = $column->getColor($record)) {
-                        $data[$column->getName() . '_color'] = $color;
+                        $data[$column->getName().'_color'] = $color;
                     }
                 }
 
@@ -459,11 +477,12 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
                         return $action->record($record)->isVisible();
                     });
 
-                    if (!empty($visibleActions)) {
+                    if (! empty($visibleActions)) {
                         $data['_row_actions'] = array_reduce($visibleActions, function ($carry, Action $action) use ($record) {
                             $carry[$action->name] = array_merge($action->component($this->component)->toData(), [
                                 'recordId' => $record->getKey(),
                             ]);
+
                             return $carry;
                         }, []);
                     }
@@ -481,7 +500,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
                     'badgeVariant' => $column->getBadgeVariant(),
                     'togglable' => $column->isTogglable(),
                     'isToggledHiddenByDefault' => $column->isToggledHiddenByDefault(),
-                    'hidden' => !$column->isVisible(),
+                    'hidden' => ! $column->isVisible(),
                 ];
             }, $visibleColumns),
             'allColumns' => array_map(function (Column $column) {
@@ -490,7 +509,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
                     'label' => $column->getLabel(),
                     'togglable' => $column->isTogglable(),
                     'isToggledHiddenByDefault' => $column->isToggledHiddenByDefault(),
-                    'hidden' => !$column->isVisible(),
+                    'hidden' => ! $column->isVisible(),
                 ];
             }, $this->columns),
             'sortable' => array_values($sortableFields),

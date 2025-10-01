@@ -54,16 +54,15 @@ class EloquentDriver implements ListingDriver
         });
     }
 
-
     public function applySort(?string $sortField, ?string $sortDirection, array $sortableFields): void
     {
-        if (!$sortField || !array_key_exists($sortField, $sortableFields)) {
+        if (! $sortField || ! array_key_exists($sortField, $sortableFields)) {
             return;
         }
 
         $sortDirection = $sortDirection === 'desc' ? 'desc' : 'asc';
 
-        if (!str_contains($sortField, '.')) {
+        if (! str_contains($sortField, '.')) {
             $this->query->orderBy(str($sortField)->snake()->toString(), $sortDirection);
         } else {
             $relationshipName = str($sortField)->beforeLast('.')->toString();
@@ -94,11 +93,11 @@ class EloquentDriver implements ListingDriver
         return $this->query->get()->toArray();
     }
 
-    private function getSortColumnForQuery(Builder $query, string $sortColumn, ?array $relationships = null): string |\Illuminate\Database\Query\Builder
+    private function getSortColumnForQuery(Builder $query, string $sortColumn, ?array $relationships = null): string|\Illuminate\Database\Query\Builder
     {
         $currentRelationshipName = array_shift($relationships);
 
-        if (!$currentRelationshipName) {
+        if (! $currentRelationshipName) {
             return $sortColumn;
         }
 
@@ -129,7 +128,7 @@ class EloquentDriver implements ListingDriver
         $relationship = null;
 
         foreach (explode('.', $name) as $nestedRelationshipName) {
-            if (!$record->isRelation($nestedRelationshipName)) {
+            if (! $record->isRelation($nestedRelationshipName)) {
                 $relationship = null;
 
                 break;

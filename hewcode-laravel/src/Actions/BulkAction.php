@@ -8,7 +8,7 @@ class BulkAction extends Action
     {
         parent::name($name);
 
-        $this->name = 'bulk-' . $this->name;
+        $this->name = 'bulk-'.$this->name;
 
         return $this;
     }
@@ -20,7 +20,7 @@ class BulkAction extends Action
             $records = $args['records'] ?? collect();
 
             // Convert array of IDs to Collection if needed
-            if (is_array($records) && !empty($records) && is_numeric($records[0] ?? null)) {
+            if (is_array($records) && ! empty($records) && is_numeric($records[0] ?? null)) {
                 // This is handled in InteractsWithActions trait
                 $records = $args['records'];
             }

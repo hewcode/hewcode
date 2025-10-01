@@ -12,7 +12,7 @@ function flattenLocaleArray(array $array, string $prefix = ''): array
             $key = str($key)->afterLast('\\')->snake()->toString();
         }
 
-        $newKey = $prefix === '' ? $key : $prefix . '.' . $key;
+        $newKey = $prefix === '' ? $key : $prefix.'.'.$key;
 
         if (is_array($value)) {
             $result += flattenLocaleArray($value, $newKey);
@@ -29,5 +29,5 @@ function generateComponentHash(string $component, ?string $route = null): string
     $route = $route ?? request()->route()->getName();
     $userId = auth()->id();
 
-    return hash_hmac('sha256', $component . '|' . $route . '|' . $userId, config('app.key'));
+    return hash_hmac('sha256', $component.'|'.$route.'|'.$userId, config('app.key'));
 }

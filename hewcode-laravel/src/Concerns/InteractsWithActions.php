@@ -3,7 +3,6 @@
 namespace Hewcode\Hewcode\Concerns;
 
 use Hewcode\Hewcode\Actions\Action;
-use Hewcode\Hewcode\Actions\BulkAction;
 use InvalidArgumentException;
 
 trait InteractsWithActions

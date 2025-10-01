@@ -2,29 +2,34 @@
 
 namespace Hewcode\Hewcode\Actions;
 
-use Hewcode\Hewcode\Concerns\InteractsWithRecord;
-use Hewcode\Hewcode\Concerns\HasVisibility;
+use Closure;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Concerns\HasVisibility;
+use Hewcode\Hewcode\Concerns\InteractsWithRecord;
 use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
-use Closure;
 use Illuminate\Support\Facades\Route;
+
 use function Hewcode\Hewcode\generateComponentHash;
 
 class Action implements Discoverable, HasRecord, WithVisibility
 {
-    use InteractsWithRecord, HasVisibility, EvaluatesClosures;
+    use EvaluatesClosures, HasVisibility, InteractsWithRecord;
 
     public ?string $component = null;
+
     public string $name;
+
     public string $label;
+
     public string $color = 'primary';
+
     public ?Closure $action = null;
 
     public static function make(string $name): static
     {
-        return (new static())->name($name);
+        return (new static)->name($name);
     }
 
     public function component(string $component): static
@@ -63,7 +68,6 @@ class Action implements Discoverable, HasRecord, WithVisibility
         return $this;
     }
 
-
     public function execute(array $args = []): mixed
     {
         if ($this->action) {
@@ -72,7 +76,6 @@ class Action implements Discoverable, HasRecord, WithVisibility
 
         return null;
     }
-
 
     protected function getEvaluationParameters(): array
     {
