@@ -1,36 +1,41 @@
-import { Button } from "./ui/button";
-import { useState } from "react";
+import { useState } from 'react';
+import { Button } from './ui/button';
 
 const colorMap = {
-  primary: "default",
-  warning: "destructive",
-  secondary: "secondary",
-  success: "default",
-  danger: "destructive",
+  primary: 'default',
+  warning: 'destructive',
+  secondary: 'secondary',
+  success: 'default',
+  danger: 'destructive',
 };
 
-export default function Action({ route, component, hash, name, label, color = "primary", args = {}, recordId, onSuccess, onError }) {
+export default function Action({ route, component, hash, name, label, color = 'primary', args = {}, recordId, onSuccess, onError }) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/_hewcode/action', {
+      const response = await fetch('/_hewcode', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
         },
         body: JSON.stringify({
           route,
           component,
           hash,
-          action: {
-            name,
-            args,
+          context: {
             recordId,
+          },
+          call: {
+            name: 'mountAction',
+            params: {
+              name,
+              args,
+            },
           },
         }),
       });
@@ -38,7 +43,7 @@ export default function Action({ route, component, hash, name, label, color = "p
       const data = await response.json();
 
       if (response.ok && onSuccess) {
-          onSuccess(data.result);
+        onSuccess(data.result);
       }
     } catch (error) {
       if (onError) {
@@ -51,17 +56,13 @@ export default function Action({ route, component, hash, name, label, color = "p
     }
   };
 
-  if (! hash) {
+  if (!hash) {
     return null;
   }
 
   return (
-    <Button
-      variant={colorMap[color] || "default"}
-      onClick={handleClick}
-      disabled={loading}
-    >
-      {loading ? "Loading..." : label || name}
+    <Button variant={colorMap[color] || 'default'} onClick={handleClick} disabled={loading}>
+      {loading ? 'Loading...' : label || name}
     </Button>
   );
 }

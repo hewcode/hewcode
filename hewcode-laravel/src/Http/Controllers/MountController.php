@@ -2,6 +2,7 @@
 
 namespace Hewcode\Hewcode\Http\Controllers;
 
+use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\ResourceController;
@@ -9,38 +10,34 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use function Hewcode\Hewcode\generateComponentHash;
 
-class ActionController extends Controller
+class MountController extends Controller
 {
     public function handle(Request $request): JsonResponse
     {
         $request->validate([
             'component' => 'required|string',
-            'action.name' => 'required|string',
-            'action.args' => 'sometimes|array',
-            'action.recordId' => 'sometimes',
-            'action.recordIds' => 'sometimes|array',
+            'call.name' => 'required|string',
+            'call.params' => 'sometimes|array',
+            'context.recordId' => 'sometimes|string',
+            'context.recordIds' => 'sometimes|array',
             'route' => 'required|string',
             'hash' => 'required|string',
         ]);
 
         $component = $request->input('component');
-        $actionName = $request->input('action.name');
-        $actionArgs = $request->input('action.args', []);
-        $recordId = $request->input('action.recordId');
-        $recordIds = $request->input('action.recordIds');
         $routeName = $request->input('route');
+        $callName = $request->input('call.name');
+        $recordId = $request->input('context.recordId');
+        $recordIds = $request->input('context.recordIds');
 
-        // Validate component hash
-        $expectedHash = generateComponentHash($component, $routeName);
-        if (!hash_equals($expectedHash, $request->input('hash'))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid component hash',
-            ], 403);
+        if (! hash_equals(generateComponentHash($component, $routeName), $request->input('hash'))) {
+            abort(403);
         }
 
         $route = Route::getRoutes()->getByName($routeName);
@@ -53,33 +50,18 @@ class ActionController extends Controller
                 throw new RuntimeException("Controller for route [$routeName] must implement ".ResourceController::class);
             }
 
-            return response()->json([
-                'success' => false,
-            ], 403);
+            abort(403);
         }
 
         if (! $controller->canAccess($method)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 403);
+            abort(403);
         }
 
         if (! method_exists($controller, $component)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Component not found on controller',
-            ], 404);
+            abort(404);
         }
 
         $component = $controller->{$component}();
-
-        if (! $component instanceof MountsActions) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Component does not mount actions',
-            ], 400);
-        }
 
         if ($component instanceof ResolvesRecord) {
             if ($recordId) {
@@ -89,12 +71,27 @@ class ActionController extends Controller
             }
         }
 
-        // Use dependency injection to resolve method parameters
-        $result = $component->mountAction($actionName, $actionArgs);
+        if ($callName === 'mountAction') {
+            if (! $component instanceof MountsActions) {
+                abort(400);
+            }
 
-        return response()->json([
-            'success' => true,
-            'result' => $result,
-        ]);
+            $data = $request->validate([
+                'call.params.name' => 'required|string',
+                'call.params.args' => 'sometimes|array',
+            ]);
+
+            $actionName = $data['call']['params']['name'];
+            $actionArgs = $data['call']['params']['args'] ?? [];
+
+            return $this->mountAction($component, $actionName, $actionArgs);
+        }
+
+        throw new HttpException(400);
+    }
+
+    protected function mountAction(Discoverable&MountsActions $component, string $action, array $args): mixed
+    {
+        return $component->mountAction($action, $args);
     }
 }

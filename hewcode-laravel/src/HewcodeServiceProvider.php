@@ -2,7 +2,7 @@
 
 namespace Hewcode\Hewcode;
 
-use Hewcode\Hewcode\Http\Controllers\ActionController;
+use Hewcode\Hewcode\Http\Controllers\MountController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
@@ -25,13 +25,9 @@ class HewcodeServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
-        // Register Hewcode routes
-        Route::prefix('_hewcode')
+        Route::post('/_hewcode', [MountController::class, 'handle'])
             ->middleware('web')
-            ->group(function () {
-                Route::post('action', [ActionController::class, 'handle'])
-                    ->name('hewcode.action');
-            });
+            ->name('hewcode.mount');
 
         Inertia::share([
             'hewcode' => [
