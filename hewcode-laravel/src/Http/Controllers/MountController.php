@@ -7,7 +7,6 @@ use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\ResourceController;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -17,7 +16,7 @@ use function Hewcode\Hewcode\generateComponentHash;
 
 class MountController extends Controller
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request): mixed
     {
         $request->validate([
             'component' => 'required|string',

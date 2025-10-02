@@ -4,6 +4,8 @@ namespace Hewcode\Hewcode\Concerns;
 
 use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Actions\BulkAction;
+use Illuminate\Contracts\Support\Responsable;
+use Illuminate\Http\Response;
 use InvalidArgumentException;
 
 trait InteractsWithActions
@@ -28,6 +30,16 @@ trait InteractsWithActions
             abort(403, 'Unauthorized.');
         }
 
-        return $action->execute($args);
+        $response = $action->execute($args);
+
+        if ($response instanceof Responsable) {
+            return $response->toResponse(request());
+        }
+
+        if ($response instanceof Response) {
+            return $response;
+        }
+
+        return back();
     }
 }
