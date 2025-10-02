@@ -25,7 +25,7 @@ class HewcodeServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
-        Route::post('/_hewcode', [MountController::class, 'handle'])
+        Route::post('/_hewcode', MountController::class)
             ->middleware('web')
             ->name('hewcode.mount');
 
