@@ -1,4 +1,4 @@
-import { Check, ChevronDown, X } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
@@ -28,6 +28,7 @@ export default function Select({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedOptionsCache, setSelectedOptionsCache] = useState(new Map());
 
   const performSearch = useCallback(
     async (query) => {
@@ -78,7 +79,39 @@ export default function Select({
     return () => clearTimeout(timeoutId);
   }, [searchQuery, performSearch]);
 
-  const displayOptions = searchable && searchQuery.trim() ? searchResults : options;
+  // Cache options that get selected so they don't disappear
+  useEffect(() => {
+    // Cache any options from search results or initial options
+    const allOptions = [...options, ...searchResults];
+    allOptions.forEach((option) => {
+      setSelectedOptionsCache((prev) => new Map(prev.set(String(option.value), option)));
+    });
+  }, [options, searchResults]);
+
+  // Ensure selected options are always included in display options
+  const getDisplayOptions = () => {
+    // Get currently selected values
+    const selectedValues = multiple ? (Array.isArray(value) ? value.map(String) : value ? [String(value)] : []) : value ? [String(value)] : [];
+
+    // Get selected options from cache - these should ALWAYS be shown
+    const selectedOptions = selectedValues.map((val) => selectedOptionsCache.get(val)).filter(Boolean);
+
+    if (!searchable || !searchQuery.trim()) {
+      // Even when not searching, include selected items that might not be in original options
+      const originalOptionValues = new Set(options.map((opt) => String(opt.value)));
+      const uniqueSelectedOptions = selectedOptions.filter((opt) => !originalOptionValues.has(String(opt.value)));
+      return [...uniqueSelectedOptions, ...options];
+    }
+
+    // Combine selected options with search results, avoiding duplicates
+    const searchResultValues = new Set(searchResults.map((opt) => String(opt.value)));
+    const uniqueSelectedOptions = selectedOptions.filter((opt) => !searchResultValues.has(String(opt.value)));
+
+    // Always put selected items first so they're easily visible
+    return [...uniqueSelectedOptions, ...searchResults];
+  };
+
+  const displayOptions = getDisplayOptions();
 
   // Handle multiple select
   if (multiple) {
@@ -89,11 +122,11 @@ export default function Select({
       const newValues = selectedValues.includes(stringOptionValue)
         ? selectedValues.filter((v) => v !== stringOptionValue)
         : [...selectedValues, stringOptionValue];
-      onChange(newValues);
+      onChange(newValues.length === 0 ? null : newValues);
     };
 
     const handleClearAll = () => {
-      onChange([]);
+      onChange(null);
       setOpen(false);
     };
 
@@ -101,8 +134,12 @@ export default function Select({
       .map((val) => {
         // First try to find in current display options
         let option = displayOptions.find((opt) => String(opt.value) === val);
-        // If not found and we have original options, search there too
-        if (!option && displayOptions !== options) {
+        // If not found, try the cache
+        if (!option) {
+          option = selectedOptionsCache.get(val);
+        }
+        // If still not found, try original options
+        if (!option) {
           option = options.find((opt) => String(opt.value) === val);
         }
         return option?.label;
@@ -122,14 +159,6 @@ export default function Select({
                   selectedLabels.map((label, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
                       {label}
-                      <X
-                        className="ml-1 h-3 w-3 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const valueToRemove = selectedValues[selectedLabels.indexOf(label)];
-                          handleToggleOption(valueToRemove);
-                        }}
-                      />
                     </Badge>
                   ))
                 ) : (
@@ -189,7 +218,9 @@ export default function Select({
 
   if (searchable) {
     const selectedOption =
-      displayOptions.find((opt) => String(opt.value) === String(value)) || options.find((opt) => String(opt.value) === String(value));
+      displayOptions.find((opt) => String(opt.value) === String(value)) ||
+      selectedOptionsCache.get(String(value)) ||
+      options.find((opt) => String(opt.value) === String(value));
 
     return (
       <div className={className}>
