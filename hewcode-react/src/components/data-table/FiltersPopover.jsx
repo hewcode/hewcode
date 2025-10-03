@@ -8,7 +8,7 @@ import DateRangePicker from './DateRangePicker.jsx';
 import Select from './Select.jsx';
 import TextInput from './TextInput.jsx';
 
-export default function FiltersPopover({ filters, state, onFilter }) {
+export default function FiltersPopover({ filters, state, onFilter, route, component, hash }) {
   const { __ } = useTranslator();
   const activeFiltersCount = Object.entries(state || {}).filter(([_, value]) => value !== null && value !== '').length;
 
@@ -48,6 +48,9 @@ export default function FiltersPopover({ filters, state, onFilter }) {
                   onChange: (value) => {
                     onFilter({ ...state, [filter.name]: value });
                   },
+                  route,
+                  component,
+                  hash,
                 })}
               </div>
             ))}
@@ -58,8 +61,22 @@ export default function FiltersPopover({ filters, state, onFilter }) {
   );
 }
 
-function renderSelectFilter({ filter, state, onChange }) {
-  return <Select options={filter.options} value={state} onChange={onChange} multiple={filter.multiple} />;
+function renderSelectFilter({ filter, state, onChange, route, component, hash }) {
+  return (
+    <Select
+      options={filter.options}
+      value={state}
+      onChange={onChange}
+      multiple={filter.multiple}
+      searchable={filter.searchable}
+      route={route}
+      component={component}
+      hash={hash}
+      filterName={filter.name}
+      relationshipName={filter.relationshipName}
+      relationshipTitleColumn={filter.relationshipTitleColumn}
+    />
+  );
 }
 
 function renderDateRangeFilter({ filter, state, onChange }) {

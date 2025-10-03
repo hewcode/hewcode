@@ -4,17 +4,22 @@ namespace Hewcode\Hewcode\Http\Controllers;
 
 use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\MountsActions;
+use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\ResourceController;
+use Hewcode\Hewcode\Lists\Filters\SelectFilter;
+use Hewcode\Hewcode\Support\Expose;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use ReflectionMethod;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use function Hewcode\Hewcode\generateComponentHash;
 
-class MountController extends Controller
+class HewcodeController extends Controller
 {
     public function __invoke(Request $request): mixed
     {
@@ -34,8 +39,8 @@ class MountController extends Controller
         $recordId = $request->input('context.recordId');
         $recordIds = $request->input('context.recordIds');
 
-        if (! hash_equals(generateComponentHash($component, $routeName), $request->input('hash'))) {
-            abort(403);
+        if (! hash_equals($hash = generateComponentHash($component, $routeName), $request->input('hash'))) {
+            abort(403, app()->environment('local') ? 'Invalid hash. Given ['.$request->input('hash').'], expected ['.$hash.']' : '');
         }
 
         $route = Route::getRoutes()->getByName($routeName);
@@ -52,11 +57,11 @@ class MountController extends Controller
         }
 
         if (! $controller->canAccess($method)) {
-            abort(403);
+            abort(403, app()->environment('local') ? 'Access denied' : '');
         }
 
         if (! method_exists($controller, $component)) {
-            abort(404);
+            abort(404, app()->environment('local') ? "Component [$component] not found on controller ".get_class($controller) : '');
         }
 
         $component = $controller->{$component}();
@@ -85,11 +90,67 @@ class MountController extends Controller
             return $this->mountAction($component, $actionName, $actionArgs);
         }
 
+        if ($callName === 'mountComponent') {
+            if (! $component instanceof MountsComponents) {
+                abort(400);
+            }
+
+            $request->validate([
+                'call.params' => 'required|array',
+                'call.params.0' => 'required|string',
+            ]);
+
+            $params = $request->input('call.params');
+
+            $path = $params[0];
+            $pathParts = explode('.', $path);
+
+            if (count($pathParts) !== 3) {
+                throw new HttpException(400);
+            }
+
+            $type = $pathParts[0];
+            $subComponentName = $pathParts[1];
+            $method = $pathParts[2];
+            $args = collect($params)->slice(1)->values()->all();
+
+            $subComponent = $component->getComponent($type, $subComponentName);
+
+            if (! $subComponent) {
+                throw new HttpException(400);
+            }
+
+            if (! method_exists($subComponent, $method)) {
+                throw new HttpException(400);
+            }
+
+            if (count((new ReflectionMethod($subComponent, $method))->getAttributes(Expose::class)) === 0) {
+                throw new HttpException(400);
+            }
+
+            return $this->primitiveToJsonResponse(
+                $subComponent->{$method}(...$args)
+            );
+        }
+
         throw new HttpException(400);
     }
 
     protected function mountAction(Discoverable&MountsActions $component, string $action, array $args): mixed
     {
         return $component->mountAction($action, $args);
+    }
+
+    protected function primitiveToJsonResponse(mixed $response): mixed
+    {
+        if (is_array($response) || $response instanceof Arrayable) {
+            return response()->json($response);
+        }
+
+        if (is_bool($response) || is_int($response) || is_float($response) || is_string($response) || $response === null) {
+            return response()->json($response);
+        }
+
+        return $response;
     }
 }

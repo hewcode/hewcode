@@ -2,11 +2,11 @@ import { router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { throttle } from 'throttle-debounce';
-import { Input } from '../ui/input.jsx';
 import useTranslator from '../../hooks/useTranslator.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
-import FiltersPopover from './FiltersPopover.jsx';
+import { Input } from '../ui/input.jsx';
 import ColumnsPopover from './ColumnsPopover.jsx';
+import FiltersPopover from './FiltersPopover.jsx';
 
 const performSearch = throttle(650, (e, urlPersistence) => {
   const [url, params] = setUrlQuery('search', e.target.value);
@@ -14,7 +14,7 @@ const performSearch = throttle(650, (e, urlPersistence) => {
   router.get(url, params, {
     replace: true,
     preserveState: true,
-    preserveUrl: !urlPersistence?.persistSearchInUrl
+    preserveUrl: !urlPersistence?.persistSearchInUrl,
   });
 });
 
@@ -45,6 +45,9 @@ const TableHeader = ({
     filter: {},
     columns: {},
   },
+  component,
+  hash,
+  route,
 }) => {
   const [search, setSearch] = useState(currentValues.search || '');
   const { __ } = useTranslator();
@@ -52,11 +55,11 @@ const TableHeader = ({
   searchPlaceholder ||= __('hewcode.common.search') + '...';
 
   return (
-    <div className="p-6 flex items-center justify-between">
-      <div className="space-x-4 flex items-center">
+    <div className="flex items-center justify-between p-6">
+      <div className="flex items-center space-x-4">
         {showSearch && (
           <div className="relative">
-            <Search className="left-3 text-gray-400 h-4 w-4 absolute top-1/2 -translate-y-1/2 transform pointer-events-none" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
             <Input
               type="text"
               value={search || ''}
@@ -74,8 +77,10 @@ const TableHeader = ({
             />
           </div>
         )}
-        {showFilter && filters.length > 0 && <FiltersPopover filters={filters} state={filterState} onFilter={onFilter} />}
-        {allColumns.some(col => col.togglable) && (
+        {showFilter && filters.length > 0 && (
+          <FiltersPopover filters={filters} state={filterState} onFilter={onFilter} route={route} component={component} hash={hash} />
+        )}
+        {allColumns.some((col) => col.togglable) && (
           <ColumnsPopover
             columns={allColumns}
             columnVisibility={columnVisibility}
@@ -84,7 +89,7 @@ const TableHeader = ({
           />
         )}
       </div>
-      {showActions && headerActions.length > 0 && <div className="space-x-2 flex items-center">{headerActions}</div>}
+      {showActions && headerActions.length > 0 && <div className="flex items-center space-x-2">{headerActions}</div>}
     </div>
   );
 };

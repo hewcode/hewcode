@@ -1,18 +1,17 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHeader as ShadcnTableHeader, TableRow } from '../ui/table.jsx';
-import { Checkbox } from '../ui/checkbox.jsx';
+import { getContrastColor, getTailwindBadgeClasses, getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
-import Badge from './Badge.jsx';
+import Action from '../Action.jsx';
 import { Badge as ShadcnBadge } from '../ui/badge.jsx';
+import { Checkbox } from '../ui/checkbox.jsx';
+import { TableHeader as ShadcnTableHeader, Table, TableBody, TableCell, TableRow } from '../ui/table.jsx';
+import Badge from './Badge.jsx';
+import BulkActions from './BulkActions.jsx';
 import Pagination from './Pagination.jsx';
 import TableColumnHeader from './TableColumnHeader.jsx';
 import TableHeader from './TableHeader.jsx';
 import TableRowActions from './TableRowActions.jsx';
-import BulkActions from './BulkActions.jsx';
-import Action from '../Action.jsx';
-import { getContrastColor, getTailwindBgClass, getTailwindBadgeClasses, isHexColor } from '../../lib/colors.js';
-
 
 const DataTable = ({
   records = [],
@@ -49,6 +48,9 @@ const DataTable = ({
     filter: {},
     columns: {},
   },
+  component,
+  hash,
+  route,
   thClassName = '',
   tdClassName = '',
   theadClassName = '',
@@ -65,7 +67,7 @@ const DataTable = ({
     const savedVisibility = currentValues.columns || {};
     const visibility = {};
 
-    allColumns.forEach(column => {
+    allColumns.forEach((column) => {
       if (column.togglable) {
         // Check if there's a saved state, otherwise use the default
         if (savedVisibility.hasOwnProperty(column.key)) {
@@ -101,11 +103,15 @@ const DataTable = ({
       let [url1, params] = setUrlQuery('sort', columnKey);
       const [url, params2] = setUrlQuery('direction', direction, url1);
 
-      router.get(url, { ...params, ...params2 }, {
-        replace: true,
-        preserveState: true,
-        preserveUrl: !urlPersistence.persistSortInUrl
-      });
+      router.get(
+        url,
+        { ...params, ...params2 },
+        {
+          replace: true,
+          preserveState: true,
+          preserveUrl: !urlPersistence.persistSortInUrl,
+        },
+      );
     }
   };
 
@@ -124,7 +130,7 @@ const DataTable = ({
     router.get(url, params, {
       replace: true,
       preserveState: true,
-      preserveUrl: !urlPersistence.persistColumnsInUrl
+      preserveUrl: !urlPersistence.persistColumnsInUrl,
     });
   };
 
@@ -148,17 +154,17 @@ const DataTable = ({
     router.get(url, params, {
       replace: true,
       preserveState: true,
-      preserveUrl: !urlPersistence.persistColumnsInUrl
+      preserveUrl: !urlPersistence.persistColumnsInUrl,
     });
   };
 
   // Filter visible columns based on visibility state
-  const visibleColumns = columns.filter(column => columnVisibility[column.key] !== false);
+  const visibleColumns = columns.filter((column) => columnVisibility[column.key] !== false);
 
   // Bulk selection functions
   const hasBulkActions = bulkActions && bulkActions.length > 0;
-  const allRecordIds = records.map(record => record.id);
-  const isAllSelected = allRecordIds.length > 0 && allRecordIds.every(id => selectedRecords.has(id));
+  const allRecordIds = records.map((record) => record.id);
+  const isAllSelected = allRecordIds.length > 0 && allRecordIds.every((id) => selectedRecords.has(id));
   const isIndeterminate = selectedRecords.size > 0 && !isAllSelected;
 
   const handleSelectAll = (checked) => {
@@ -195,7 +201,7 @@ const DataTable = ({
     let mainContent;
     if (column.badge) {
       const badgeProps = {
-        variant: column.badgeVariant || 'default'
+        variant: column.badgeVariant || 'default',
       };
 
       // Apply custom color styling
@@ -210,17 +216,13 @@ const DataTable = ({
           badgeProps.style = {
             backgroundColor: badgeColor,
             color: getContrastColor(badgeColor),
-            borderColor: badgeColor
+            borderColor: badgeColor,
           };
           badgeProps.className = 'border-transparent';
         }
       }
 
-      mainContent = (
-        <ShadcnBadge {...badgeProps}>
-          {item[column.key]}
-        </ShadcnBadge>
-      );
+      mainContent = <ShadcnBadge {...badgeProps}>{item[column.key]}</ShadcnBadge>;
     } else {
       mainContent = item[column.key];
     }
@@ -229,17 +231,9 @@ const DataTable = ({
     if (beforeContent || afterContent) {
       return (
         <div className="space-y-1">
-          {beforeContent && (
-            <div className="text-xs text-muted-foreground">
-              {beforeContent}
-            </div>
-          )}
+          {beforeContent && <div className="text-muted-foreground text-xs">{beforeContent}</div>}
           <div>{mainContent}</div>
-          {afterContent && (
-            <div className="text-xs text-muted-foreground">
-              {afterContent}
-            </div>
-          )}
+          {afterContent && <div className="text-muted-foreground text-xs">{afterContent}</div>}
         </div>
       );
     }
@@ -260,15 +254,15 @@ const DataTable = ({
     router.get(url, params, {
       replace: true,
       preserveState: true,
-      preserveUrl: !urlPersistence.persistFiltersInUrl
+      preserveUrl: !urlPersistence.persistFiltersInUrl,
     });
   };
 
-  const rowActions = records.some(record => record._row_actions);
+  const rowActions = records.some((record) => record._row_actions);
 
   return (
     <div className="w-full">
-      {((showSearch || showActions || filters || allColumns.some(col => col.togglable)) && (
+      {((showSearch || showActions || filters || allColumns.some((col) => col.togglable)) && (
         <TableHeader
           showSearch={showSearch}
           showFilter={showFilter}
@@ -285,6 +279,9 @@ const DataTable = ({
           onBulkColumnVisibilityChange={handleBulkColumnVisibilityChange}
           urlPersistence={urlPersistence}
           currentValues={currentValues}
+          component={component}
+          hash={hash}
+          route={route}
         />
       )) ||
         null}
@@ -303,14 +300,7 @@ const DataTable = ({
           <TableRow>
             {hasBulkActions && (
               <TableColumnHeader
-                label={
-                  <Checkbox
-                    checked={isAllSelected}
-                    indeterminate={isIndeterminate}
-                    onCheckedChange={handleSelectAll}
-                    aria-label="Select all"
-                  />
-                }
+                label={<Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label="Select all" />}
                 className={thClassName}
               />
             )}
@@ -335,15 +325,11 @@ const DataTable = ({
             const tailwindBgClass = getTailwindBgClass(rowBgColor);
 
             // Use Tailwind classes if available, otherwise fallback to inline styles
-            const rowStyle = tailwindBgClass ? undefined : (rowBgColor && isHexColor(rowBgColor)) ? { backgroundColor: rowBgColor } : undefined;
+            const rowStyle = tailwindBgClass ? undefined : rowBgColor && isHexColor(rowBgColor) ? { backgroundColor: rowBgColor } : undefined;
             const rowClassName = tailwindBgClass || '';
 
             return (
-              <TableRow
-                key={record.id || index}
-                style={rowStyle}
-                className={rowClassName}
-              >
+              <TableRow key={record.id || index} style={rowStyle} className={rowClassName}>
                 {hasBulkActions && (
                   <TableCell className={tdClassName}>
                     <Checkbox
@@ -356,16 +342,13 @@ const DataTable = ({
                 {visibleColumns
                   .filter((col) => !col.hidden)
                   .map((column) => (
-                    <TableCell
-                      key={column.key}
-                      className={`${tdClassName} ${column.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}
-                    >
+                    <TableCell key={column.key} className={`${tdClassName} ${column.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
                       {renderCellContent(record, column)}
                     </TableCell>
                   ))}
-                <TableRowActions actions={record._row_actions ? Object.values(record._row_actions).map(action =>
-                  <Action key={action.name} {...action} />
-                ) : null} />
+                <TableRowActions
+                  actions={record._row_actions ? Object.values(record._row_actions).map((action) => <Action key={action.name} {...action} />) : null}
+                />
               </TableRow>
             );
           })}

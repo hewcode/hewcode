@@ -3,10 +3,11 @@
 namespace Hewcode\Hewcode\Lists\Filters;
 
 use Closure;
+use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 
-class Filter
+class Filter extends Component
 {
     public string $label;
     public string $name;

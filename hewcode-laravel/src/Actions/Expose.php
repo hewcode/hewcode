@@ -5,9 +5,7 @@ namespace Hewcode\Hewcode\Actions;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_METHOD)]
-class Expose
+class Expose extends \Hewcode\Hewcode\Support\Expose
 {
-    public function __construct(public ?string $key = null)
-    {
-    }
+    //
 }

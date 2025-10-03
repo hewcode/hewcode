@@ -6,10 +6,11 @@ use Closure;
 use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
 use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-abstract class Column implements WithVisibility
+abstract class Column extends Component implements WithVisibility
 {
     use HasVisibility, EvaluatesClosures;
 

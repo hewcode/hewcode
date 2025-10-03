@@ -1,22 +1,93 @@
-import { Select as ShadcnSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select.jsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
-import { Button } from '../ui/button.jsx';
-import { Badge } from '../ui/badge.jsx';
 import { Check, ChevronDown, X } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Badge } from '../ui/badge.jsx';
+import { Button } from '../ui/button.jsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
+import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select as ShadcnSelect } from '../ui/select.jsx';
 import Label from './Label.jsx';
+import TextInput from './TextInput.jsx';
 
-export default function Select({ label, required, options, value, onChange, className, clearable = true, multiple = false }) {
+export default function Select({
+  label,
+  required,
+  options,
+  value,
+  onChange,
+  className,
+  clearable = true,
+  multiple = false,
+  searchable = false,
+  route,
+  component,
+  hash,
+  filterName,
+  relationshipName,
+  relationshipTitleColumn,
+}) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const performSearch = useCallback(
+    async (query) => {
+      if (!searchable || !query.trim() || !route || !hash) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const response = await fetch('/_hewcode', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+          },
+          body: JSON.stringify({
+            route,
+            component,
+            hash,
+            call: {
+              name: 'mountComponent',
+              params: ['filters.' + filterName + '.getSearchResults', query],
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data || []);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [searchable, route, component, hash, filterName],
+  );
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      performSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, performSearch]);
+
+  const displayOptions = searchable && searchQuery.trim() ? searchResults : options;
 
   // Handle multiple select
   if (multiple) {
-    const selectedValues = Array.isArray(value) ? value.map(String) : (value ? [String(value)] : []);
+    const selectedValues = Array.isArray(value) ? value.map(String) : value ? [String(value)] : [];
 
     const handleToggleOption = (optionValue) => {
       const stringOptionValue = String(optionValue);
       const newValues = selectedValues.includes(stringOptionValue)
-        ? selectedValues.filter(v => v !== stringOptionValue)
+        ? selectedValues.filter((v) => v !== stringOptionValue)
         : [...selectedValues, stringOptionValue];
       onChange(newValues);
     };
@@ -27,23 +98,24 @@ export default function Select({ label, required, options, value, onChange, clas
     };
 
     const selectedLabels = selectedValues
-      .map(val => options.find(opt => String(opt.value) === val)?.label)
+      .map((val) => {
+        // First try to find in current display options
+        let option = displayOptions.find((opt) => String(opt.value) === val);
+        // If not found and we have original options, search there too
+        if (!option && displayOptions !== options) {
+          option = options.find((opt) => String(opt.value) === val);
+        }
+        return option?.label;
+      })
       .filter(Boolean);
 
     return (
       <div className={className}>
-        {label && (
-          <Label required={required}>{label}</Label>
-        )}
+        {label && <Label required={required}>{label}</Label>}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between h-9 px-3"
-            >
-              <div className="flex flex-wrap gap-1 flex-1 text-left">
+            <Button variant="outline" role="combobox" aria-expanded={open} className="h-9 w-full justify-between px-3">
+              <div className="flex flex-1 flex-wrap gap-1 text-left">
                 {selectedLabels.length === 0 ? (
                   <span className="text-muted-foreground">Select options...</span>
                 ) : selectedLabels.length <= 2 ? (
@@ -71,26 +143,32 @@ export default function Select({ label, required, options, value, onChange, clas
           </PopoverTrigger>
           <PopoverContent className="w-full p-0" align="start">
             <div className="p-2">
+              {searchable && (
+                <div className="mb-3">
+                  <TextInput
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search options..."
+                    className="w-full"
+                    autoComplete="off"
+                    spellCheck="false"
+                  />
+                  {isSearching && <div className="text-muted-foreground mt-1 text-xs">Searching...</div>}
+                </div>
+              )}
               {clearable && selectedValues.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-xs mb-2"
-                  onClick={handleClearAll}
-                >
+                <Button variant="ghost" size="sm" className="mb-2 w-full justify-start text-xs" onClick={handleClearAll}>
                   Clear all
                 </Button>
               )}
-              {options.map(({ label, value: optionValue }) => (
+              {displayOptions.map(({ label, value: optionValue }) => (
                 <div
                   key={optionValue}
-                  className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent"
+                  className="hover:bg-accent flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm"
                   onClick={() => handleToggleOption(optionValue)}
                 >
-                  <div className="flex h-4 w-4 items-center justify-center rounded-sm border border-primary">
-                    {selectedValues.includes(String(optionValue)) && (
-                      <Check className="h-3 w-3" />
-                    )}
+                  <div className="border-primary flex h-4 w-4 items-center justify-center rounded-sm border">
+                    {selectedValues.includes(String(optionValue)) && <Check className="h-3 w-3" />}
                   </div>
                   <span>{label}</span>
                 </div>
@@ -103,21 +181,78 @@ export default function Select({ label, required, options, value, onChange, clas
   }
 
   // Handle single select (existing logic)
-  let processedOptions = [...options];
+  let processedOptions = [...displayOptions];
 
-  if (clearable && !options.some((option) => !option.value)) {
-    processedOptions = [{ label: '-', value: '__clear__' }, ...options];
+  if (clearable && !displayOptions.some((option) => !option.value)) {
+    processedOptions = [{ label: '-', value: '__clear__' }, ...displayOptions];
+  }
+
+  if (searchable) {
+    const selectedOption =
+      displayOptions.find((opt) => String(opt.value) === String(value)) || options.find((opt) => String(opt.value) === String(value));
+
+    return (
+      <div className={className}>
+        {label && <Label required={required}>{label}</Label>}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" role="combobox" aria-expanded={open} className="h-9 w-full justify-between px-3">
+              <span className="truncate">{selectedOption ? selectedOption.label : 'Select option...'}</span>
+              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" align="start">
+            <div className="p-2">
+              <div className="mb-3">
+                <TextInput
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Search options..."
+                  className="w-full"
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+                {isSearching && <div className="text-muted-foreground mt-1 text-xs">Searching...</div>}
+              </div>
+              {clearable && value && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mb-2 w-full justify-start text-xs"
+                  onClick={() => {
+                    onChange('');
+                    setOpen(false);
+                  }}
+                >
+                  Clear selection
+                </Button>
+              )}
+              {processedOptions.map(({ label, value: optionValue }) => (
+                <div
+                  key={optionValue}
+                  className="hover:bg-accent flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm"
+                  onClick={() => {
+                    onChange(optionValue === '__clear__' ? '' : optionValue);
+                    setOpen(false);
+                  }}
+                >
+                  <div className="border-primary flex h-4 w-4 items-center justify-center rounded-sm border">
+                    {String(value) === String(optionValue) && <Check className="h-3 w-3" />}
+                  </div>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
   }
 
   return (
     <div className={className}>
-      {label && (
-        <Label required={required}>{label}</Label>
-      )}
-      <ShadcnSelect
-        value={value || '__clear__'}
-        onValueChange={(newValue) => onChange(newValue === '__clear__' ? '' : newValue)}
-      >
+      {label && <Label required={required}>{label}</Label>}
+      <ShadcnSelect value={value || '__clear__'} onValueChange={(newValue) => onChange(newValue === '__clear__' ? '' : newValue)}>
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>

@@ -8,6 +8,7 @@ use Hewcode\Hewcode\Concerns\InteractsWithModel;
 use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
 use Hewcode\Hewcode\Contracts\MountsActions;
+use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Hewcode\Hewcode\Lists\Drivers\EloquentDriver;
@@ -17,9 +18,11 @@ use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Actions\BulkAction;
 use Hewcode\Hewcode\Lists\Filters\Filter;
 use Hewcode\Hewcode\Lists\Schema\Column;
+use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Builder;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Route;
 use ReflectionClass;
 use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
@@ -28,7 +31,7 @@ use ReflectionException;
 use Illuminate\Support\Facades\Hash;
 use function Hewcode\Hewcode\generateComponentHash;
 
-class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibility
+class Listing implements Discoverable, MountsActions, MountsComponents, ResolvesRecord, WithVisibility
 {
     use InteractsWithModel;
     use InteractsWithActions;
@@ -429,6 +432,7 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
         return [
             'component' => $this->component,
             'hash' => generateComponentHash($this->component),
+            'route' => Route::currentRouteName(),
             'records' => $result['records']->map(function (Model $record) use ($visibleColumns) {
                 $data = [];
 
@@ -556,5 +560,36 @@ class Listing implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
     public function getMountableActions(): array
     {
         return array_merge($this->actions, $this->bulkActions);
+    }
+
+    public function getComponent(string $type, string $name): ?Component
+    {
+        return match ($type) {
+            'columns' => $this->getColumn($name),
+            'filters' => $this->getFilter($name),
+            default => null,
+        };
+    }
+
+    public function getFilter(string $name): ?Filter
+    {
+        foreach ($this->filters as $filter) {
+            if ($filter->name === $name) {
+                return $filter;
+            }
+        }
+
+        return null;
+    }
+
+    public function getColumn(string $name): ?Column
+    {
+        foreach ($this->columns as $column) {
+            if ($column->getName() === $name) {
+                return $column;
+            }
+        }
+
+        return null;
     }
 }
