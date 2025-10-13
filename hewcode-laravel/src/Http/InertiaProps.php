@@ -8,9 +8,6 @@ use function Hewcode\Hewcode\flattenLocaleArray;
 
 class InertiaProps implements ProvidesInertiaProperties
 {
-    /**
-     * @inheritDoc
-     */
     public function toInertiaProperties(RenderContext $context): iterable
     {
         return [

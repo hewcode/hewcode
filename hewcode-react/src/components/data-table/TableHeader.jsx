@@ -56,7 +56,7 @@ const TableHeader = ({
 
   return (
     <div className="flex items-center justify-between p-6">
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2">
         {showSearch && (
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
