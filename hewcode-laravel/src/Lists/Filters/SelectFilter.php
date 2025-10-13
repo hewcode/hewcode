@@ -19,6 +19,15 @@ class SelectFilter extends Filter
 
     public ?string $relationshipTitleColumn = null;
 
+    public int $preloadLimit = 0;
+
+    public function preload(int $limit = 25): self
+    {
+        $this->preloadLimit = $limit;
+
+        return $this;
+    }
+
     public function options(array|string $options): self
     {
         if (is_string($options) && enum_exists($options)) {
@@ -89,6 +98,27 @@ class SelectFilter extends Filter
             ->toArray();
     }
 
+    protected function getPreloadedOptions(): array
+    {
+        if (!$this->relationshipName || $this->preloadLimit <= 0) {
+            return [];
+        }
+
+        $relationshipClass = $this->getRelationshipModelClass();
+
+        if (!$relationshipClass || !class_exists($relationshipClass)) {
+            return [];
+        }
+
+        return $relationshipClass::limit($this->preloadLimit)
+            ->get(['id', $this->relationshipTitleColumn])
+            ->map(fn($model) => [
+                'value' => $model->id,
+                'label' => $model->{$this->relationshipTitleColumn},
+            ])
+            ->toArray();
+    }
+
     protected function getRelationshipModelClass(): ?string
     {
         if (!$this->relationshipName) {
@@ -114,13 +144,20 @@ class SelectFilter extends Filter
 
     public function toData(): array
     {
+        $options = collect($this->options)
+            ->map(function ($label, $value) {
+                return ['label' => $label, 'value' => $value];
+            })
+            ->values()
+            ->toArray();
+
+        // If we have preloaded options and no static options, use preloaded ones
+        if (empty($options) && $this->preloadLimit > 0) {
+            $options = $this->getPreloadedOptions();
+        }
+
         return array_merge(parent::toData(), [
-            'options' => collect($this->options)
-                ->map(function ($label, $value) {
-                    return ['label' => $label, 'value' => $value];
-                })
-                ->values()
-                ->toArray(),
+            'options' => $options,
             'multiple' => $this->multiple,
             'searchable' => $this->searchable,
             'relationshipName' => $this->relationshipName,

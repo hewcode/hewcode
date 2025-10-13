@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode;
 
 use Hewcode\Hewcode\Http\Controllers\HewcodeController;
+use Hewcode\Hewcode\Http\InertiaProps;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
@@ -29,13 +30,6 @@ class HewcodeServiceProvider extends PackageServiceProvider
             ->middleware('web')
             ->name('hewcode.mount');
 
-        Inertia::share([
-            'hewcode' => [
-                'locale' => [
-                    'lang' => request()->getLocale(),
-                    'messages' => flattenLocaleArray(is_array(__('hewcode::hewcode')) ? __('hewcode::hewcode') : [], 'hewcode'),
-                ],
-            ],
-        ]);
+        Inertia::share(new InertiaProps);
     }
 }
