@@ -79,7 +79,7 @@ const Pagination = ({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerP
         </Button>
       </div>
 
-      <div className="text-sm text-gray-700">
+      <div className="text-sm text-gray-700 dark:text-gray-300">
         {__('hewcode.common.showing_x_to_y_of_z_results', {
           from: startItem,
           to: endItem,
