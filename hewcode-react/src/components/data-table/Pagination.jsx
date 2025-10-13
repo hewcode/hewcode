@@ -1,8 +1,7 @@
-import { Link } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
-import { Button } from '../ui/button.jsx';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useTranslator from '../../hooks/useTranslator.js';
+import { Button } from '../ui/button.jsx';
 
 const Pagination = ({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerPage = 20, onPageChange, showPagination = true }) => {
   const { __ } = useTranslator();
@@ -20,27 +19,25 @@ const Pagination = ({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerP
     return url.toString();
   };
 
-
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="p-6 flex items-center justify-between">
-      <div className="space-x-2 flex items-center">
-        <Link
+    <div className="flex items-center justify-between p-6">
+      <div className="flex items-center space-x-2">
+        <Button
+          asLink={true}
+          variant="outline"
           href={pageUrl(currentPage - 1)}
-          className={clsx(
-            'px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border-gray-300 rounded-lg hover:bg-gray-50 flex items-center border disabled:cursor-not-allowed disabled:opacity-50',
-            {
-              'cursor-not-allowed opacity-50': currentPage === 1,
-            },
-          )}
+          className={clsx({
+            'cursor-not-allowed opacity-50': currentPage === 1,
+          })}
         >
-          <ChevronLeft className="h-4 w-4 mr-1" />
+          <ChevronLeft className="mr-1 h-4 w-4" />
           {__('hewcode.common.previous')}
-        </Link>
+        </Button>
 
-        <div className="space-x-1 flex items-center">
+        <div className="flex items-center space-x-1">
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
             let pageNum;
             if (totalPages <= 5) {
@@ -54,43 +51,32 @@ const Pagination = ({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerP
             }
 
             return (
-              <Link
-                key={pageNum}
-                href={pageUrl(pageNum)}
-                className={clsx('px-3 py-1.5 text-sm font-medium rounded-lg rounded-lg flex items-center border', {
-                  'bg-black border-black text-white': pageNum === currentPage,
-                  'bg-white border-gray-300 text-gray-700 hover:bg-gray-50': pageNum !== currentPage,
-                })}
-              >
+              <Button asLink={true} size="icon" key={pageNum} href={pageUrl(pageNum)} variant={pageNum === currentPage ? 'default' : 'outline'}>
                 {pageNum}
-              </Link>
+              </Button>
             );
           })}
           {totalPages > 5 && currentPage < totalPages - 2 && (
             <>
               <span className="px-2 text-gray-500">...</span>
-              <Link
-                href={pageUrl(totalPages)}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-50 bg-white border-gray-300 rounded-lg hover:bg-gray-50 flex items-center border"
-              >
+              <Button asLink={true} href={pageUrl(totalPages)} variant="outline">
                 {totalPages}
-              </Link>
+              </Button>
             </>
           )}
         </div>
 
-        <Link
+        <Button
+          asLink={true}
+          variant="outline"
           href={pageUrl(currentPage + 1)}
-          className={clsx(
-            'px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border-gray-300 rounded-lg hover:bg-gray-50 flex items-center border disabled:cursor-not-allowed disabled:opacity-50',
-            {
-              'cursor-not-allowed opacity-50': currentPage === totalPages,
-            },
-          )}
+          className={clsx({
+            'cursor-not-allowed opacity-50': currentPage === totalPages,
+          })}
         >
           {__('hewcode.common.next')}
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Link>
+          <ChevronRight className="ml-1 h-4 w-4" />
+        </Button>
       </div>
 
       <div className="text-sm text-gray-700">
