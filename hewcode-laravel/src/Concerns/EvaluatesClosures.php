@@ -16,6 +16,8 @@ trait EvaluatesClosures
         // Merge with any additional parameters passed to this call
         $parameters = array_merge($globalParameters, $additionalParameters);
 
+        $parameters['component'] = $this;
+
         return app()->call($callback, $parameters);
     }
 

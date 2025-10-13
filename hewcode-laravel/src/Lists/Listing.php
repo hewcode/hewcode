@@ -18,6 +18,7 @@ use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Actions\BulkAction;
 use Hewcode\Hewcode\Lists\Filters\Filter;
 use Hewcode\Hewcode\Lists\Schema\Column;
+use Hewcode\Hewcode\Lists\Tabs\Tab;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Builder;
 use Closure;
@@ -47,6 +48,10 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     public ?array $defaultSort = null;
     /** @var array<Filter> */
     public array $filters = [];
+    /** @var array<Tab> */
+    public array $tabs = [];
+    public ?string $defaultTab = null;
+    public ?string $activeTab = null;
     /** @var array<Action> */
     public array $actions = [];
     /** @var array<BulkAction> */
@@ -65,6 +70,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     protected bool $persistSortInSession = false;
     protected bool $persistColumnsInSession = false;
     protected bool $persistSearchInSession = false;
+    protected bool $persistTabInSession = false;
     protected ?string $sessionKey = null;
 
     public static function make(): self
@@ -165,6 +171,21 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         return $this;
     }
 
+    /** @param Tab[] $tabs */
+    public function tabs(array $tabs): self
+    {
+        $this->tabs = $tabs;
+
+        return $this;
+    }
+
+    public function defaultTab(string $tabName): self
+    {
+        $this->defaultTab = $tabName;
+
+        return $this;
+    }
+
     /** @param Action[] $actions */
     public function actions(array $actions): self
     {
@@ -261,12 +282,20 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         return $this;
     }
 
+    public function persistTabInSession(bool $persist = true): self
+    {
+        $this->persistTabInSession = $persist;
+
+        return $this;
+    }
+
     public function persistInSession(bool $persist = true): self
     {
         $this->persistFiltersInSession = $persist;
         $this->persistSortInSession = $persist;
         $this->persistColumnsInSession = $persist;
         $this->persistSearchInSession = $persist;
+        $this->persistTabInSession = $persist;
 
         return $this;
     }
@@ -354,6 +383,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
             'sort', 'direction' => $this->persistSortInSession,
             'filter' => $this->persistFiltersInSession,
             'columns' => $this->persistColumnsInSession,
+            'activeTab' => $this->persistTabInSession,
             default => false,
         };
 
@@ -363,7 +393,9 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
             // Clear specific types or all if clear=true (backward compatibility)
             if ($clearType === true || $clearType === 'filters' && $key === 'filter' ||
-                $clearType === 'columns' && $key === 'columns') {
+                $clearType === 'columns' && $key === 'columns' ||
+                $clearType ===  'activeTab' && $key === 'activeTab'
+            ) {
                 $this->putInSession($key, null);
                 return $default;
             }
@@ -412,6 +444,12 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
         $sortField = $this->getRequestOrSession('sort', $this->defaultSort[0] ?? null);
         $sortDirection = $this->getRequestOrSession('direction', $this->defaultSort[1] ?? 'asc');
+
+        if ($this->activeTab = ($this->getRequestOrSession('activeTab', $this->defaultTab) ?? $this->defaultTab)) {
+            $this->driver->applyTab(
+                collect($this->tabs)->firstWhere('name', $this->activeTab)->active()
+            );
+        }
 
         $this->driver->applySort($sortField, $sortDirection, $sortableFields);
     }
@@ -501,6 +539,10 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
             'filters' => array_map(function (Filter $filter) {
                 return $filter->toData();
             }, $this->filters),
+            'tabs' => array_map(function (Tab $tab) {
+                return $tab->toData();
+            }, $this->tabs),
+            'activeTab' => $this->activeTab,
             'urlPersistence' => [
                 'persistFiltersInUrl' => $this->persistFiltersInUrl,
                 'persistSortInUrl' => $this->persistSortInUrl,

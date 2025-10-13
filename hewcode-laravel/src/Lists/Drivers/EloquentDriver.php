@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Lists\Drivers;
 
 use Hewcode\Hewcode\Lists\Filters\Filter;
+use Hewcode\Hewcode\Lists\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -38,6 +39,13 @@ class EloquentDriver implements ListingDriver
     {
         foreach ($filters as $filter) {
             $this->applyFilterToQuery($filter, $this->query);
+        }
+    }
+
+    public function applyTab(Tab $tab): void
+    {
+        if ($query = $tab->query) {
+            $query($this->query);
         }
     }
 

@@ -26,8 +26,11 @@ const DataTable = ({
   headerActions = [],
   sortable = [],
   filters = null,
+  tabs = [],
+  activeTab = null,
   onSearch,
   onFilter,
+  onTab,
   onSort,
   pagination = {
     currentPage: 1,
@@ -258,6 +261,21 @@ const DataTable = ({
     });
   };
 
+  onTab ||= (tab) => {
+    const [url, params] = setUrlQuery('activeTab', tab);
+
+    // Add clear parameter when clearing tabs
+    if (tab === null) {
+      params.clear = 'activeTab';
+    }
+
+    router.get(url, params, {
+      replace: true,
+      preserveState: true,
+      preserveUrl: true,
+    });
+  };
+
   const rowActions = records.some((record) => record._row_actions);
 
   return (
@@ -270,8 +288,11 @@ const DataTable = ({
           searchPlaceholder={searchPlaceholder}
           filters={filters}
           filterState={filterState}
+          tabs={tabs}
+          activeTab={activeTab}
           onSearch={onSearch}
           onFilter={onFilter}
+          onTab={onTab}
           headerActions={headerActions}
           allColumns={allColumns}
           columnVisibility={columnVisibility}

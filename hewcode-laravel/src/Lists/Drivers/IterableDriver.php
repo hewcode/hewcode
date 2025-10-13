@@ -2,6 +2,7 @@
 
 namespace Hewcode\Hewcode\Lists\Drivers;
 
+use Hewcode\Hewcode\Lists\Tabs\Tab;
 use Illuminate\Support\Collection;
 use Hewcode\Hewcode\Lists\Filters\Filter;
 
@@ -25,7 +26,7 @@ class IterableDriver implements ListingDriver
         $this->data = $this->data->filter(function ($item) use ($searchTerm, $searchableFields) {
             foreach ($searchableFields as $field) {
                 $value = data_get($item, $field);
-                
+
                 if (is_string($value) && str_contains(strtolower($value), strtolower($searchTerm))) {
                     return true;
                 }
@@ -57,7 +58,7 @@ class IterableDriver implements ListingDriver
         $filter->validate();
 
         $this->data = $filter->modifyCollection($this->data, $value);
-        
+
         return $this->data;
     }
 
@@ -73,6 +74,13 @@ class IterableDriver implements ListingDriver
         $this->data = $this->data->sortBy(function ($item) use ($sortField) {
             return data_get($item, $sortField);
         }, SORT_REGULAR, !$ascending);
+    }
+
+    public function applyTab(Tab $tab): void
+    {
+        if ($tab->query) {
+            $this->data = $tab->query->__invoke($this->data);
+        }
     }
 
     public function paginate(int $perPage): array

@@ -7,6 +7,7 @@ import setUrlQuery from '../../utils/setUrlQuery.js';
 import { Input } from '../ui/input.jsx';
 import ColumnsPopover from './ColumnsPopover.jsx';
 import FiltersPopover from './FiltersPopover.jsx';
+import TabsActions from './TabsActions.jsx';
 
 const performSearch = throttle(650, (e, urlPersistence) => {
   const [url, params] = setUrlQuery('search', e.target.value);
@@ -25,9 +26,12 @@ const TableHeader = ({
   searchPlaceholder,
   onSearch,
   onFilter,
+  onTab,
   filterState,
   headerActions = [],
   filters = [],
+  tabs = [],
+  activeTab = null,
   allColumns = [],
   columnVisibility = {},
   onColumnVisibilityChange,
@@ -88,6 +92,11 @@ const TableHeader = ({
             onBulkColumnVisibilityChange={onBulkColumnVisibilityChange}
           />
         )}
+        {/*separator between above items and the tabs when needed*/}
+        {(showSearch || (showFilter && filters.length > 0) || allColumns.some((col) => col.togglable)) && tabs.length > 0 && (
+          <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />
+        )}
+        {tabs.length > 0 && <TabsActions tabs={tabs} activeTab={activeTab} onTabChange={onTab} />}
       </div>
       {showActions && headerActions.length > 0 && <div className="flex items-center space-x-2">{headerActions}</div>}
     </div>

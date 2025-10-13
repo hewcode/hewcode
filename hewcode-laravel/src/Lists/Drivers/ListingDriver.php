@@ -4,6 +4,7 @@ namespace Hewcode\Hewcode\Lists\Drivers;
 
 use Hewcode\Hewcode\Lists\Filters\Filter;
 use Hewcode\Hewcode\Lists\Schema\Column;
+use Hewcode\Hewcode\Lists\Tabs\Tab;
 
 interface ListingDriver
 {
@@ -21,6 +22,11 @@ interface ListingDriver
      * @param Filter[] $filters Array of Filter instances to apply
      */
     public function applyFilters(array $filters): void;
+
+    /**
+     * Apply the active tab to the data source.
+     */
+    public function applyTab(Tab $tab): void;
 
     /**
      * Apply sorting to the data source.

@@ -35,6 +35,16 @@ class PostController extends Controller implements ResourceController
                 Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
                 Lists\Schema\TextColumn::make('status'),
             ])
+            ->tabs([
+                Lists\Tabs\Tab::make('all')
+                    ->label('All')
+                    ->badge(fn () => Post::query()->count()),
+                Lists\Tabs\Tab::make('published')
+                    ->label('Published')
+                    ->badge(fn () => Post::query()->where('status', PostStatus::PUBLISHED)->count())
+                    ->query(fn (Builder $query) => $query->where('status', PostStatus::PUBLISHED)),
+            ])
+            ->defaultTab('all')
             ->persistInSession();
     }
 
@@ -139,6 +149,38 @@ use Hewcode\Hewcode\Lists;
         ->field('published_at'),
 ])
 ```
+
+### Tabs
+
+Add tabs to provide quick filtering and navigation between different data views:
+
+```php
+use Hewcode\Hewcode\Lists;
+use Illuminate\Database\Eloquent\Builder;
+
+->tabs([
+    Lists\Tabs\Tab::make('all')
+        ->label('All')
+        ->badge(fn () => Post::query()->count()),
+    Lists\Tabs\Tab::make('published')
+        ->label('Published')
+        ->badge(fn () => Post::query()->where('status', PostStatus::PUBLISHED)->count())
+        ->query(fn (Builder $query) => $query->where('status', PostStatus::PUBLISHED)),
+    Lists\Tabs\Tab::make('drafts')
+        ->label('Drafts')
+        ->badge(fn () => Post::query()->where('status', PostStatus::DRAFT)->count())
+        ->query(fn (Builder $query) => $query->where('status', PostStatus::DRAFT)),
+])
+->defaultTab('all')
+```
+
+**Tab Configuration:**
+
+- `make()` - Create a tab with a unique identifier
+- `label()` - Display label for the tab
+- `badge()` - Optional badge showing count or other information
+- `query()` - Query modifier function to filter results for this tab
+- `defaultTab()` - Set which tab is active by default
 
 ### Row Background Colors
 
@@ -291,6 +333,24 @@ class PostController extends Controller implements ResourceController
                 PostStatus::PUBLISHED => 'success',
                 default => null,
             })
+            ->tabs([
+                Lists\Tabs\Tab::make('all')
+                    ->label('All')
+                    ->badge(fn () => Post::query()->count()),
+                Lists\Tabs\Tab::make('published')
+                    ->label('Published')
+                    ->badge(fn () => Post::query()->where('status', PostStatus::PUBLISHED)->count())
+                    ->query(fn (Builder $query) => $query->where('status', PostStatus::PUBLISHED)),
+                Lists\Tabs\Tab::make('drafts')
+                    ->label('Drafts')
+                    ->badge(fn () => Post::query()->where('status', PostStatus::DRAFT)->count())
+                    ->query(fn (Builder $query) => $query->where('status', PostStatus::DRAFT)),
+                Lists\Tabs\Tab::make('archived')
+                    ->label('Archived')
+                    ->badge(fn () => Post::query()->where('status', PostStatus::ARCHIVED)->count())
+                    ->query(fn (Builder $query) => $query->where('status', PostStatus::ARCHIVED)),
+            ])
+            ->defaultTab('all')
             ->filters([
                 Lists\Filters\SelectFilter::make('status')
                     ->label('Status')
@@ -375,6 +435,7 @@ The listing automatically handles these request parameters:
 - `sort` - Sort field
 - `direction` - Sort direction (`asc` or `desc`)
 - `page` - Current page number
+- `tab` - Active tab identifier
 - `filter.*` - Filter values
 
 ## Output Format
@@ -393,6 +454,7 @@ The `toData()` method returns an array with the following structure:
     'columns' => [...], // Column metadata
     'sortable' => [...], // Sortable field names
     'filters' => [...], // Filter definitions
+    'tabs' => [...], // Tab definitions with badges
     'urlPersistence' => [
         'persistFiltersInUrl' => false,
         'persistSortInUrl' => false,
@@ -410,6 +472,7 @@ The `toData()` method returns an array with the following structure:
         'search' => 'John Doe',
         'sort' => 'created_at',
         'direction' => 'desc',
+        'tab' => 'published',
         'filter' => [
             'status' => 'published',
             'category' => '1',

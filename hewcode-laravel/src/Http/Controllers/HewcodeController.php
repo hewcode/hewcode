@@ -7,7 +7,6 @@ use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\ResourceController;
-use Hewcode\Hewcode\Lists\Filters\SelectFilter;
 use Hewcode\Hewcode\Support\Expose;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
