@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useFetch from '../hooks/useFetch.js';
 import { Button } from './ui/button';
 
 const colorMap = {
@@ -12,18 +13,15 @@ const colorMap = {
 export default function Action({ route, component, hash, name, label, color = 'primary', args = {}, recordId, onSuccess, onError }) {
   const [loading, setLoading] = useState(false);
 
+  const { fetch } = useFetch();
+
   const handleClick = async () => {
     setLoading(true);
 
     try {
       const response = await fetch('/_hewcode', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-        },
-        body: JSON.stringify({
+        body: {
           route,
           component,
           hash,
@@ -37,7 +35,7 @@ export default function Action({ route, component, hash, name, label, color = 'p
               args,
             },
           },
-        }),
+        },
       });
 
       const data = await response.json();

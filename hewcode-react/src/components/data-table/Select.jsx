@@ -1,5 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import useFetch from '../../hooks/useFetch.js';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
@@ -30,6 +31,8 @@ export default function Select({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedOptionsCache, setSelectedOptionsCache] = useState(new Map());
 
+  const { fetch } = useFetch();
+
   const performSearch = useCallback(
     async (query) => {
       if (!searchable || !query.trim() || !route || !hash) {
@@ -41,12 +44,7 @@ export default function Select({
       try {
         const response = await fetch('/_hewcode', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-          },
-          body: JSON.stringify({
+          body: {
             route,
             component,
             hash,
@@ -54,7 +52,7 @@ export default function Select({
               name: 'mountComponent',
               params: ['filters.' + filterName + '.getSearchResults', query],
             },
-          }),
+          },
         });
 
         if (response.ok) {
