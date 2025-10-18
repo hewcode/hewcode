@@ -2,6 +2,21 @@
 
 The `Listing` class is a powerful data table builder that provides pagination, sorting, filtering, and searching capabilities for your data. It supports both Eloquent models and iterable data sources.
 
+## Key Features
+
+- 📊 **Pagination** - Automatic pagination with customizable items per page
+- 🔍 **Global Search** - Search across multiple columns with a single input
+- 🎯 **Filters** - Advanced filtering with multiple filter types
+- ⬆️⬇️ **Sorting** - Multi-column sorting with relationship support
+- 🗂️ **Tabs** - Quick navigation between different data views with badges
+- 🎨 **Row Styling** - Conditional row background colors
+- 👁️ **Column Visibility** - User-controlled column toggling
+- 🔄 **Drag-and-Drop Reordering** - Reorder records with visual feedback
+- ☑️ **Bulk Actions** - Perform actions on multiple selected records
+- 🔗 **Relationship Support** - Sort and search on related models
+- 💾 **State Persistence** - Save preferences in URL or session
+- 🌐 **Internationalization** - Automatic locale-based labels
+
 ## Discovery API (Recommended)
 
 The Discovery API provides a clean, attribute-based approach to organizing multiple listings and actions in your controllers. This is the recommended way to use listings in modern Hewcode applications.
@@ -194,6 +209,62 @@ Add conditional row styling:
 })
 ```
 
+### Reordering
+
+Enable drag-and-drop row reordering by specifying an order column:
+
+```php
+->reorderable('order')  // Enable reordering using the 'order' column
+```
+
+**Requirements:**
+- Your model must have an integer column for storing the order (e.g., `order`)
+- The column should have a default value (e.g., `0`)
+
+**Complete example:**
+```php
+Lists\Listing::make()
+    ->query(Post::query()->with(['user', 'category']))
+    ->reorderable('order')  // Enable reordering
+    ->columns([
+        Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
+        Lists\Schema\TextColumn::make('status'),
+    ])
+    ->perPage(10);
+```
+
+**Notes:**
+- Reordering is only available with Eloquent models (not iterable data)
+- The order column can be named anything (defaults to 'order')
+- Reordering mode disables regular sorting while active
+
+### Bulk Actions
+
+Add bulk actions that users can perform on multiple selected records:
+
+```php
+use Illuminate\Support\Collection;
+
+->bulkActions([
+    Actions\BulkAction::make('delete')
+        ->label('Delete Selected')
+        ->color('danger')
+        ->action(fn (Collection $records) => $records->each->delete()),
+    Actions\BulkAction::make('publish')
+        ->label('Publish Selected')
+        ->color('primary')
+        ->action(fn (Collection $records) => 
+            $records->each->update(['status' => PostStatus::PUBLISHED])
+        ),
+    Actions\BulkAction::make('archive')
+        ->label('Archive Selected')
+        ->color('secondary')
+        ->action(fn (Collection $records) => 
+            $records->each->update(['status' => PostStatus::ARCHIVED])
+        ),
+])
+```
+
 ### URL Persistence
 
 Control which interactions persist in the URL. By default, nothing persists in the URL to provide a cleaner experience:
@@ -291,6 +362,7 @@ class PostController extends Controller implements ResourceController
     {
         return Lists\Listing::make()
             ->query(Post::query()->with(['user', 'category']))
+            ->reorderable('order')  // Enable drag-and-drop reordering
             ->columns([
                 Lists\Schema\TextColumn::make('id')->togglable(true, true),
                 Lists\Schema\TextColumn::make('title')
@@ -373,6 +445,24 @@ class PostController extends Controller implements ResourceController
                     ->label('Delete')
                     ->color('danger')
                     ->action('delete'),
+            ])
+            ->bulkActions([
+                Actions\BulkAction::make('delete')
+                    ->label('Delete Selected')
+                    ->color('danger')
+                    ->action(fn (Collection $records) => $records->each->delete()),
+                Actions\BulkAction::make('publish')
+                    ->label('Publish Selected')
+                    ->color('primary')
+                    ->action(fn (Collection $records) => 
+                        $records->each->update(['status' => PostStatus::PUBLISHED])
+                    ),
+                Actions\BulkAction::make('archive')
+                    ->label('Archive Selected')
+                    ->color('secondary')
+                    ->action(fn (Collection $records) => 
+                        $records->each->update(['status' => PostStatus::ARCHIVED])
+                    ),
             ])
             ->perPage(10)
             ->persistInSession();
