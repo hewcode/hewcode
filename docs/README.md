@@ -4,6 +4,17 @@ Hewcode transforms complex data table requirements into elegant, maintainable co
 
 Inspired by [Filament](https://filamentphp.com), Hewcode brings a similar developer experience to React-based applications.
 
+## Installation
+
+Get started in minutes:
+
+```bash
+composer require hewcode/hewcode
+npm install @hewcode/react
+```
+
+See the [Installation Guide](installation.md) for detailed instructions and requirements.
+
 ## Hewcode in 5 Minutes
 
 Here's how little code it takes to build a fully-featured data table with sorting, searching, filtering, and pagination:
@@ -117,6 +128,7 @@ Listings can save user preferences in URLs (shareable) or sessions (private). Th
 
 | Feature | Documentation |
 |---------|---------------|
+| Installation | [Installation](installation.md) |
 | Building data tables | [Listing](listing.md) |
 | Formatting columns | [TextColumn](text-column.md) |
 | Securing endpoints | [Authorization](authorization.md) |
