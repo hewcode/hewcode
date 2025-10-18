@@ -1,6 +1,8 @@
 # Hewcode Documentation
 
-Hewcode transforms complex data table requirements into elegant, maintainable code. Built for Laravel applications, it provides sortable, searchable, filterable data tables with a fluent API that handles the complexity of query building, request parsing, and state management—so you can focus on your business logic.
+Hewcode transforms complex data table requirements into elegant, maintainable code. Built for Laravel and React applications with Inertia.js, it provides sortable, searchable, filterable data tables with a fluent API that handles the complexity of query building, request parsing, and state management—so you can focus on your business logic.
+
+Inspired by [Filament](https://filamentphp.com), Hewcode brings a similar developer experience to React-based applications.
 
 ## Hewcode in 5 Minutes
 
@@ -128,7 +130,7 @@ If you've used other Laravel table builders, here's what makes Hewcode different
 Hewcode eliminates boilerplate. No need to manually handle `request()->input('sort')`, build where clauses for filters, or manage pagination—it's all automatic.
 
 **vs. Filament Tables:**  
-Hewcode is framework-agnostic on the frontend. While Filament is Laravel + Livewire, Hewcode works with any frontend (React, Vue, etc.) via Inertia. You control your UI completely.
+Hewcode brings Filament's excellent API design to React applications. While Filament is Laravel + Livewire with its own UI components, Hewcode uses Inertia.js and works with your React components. If you love Filament but need a React frontend, Hewcode is for you.
 
 **vs. Livewire Tables:**  
 Similar philosophy but different architecture. Hewcode uses Inertia for SPA-like experiences without page reloads, while Livewire stays server-rendered. Choose based on your frontend preferences.
@@ -186,12 +188,6 @@ public function canAccess(?string $method = '__invoke'): bool
     // return auth()->check();
 }
 ```
-
-## Getting Help
-
-- **Check the examples** in your PostController and posts/index.tsx  
-- **Read the source** at `packages/hewcode/` and `packages/hewcode-react/`
-- **Search the docs** for specific methods or patterns
 
 ## Next Steps
 
