@@ -149,4 +149,38 @@ class EloquentDriver implements ListingDriver
 
         return $relationship;
     }
+
+    public function reorder(int $recordId, int $newPosition, string $reorderableColumn): bool
+    {
+        $model = $this->query->getModel();
+        $record = $model->newQuery()->findOrFail($recordId);
+        $oldPosition = $record->{$reorderableColumn};
+
+        // Update the record with the new position
+        $record->{$reorderableColumn} = $newPosition;
+        $record->save();
+
+        // Shift other records' positions
+
+        /** @var class-string<Model> $modelClass */
+        $modelClass = $model::class;
+
+        if ($newPosition > $oldPosition) {
+            // Moving down - shift items up between old and new position
+            $modelClass::query()
+                ->where('id', '!=', $recordId)
+                ->where($reorderableColumn, '>', $oldPosition)
+                ->where($reorderableColumn, '<=', $newPosition)
+                ->decrement($reorderableColumn);
+        } else {
+            // Moving up - shift items down between new and old position
+            $modelClass::query()
+                ->where('id', '!=', $recordId)
+                ->where($reorderableColumn, '>=', $newPosition)
+                ->where($reorderableColumn, '<', $oldPosition)
+                ->increment($reorderableColumn);
+        }
+
+        return true;
+    }
 }

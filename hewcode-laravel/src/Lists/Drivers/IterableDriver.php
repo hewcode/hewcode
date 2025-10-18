@@ -108,4 +108,11 @@ class IterableDriver implements ListingDriver
     {
         return $this->data->all();
     }
+
+    public function reorder(int $recordId, int $newPosition, string $reorderableColumn): bool
+    {
+        // Reordering is not supported for iterable data sources
+        // as they don't persist changes
+        return false;
+    }
 }

@@ -655,41 +655,10 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     #[Expose]
     public function reorder(int $recordId, int $newPosition): bool
     {
-        if (!$this->reorderableColumn) {
+        if (!$this->reorderableColumn || !isset($this->driver)) {
             return false;
         }
 
-        $model = $this->getModel();
-
-        if (!$model) {
-            return false;
-        }
-
-        $record = $model->newQuery()->findOrFail($recordId);
-        $oldPosition = $record->{$this->reorderableColumn};
-
-        // Update the record with the new position
-        $record->{$this->reorderableColumn} = $newPosition;
-        $record->save();
-
-        // Shift other records' positions
-        $modelClass = get_class($model);
-        if ($newPosition > $oldPosition) {
-            // Moving down - shift items up between old and new position
-            $modelClass::query()
-                ->where('id', '!=', $recordId)
-                ->where($this->reorderableColumn, '>', $oldPosition)
-                ->where($this->reorderableColumn, '<=', $newPosition)
-                ->decrement($this->reorderableColumn);
-        } else {
-            // Moving up - shift items down between new and old position
-            $modelClass::query()
-                ->where('id', '!=', $recordId)
-                ->where($this->reorderableColumn, '>=', $newPosition)
-                ->where($this->reorderableColumn, '<', $oldPosition)
-                ->increment($this->reorderableColumn);
-        }
-
-        return true;
+        return $this->driver->reorder($recordId, $newPosition, $this->reorderableColumn);
     }
 }

@@ -52,4 +52,14 @@ interface ListingDriver
      * @return array Array of all records
      */
     public function getRecords(array $columns): array;
+
+    /**
+     * Reorder a record by updating its order position.
+     *
+     * @param int $recordId The ID of the record to reorder
+     * @param int $newPosition The new position for the record
+     * @param string $reorderableColumn The column name used for ordering
+     * @return bool True if reorder was successful, false otherwise
+     */
+    public function reorder(int $recordId, int $newPosition, string $reorderableColumn): bool;
 }
