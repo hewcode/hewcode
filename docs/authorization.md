@@ -1,8 +1,13 @@
 # Authorization
 
-Controllers that use Discovery to expose listings and actions must implement the `ResourceController` contract. This ensures that only authorized users can access your endpoints.
+- [The ResourceController Contract](#the-resourcecontroller-contract)
+- [Why It's Required](#why-its-required)
+- [Method-Specific Authorization](#method-specific-authorization)
 
+<a name="the-resourcecontroller-contract"></a>
 ## The ResourceController Contract
+
+Controllers that use Discovery to expose listings and actions must implement the `ResourceController` contract. This ensures that only authorized users can access your endpoints.
 
 ```php
 use Hewcode\Hewcode\Contracts\ResourceController;
@@ -25,12 +30,14 @@ class PostController extends Controller implements ResourceController
 }
 ```
 
+<a name="why-its-required"></a>
 ## Why It's Required
 
 When Discovery calls your exposed methods to get listing data or execute actions, it first checks if the user is authorized by calling `canAccess()` with the method name. If it returns `false`, a 403 error is thrown.
 
 Without this contract, your exposed endpoints would be unprotected.
 
+<a name="method-specific-authorization"></a>
 ## Method-Specific Authorization
 
 The `canAccess()` method receives the target method name, allowing different permissions per action:

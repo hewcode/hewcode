@@ -1,8 +1,24 @@
 # TextColumn
 
-The `TextColumn` class is the primary column type for displaying text data in listings. It provides extensive customization options for formatting, styling, and behavior, from simple text display to complex formatted output with badges, colors, and relationship data.
+- [Quick Reference](#quick-reference)
+- [When To Use TextColumn](#when-to-use-textcolumn)
+- [Basic Usage](#basic-usage)
+- [Label Configuration](#label-configuration)
+- [Sorting and Searching](#sorting-and-searching)
+- [Data Transformation](#data-transformation)
+- [Visual Styling](#visual-styling)
+- [Before and After Content](#before-and-after-content)
+- [Visibility Control](#visibility-control)
+- [Relationship Columns](#relationship-columns)
+- [Complete Examples](#complete-examples)
+- [Common Recipes](#common-recipes)
+- [Troubleshooting](#troubleshooting)
+- [Method Chaining](#method-chaining)
 
+<a name="quick-reference"></a>
 ## Quick Reference
+
+The `TextColumn` class is the primary column type for displaying text data in listings. It provides extensive customization options for formatting, styling, and behavior, from simple text display to complex formatted output with badges, colors, and relationship data.
 
 | What You Want | Method | Example |
 |---------------|--------|---------|
@@ -18,6 +34,7 @@ The `TextColumn` class is the primary column type for displaying text data in li
 | Additional content | `->after()` or `->before()` | `->after(fn ($r) => $r->slug)` |
 | Conditional hiding | `->omit()` | `->omit(fn ($r) => !$r->is_public)` |
 
+<a name="when-to-use-textcolumn"></a>
 ## When To Use TextColumn
 
 Use TextColumn for:
@@ -30,6 +47,7 @@ Use TextColumn for:
 
 For non-text data types (images, booleans, numbers with special formatting), future column types will provide specialized handling, but TextColumn works for most use cases today.
 
+<a name="basic-usage"></a>
 ## Basic Usage
 
 ```php
@@ -38,6 +56,7 @@ use Hewcode\Hewcode\Lists\Schema\TextColumn;
 TextColumn::make('title')
 ```
 
+<a name="label-configuration"></a>
 ## Label Configuration
 
 ### Explicit Labels
@@ -87,6 +106,7 @@ return [
 
 If no translation is found, falls back to the default title-cased column name.
 
+<a name="sorting-and-searching"></a>
 ## Sorting and Searching
 
 ### Make Column Sortable
@@ -119,6 +139,7 @@ TextColumn::make('title')
     ->searchable()
 ```
 
+<a name="data-transformation"></a>
 ## Data Transformation
 
 ### Custom Data Retrieval
@@ -150,6 +171,7 @@ TextColumn::make('created_at')
     ->formatStateUsing(fn (Carbon $date) => $date->format('M j, Y g:i A'))
 ```
 
+<a name="visual-styling"></a>
 ## Visual Styling
 
 ### Text Wrapping
@@ -193,6 +215,7 @@ TextColumn::make('status')
     })
 ```
 
+<a name="before-and-after-content"></a>
 ## Before and After Content
 
 Add content before or after the main column value:
@@ -206,6 +229,7 @@ TextColumn::make('price')
     ->after(fn ($record) => ' USD')
 ```
 
+<a name="visibility-control"></a>
 ## Visibility Control
 
 ### Static Visibility
@@ -238,6 +262,7 @@ TextColumn::make('salary')
 - `visible()` controls whether the entire column appears for all records
 - `omit()` controls whether the value is shown for individual records, returning `null` when the condition is met
 
+<a name="relationship-columns"></a>
 ## Relationship Columns
 
 TextColumn seamlessly handles Eloquent relationships:
@@ -258,6 +283,7 @@ TextColumn::make('category.parent.name')
 Post::query()->with(['user', 'category.parent'])
 ```
 
+<a name="complete-examples"></a>
 ## Complete Examples
 
 ### Basic Text Column
@@ -400,6 +426,7 @@ TextColumn::make('category.parent.name')
 
 **Remember to eager-load:** `->query(Post::query()->with('category.parent'))`
 
+<a name="common-recipes"></a>
 ## Common Recipes
 
 ### How to Format Phone Numbers
@@ -449,6 +476,7 @@ TextColumn::make('status')
     })
 ```
 
+<a name="troubleshooting"></a>
 ## Troubleshooting
 
 ### Column showing "[object Object]" or weird output
@@ -508,6 +536,7 @@ TextColumn::make('user.name')
 ->after(fn ($record) => $record->user->email)
 ```
 
+<a name="method-chaining"></a>
 ## Method Chaining
 
 All TextColumn methods return the instance, allowing for fluent method chaining:

@@ -1,8 +1,35 @@
 # Listing
 
-When building admin panels or data-heavy applications, you need more than just a table—you need sorting, filtering, pagination, and search that works seamlessly with your Eloquent models. Hewcode's Listing class provides this complete solution with a fluent, declarative API that transforms complex data table requirements into elegant, maintainable code.
+- [When To Use Listings](#when-to-use-listings)
+- [How It Works](#how-it-works)
+- [Your First Listing](#your-first-listing)
+    - [Adding Sorting and Search](#adding-sorting-and-search)
+    - [Working with Relationships](#working-with-relationships)
+- [How Discovery Works](#how-discovery-works)
+- [Essential Configuration](#essential-configuration)
+    - [Columns](#columns)
+    - [Default Sorting](#default-sorting)
+    - [Pagination](#pagination)
+    - [Filters](#filters)
+- [Common Patterns](#common-patterns)
+- [Advanced Features](#advanced-features)
+    - [Tabs](#tabs)
+    - [Row Background Colors](#row-background-colors)
+    - [Drag-and-Drop Reordering](#drag-and-drop-reordering)
+    - [Row Actions](#row-actions)
+    - [Bulk Actions](#bulk-actions)
+- [State Persistence](#state-persistence)
+- [Working with Iterable Data](#working-with-iterable-data)
+- [Troubleshooting](#troubleshooting)
+- [Complete Real-World Example](#complete-real-world-example)
+- [Reference](#reference)
+    - [Request Parameters](#reference-request-parameters)
+    - [Output Format](#reference-output-format)
 
+<a name="when-to-use-listings"></a>
 ## When To Use Listings
+
+When building admin panels or data-heavy applications, you need more than just a table—you need sorting, filtering, pagination, and search that works seamlessly with your Eloquent models. Hewcode's Listing class provides this complete solution with a fluent, declarative API that transforms complex data table requirements into elegant, maintainable code.
 
 Use Hewcode Listings when you need to:
 
@@ -15,6 +42,7 @@ Use Hewcode Listings when you need to:
 
 Listings handle the heavy lifting of query building, request parsing, and data transformation—letting you focus on business logic instead of boilerplate.
 
+<a name="how-it-works"></a>
 ## How It Works
 
 When a user interacts with your listing (sorts, filters, searches), here's the flow:
@@ -34,6 +62,7 @@ The Listing class:
 
 You configure what's possible (which columns are sortable, what filters exist), and Listing handles the execution.
 
+<a name="your-first-listing"></a>
 ## Your First Listing
 
 Let's start with the absolute minimum. In your controller, create a method that returns a Listing:
@@ -83,6 +112,7 @@ export default function Index() {
 
 That's it. You now have a paginated table with two columns showing your posts.
 
+<a name="adding-sorting-and-search"></a>
 ### Adding Sorting and Search
 
 Add sorting and search capabilities with simple method calls:
@@ -106,6 +136,7 @@ public function posts(): Lists\Listing
 
 Now users can click column headers to sort and use the search box to filter.
 
+<a name="working-with-relationships"></a>
 ### Working with Relationships
 
 Display related data with dot notation:
@@ -130,6 +161,7 @@ public function posts(): Lists\Listing
 
 **Important:** Always eager load relationships with `->with()` to avoid N+1 query problems.
 
+<a name="how-discovery-works"></a>
 ## How Discovery Works
 
 Discovery scans your controller for methods tagged with `#[Lists\Expose]`, calls them to get Listing configurations, and passes them as props to your Inertia component. The method name (`posts`) becomes the prop name.
@@ -145,10 +177,12 @@ public function posts(): Lists\Listing
 }
 ```
 
+<a name="essential-configuration"></a>
 ## Essential Configuration
 
 These are the most commonly used configuration methods you'll need for typical listings.
 
+<a name="columns"></a>
 ### Columns
 
 Define which data columns to display. See [TextColumn](text-column.md) for detailed column customization.
@@ -163,6 +197,7 @@ Define which data columns to display. See [TextColumn](text-column.md) for detai
 
 Each column can be independently configured for sorting, searching, formatting, and styling.
 
+<a name="default-sorting"></a>
 ### Default Sorting
 
 Set which column is sorted by default and in which direction:
@@ -173,6 +208,7 @@ Set which column is sorted by default and in which direction:
 
 Users can still change the sort by clicking column headers, but this sets the initial state.
 
+<a name="pagination"></a>
 ### Pagination
 
 Control how many items appear per page:
@@ -183,6 +219,7 @@ Control how many items appear per page:
 
 Users can typically change this in the UI, but this sets the default.
 
+<a name="filters"></a>
 ### Filters
 
 Add filters to let users narrow down results. Filters appear in a UI panel separate from the table:
@@ -212,6 +249,7 @@ use Hewcode\Hewcode\Lists\Filters;
 
 Filters automatically apply to your query based on user selections.
 
+<a name="common-patterns"></a>
 ## Common Patterns
 
 These patterns cover 80% of typical listing use cases.
@@ -280,10 +318,12 @@ TextColumn::make('title')
     ->after(fn ($record) => $record->slug),  // Show slug below title
 ```
 
+<a name="advanced-features"></a>
 ## Advanced Features
 
 These features handle more complex use cases.
 
+<a name="tabs"></a>
 ### Tabs
 
 Tabs provide quick navigation between different data views, perfect for status-based filtering or common queries:
@@ -314,6 +354,7 @@ use Illuminate\Database\Eloquent\Builder;
 - The default tab is active when no tab parameter is in the request
 - Tab state persists based on your persistence configuration
 
+<a name="row-background-colors"></a>
 ### Row Background Colors
 
 Add visual indicators with conditional row styling:
@@ -329,6 +370,7 @@ Add visual indicators with conditional row styling:
 
 Colors use your theme's color system: `primary`, `secondary`, `success`, `danger`, `warning`, `info`.
 
+<a name="drag-and-drop-reordering"></a>
 ### Drag-and-Drop Reordering
 
 Enable users to reorder records visually:
@@ -349,6 +391,7 @@ $table->integer('order')->default(0);
 
 When reordering is enabled, users can drag rows to reposition them, and the order column updates automatically.
 
+<a name="row-actions"></a>
 ### Row Actions
 
 Add action buttons that appear on each row:
@@ -370,6 +413,7 @@ use Hewcode\Hewcode\Actions;
 
 Actions receive the current record and can perform any operation.
 
+<a name="bulk-actions"></a>
 ### Bulk Actions
 
 Let users select multiple rows and perform batch operations:
@@ -397,6 +441,7 @@ use Illuminate\Support\Collection;
 
 Bulk actions receive a Collection of selected records. Users select rows with checkboxes and then choose an action from the bulk actions menu.
 
+<a name="state-persistence"></a>
 ## State Persistence
 
 Listings can remember user preferences so they don't lose their filters, sorts, or search terms when navigating away. You have two persistence strategies: URL and session.
@@ -488,6 +533,7 @@ By default, nothing persists (providing the cleanest UX for exploratory use). To
 ->persistSortInSession(false)
 ```
 
+<a name="working-with-iterable-data"></a>
 ## Working with Iterable Data
 
 While Listings work best with Eloquent models, you can also use arrays or collections:
@@ -518,6 +564,7 @@ public function stats(): Lists\Listing
 
 For production use with large datasets, always prefer Eloquent models.
 
+<a name="complete-real-world-example"></a>
 ## Complete Real-World Example
 
 Here's a comprehensive example showing most features working together:
