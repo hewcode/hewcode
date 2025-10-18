@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 use ReflectionMethod;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use function Hewcode\Hewcode\exposed;
 use function Hewcode\Hewcode\generateComponentHash;
 
 class HewcodeController extends Controller
@@ -104,32 +105,47 @@ class HewcodeController extends Controller
             $path = $params[0];
             $pathParts = explode('.', $path);
 
-            if (count($pathParts) !== 3) {
-                throw new HttpException(400);
+            if (count($pathParts) === 3) {
+                $type = $pathParts[0];
+                $subComponentName = $pathParts[1];
+                $method = $pathParts[2];
+                $args = collect($params)->slice(1)->values()->all();
+
+                $subComponent = $component->getComponent($type, $subComponentName);
+
+                if (! $subComponent) {
+                    throw new HttpException(400);
+                }
+
+                if (! method_exists($subComponent, $method)) {
+                    throw new HttpException(400);
+                }
+
+                if (! exposed($subComponent, $method)) {
+                    throw new HttpException(400);
+                }
+
+                return $this->primitiveToJsonResponse(
+                    $subComponent->{$method}(...$args)
+                );
+            } elseif (count($pathParts) === 1) {
+                $method = $pathParts[0];
+                $args = collect($params)->slice(1)->values()->all();
+
+                if (! method_exists($component, $method)) {
+                    throw new HttpException(400);
+                }
+
+                if (! exposed($component, $method)) {
+                    throw new HttpException(400);
+                }
+
+                return $this->primitiveToJsonResponse(
+                    $component->{$method}(...$args)
+                );
             }
 
-            $type = $pathParts[0];
-            $subComponentName = $pathParts[1];
-            $method = $pathParts[2];
-            $args = collect($params)->slice(1)->values()->all();
-
-            $subComponent = $component->getComponent($type, $subComponentName);
-
-            if (! $subComponent) {
-                throw new HttpException(400);
-            }
-
-            if (! method_exists($subComponent, $method)) {
-                throw new HttpException(400);
-            }
-
-            if (count((new ReflectionMethod($subComponent, $method))->getAttributes(Expose::class)) === 0) {
-                throw new HttpException(400);
-            }
-
-            return $this->primitiveToJsonResponse(
-                $subComponent->{$method}(...$args)
-            );
+            throw new HttpException(400);
         }
 
         throw new HttpException(400);

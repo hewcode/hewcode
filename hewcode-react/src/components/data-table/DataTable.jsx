@@ -1,5 +1,10 @@
+import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
+import { GripVertical } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import useFetch from '../../hooks/useFetch.js';
 import { getContrastColor, getTailwindBadgeClasses, getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import Action from '../Action.jsx';
@@ -57,6 +62,7 @@ const DataTable = ({
   thClassName = '',
   tdClassName = '',
   theadClassName = '',
+  reorderable = null,
 }) => {
   const [sortConfig, setSortConfig] = useState({
     sort: currentValues.sort,
@@ -64,6 +70,23 @@ const DataTable = ({
   });
   const [filterState, setFilterState] = useState(currentValues.filter || {});
   const [selectedRecords, setSelectedRecords] = useState(new Set());
+  const [orderedRecords, setOrderedRecords] = useState(records);
+  const [isReordering, setIsReordering] = useState(false);
+
+  const { fetch } = useFetch();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
+
+  // Update ordered records when records prop changes
+  useEffect(() => {
+    setOrderedRecords(records);
+  }, [records]);
 
   // Initialize column visibility state based on togglable columns and their defaults
   const initializeColumnVisibility = () => {
@@ -90,7 +113,7 @@ const DataTable = ({
   const [columnVisibility, setColumnVisibility] = useState(initializeColumnVisibility);
 
   const handleSort = (columnKey) => {
-    if (!sortable.includes(columnKey)) return;
+    if (!sortable.includes(columnKey) && columnKey !== reorderable) return;
 
     const direction = sortConfig.sort === columnKey ? (sortConfig.direction === 'asc' ? 'desc' : null) : 'asc';
 
@@ -115,6 +138,30 @@ const DataTable = ({
           preserveUrl: !urlPersistence.persistSortInUrl,
         },
       );
+    }
+  };
+
+  const handleToggleReordering = () => {
+    if (!isReordering) {
+      // Entering reorder mode - ensure table is sorted by reorderable column (asc)
+      if (sortConfig.sort !== reorderable || sortConfig.direction !== 'asc') {
+        handleSort(reorderable);
+        // Wait a moment for the sort to complete, then enable reordering
+        setTimeout(() => {
+          setIsReordering(true);
+        }, 100);
+      } else {
+        setIsReordering(true);
+      }
+    } else {
+      router.reload({
+        preserveScroll: true,
+        preserveUrl: true,
+        onSuccess: ({ props }) => {
+          setSortConfig(props.posts.currentValues.sort);
+          setIsReordering(false);
+        },
+      });
     }
   };
 
@@ -276,11 +323,73 @@ const DataTable = ({
     });
   };
 
+  // Handle drag end for reordering
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = orderedRecords.findIndex((record) => record.id === active.id);
+    const newIndex = orderedRecords.findIndex((record) => record.id === over.id);
+
+    // Optimistically update the UI
+    const newRecords = [...orderedRecords];
+    const [movedItem] = newRecords.splice(oldIndex, 1);
+    newRecords.splice(newIndex, 0, movedItem);
+    setOrderedRecords(newRecords);
+
+    // Send reorder request to backend
+    fetch('/_hewcode', {
+      method: 'POST',
+      body: {
+        route,
+        component,
+        hash,
+        call: {
+          name: 'mountComponent',
+          params: ['reorder', active.id, newIndex],
+        },
+      },
+    }).catch((error) => {
+      // Revert on error
+      setOrderedRecords(orderedRecords);
+      console.error('Reorder failed:', error);
+    });
+  };
+
+  // Use ordered records if reordering is active, otherwise use original records
+  const displayRecords = isReordering ? orderedRecords : records;
+  const isReorderingActive = reorderable && isReordering;
+
+  // Sortable row component
+  const SortableRow = ({ record, index, children }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: record.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    const rowBgColor = record._row_bg_color;
+    const tailwindBgClass = getTailwindBgClass(rowBgColor);
+    const rowStyle = tailwindBgClass ? { ...style } : rowBgColor && isHexColor(rowBgColor) ? { ...style, backgroundColor: rowBgColor } : style;
+    const rowClassName = tailwindBgClass || '';
+
+    return (
+      <TableRow ref={setNodeRef} style={rowStyle} className={rowClassName}>
+        {children(attributes, listeners)}
+      </TableRow>
+    );
+  };
+
   const rowActions = records.some((record) => record._row_actions);
 
   return (
     <div className="w-full">
-      {((showSearch || showActions || filters || allColumns.some((col) => col.togglable)) && (
+      {((showSearch || showActions || filters || allColumns.some((col) => col.togglable) || reorderable) && (
         <TableHeader
           showSearch={showSearch}
           showFilter={showFilter}
@@ -303,6 +412,9 @@ const DataTable = ({
           component={component}
           hash={hash}
           route={route}
+          reorderable={reorderable}
+          isReordering={isReordering}
+          onToggleReordering={handleToggleReordering}
         />
       )) ||
         null}
@@ -316,65 +428,94 @@ const DataTable = ({
         />
       )}
 
-      <Table>
-        <ShadcnTableHeader className={theadClassName}>
-          <TableRow>
-            {hasBulkActions && (
-              <TableColumnHeader
-                label={<Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label="Select all" />}
-                className={thClassName}
-              />
-            )}
-            {visibleColumns
-              .filter((col) => !col.hidden)
-              .map((column) => (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <Table>
+          <ShadcnTableHeader className={theadClassName}>
+            <TableRow>
+              {isReorderingActive && <TableColumnHeader label="" className={`${thClassName} w-8`} />}
+              {hasBulkActions && (
                 <TableColumnHeader
-                  key={column.key}
-                  label={column.label}
-                  sortable={sortable.includes(column.key)}
-                  sortDirection={sortConfig.sort === column.key ? sortConfig.direction : null}
-                  onSort={() => handleSort(column.key)}
-                  colSpan={rowActions && column.key === visibleColumns[visibleColumns.length - 1].key ? 2 : 1}
+                  label={
+                    <Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label="Select all" />
+                  }
                   className={thClassName}
                 />
-              ))}
-          </TableRow>
-        </ShadcnTableHeader>
-        <TableBody>
-          {records.map((record, index) => {
-            const rowBgColor = record._row_bg_color;
-            const tailwindBgClass = getTailwindBgClass(rowBgColor);
-
-            // Use Tailwind classes if available, otherwise fallback to inline styles
-            const rowStyle = tailwindBgClass ? undefined : rowBgColor && isHexColor(rowBgColor) ? { backgroundColor: rowBgColor } : undefined;
-            const rowClassName = tailwindBgClass || '';
-
-            return (
-              <TableRow key={record.id || index} style={rowStyle} className={rowClassName}>
-                {hasBulkActions && (
-                  <TableCell className={tdClassName}>
-                    <Checkbox
-                      checked={selectedRecords.has(record.id)}
-                      onCheckedChange={(checked) => handleSelectRecord(record.id, checked)}
-                      aria-label={`Select record ${record.id}`}
+              )}
+              {visibleColumns
+                .filter((col) => !col.hidden)
+                .map((column) => (
+                  <TableColumnHeader
+                    key={column.key}
+                    label={column.label}
+                    sortable={sortable.includes(column.key)}
+                    sortDirection={sortConfig.sort === column.key ? sortConfig.direction : null}
+                    onSort={() => handleSort(column.key)}
+                    colSpan={rowActions && column.key === visibleColumns[visibleColumns.length - 1].key ? 2 : 1}
+                    className={thClassName}
+                  />
+                ))}
+            </TableRow>
+          </ShadcnTableHeader>
+          <SortableContext items={displayRecords.map((r) => r.id)} strategy={verticalListSortingStrategy} disabled={!isReorderingActive}>
+            <TableBody>
+              {displayRecords.map((record, index) => {
+                const renderRowContent = (attributes = {}, listeners = {}) => (
+                  <>
+                    {isReorderingActive && (
+                      <TableCell className={`${tdClassName} cursor-grab active:cursor-grabbing`} {...attributes} {...listeners}>
+                        <GripVertical className="text-muted-foreground h-4 w-4" />
+                      </TableCell>
+                    )}
+                    {hasBulkActions && (
+                      <TableCell className={tdClassName}>
+                        <Checkbox
+                          checked={selectedRecords.has(record.id)}
+                          onCheckedChange={(checked) => handleSelectRecord(record.id, checked)}
+                          aria-label={`Select record ${record.id}`}
+                        />
+                      </TableCell>
+                    )}
+                    {visibleColumns
+                      .filter((col) => !col.hidden)
+                      .map((column) => (
+                        <TableCell
+                          key={column.key}
+                          className={`${tdClassName} ${column.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}
+                        >
+                          {renderCellContent(record, column)}
+                        </TableCell>
+                      ))}
+                    <TableRowActions
+                      actions={
+                        record._row_actions ? Object.values(record._row_actions).map((action) => <Action key={action.name} {...action} />) : null
+                      }
                     />
-                  </TableCell>
-                )}
-                {visibleColumns
-                  .filter((col) => !col.hidden)
-                  .map((column) => (
-                    <TableCell key={column.key} className={`${tdClassName} ${column.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
-                      {renderCellContent(record, column)}
-                    </TableCell>
-                  ))}
-                <TableRowActions
-                  actions={record._row_actions ? Object.values(record._row_actions).map((action) => <Action key={action.name} {...action} />) : null}
-                />
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                  </>
+                );
+
+                if (isReorderingActive) {
+                  return (
+                    <SortableRow key={record.id || index} record={record} index={index}>
+                      {(attributes, listeners) => renderRowContent(attributes, listeners)}
+                    </SortableRow>
+                  );
+                }
+
+                const rowBgColor = record._row_bg_color;
+                const tailwindBgClass = getTailwindBgClass(rowBgColor);
+                const rowStyle = tailwindBgClass ? undefined : rowBgColor && isHexColor(rowBgColor) ? { backgroundColor: rowBgColor } : undefined;
+                const rowClassName = tailwindBgClass || '';
+
+                return (
+                  <TableRow key={record.id || index} style={rowStyle} className={rowClassName}>
+                    {renderRowContent()}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </SortableContext>
+        </Table>
+      </DndContext>
 
       <Pagination
         showPagination={showPagination}

@@ -1,10 +1,11 @@
 import { router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { throttle } from 'throttle-debounce';
 import useTranslator from '../../hooks/useTranslator.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import { Input } from '../ui/input.jsx';
+import { Button } from '../ui/button.jsx';
 import ColumnsPopover from './ColumnsPopover.jsx';
 import FiltersPopover from './FiltersPopover.jsx';
 import TabsActions from './TabsActions.jsx';
@@ -52,6 +53,9 @@ const TableHeader = ({
   component,
   hash,
   route,
+  reorderable = null,
+  isReordering = false,
+  onToggleReordering = null,
 }) => {
   const [search, setSearch] = useState(currentValues.search || '');
   const { __ } = useTranslator();
@@ -92,8 +96,19 @@ const TableHeader = ({
             onBulkColumnVisibilityChange={onBulkColumnVisibilityChange}
           />
         )}
+        {reorderable && (
+          <Button
+            variant={isReordering ? 'default' : 'outline'}
+            size="icon"
+            onClick={onToggleReordering}
+            className="h-9 w-9"
+            title={isReordering ? __('hewcode.common.done') : __('hewcode.common.reorder')}
+          >
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        )}
         {/*separator between above items and the tabs when needed*/}
-        {(showSearch || (showFilter && filters.length > 0) || allColumns.some((col) => col.togglable)) && tabs.length > 0 && (
+        {(showSearch || (showFilter && filters.length > 0) || allColumns.some((col) => col.togglable) || reorderable) && tabs.length > 0 && (
           <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />
         )}
         {tabs.length > 0 && <TabsActions tabs={tabs} activeTab={activeTab} onTabChange={onTab} />}

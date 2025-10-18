@@ -63,9 +63,9 @@ class EloquentDriver implements ListingDriver
     }
 
 
-    public function applySort(?string $sortField, ?string $sortDirection, array $sortableFields): void
+    public function applySort(?string $sortField, ?string $sortDirection, array $sortableFields, ?array $defaultSort, ?string $reorderable): void
     {
-        if (!$sortField || !array_key_exists($sortField, $sortableFields)) {
+        if (!$sortField || (! array_key_exists($sortField, $sortableFields) && $defaultSort !== [$sortField, $sortDirection] && $reorderable !== $sortField)) {
             return;
         }
 

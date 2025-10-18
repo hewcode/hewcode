@@ -35,7 +35,7 @@ interface ListingDriver
      * @param string|null $sortDirection The sort direction ('asc' or 'desc')
      * @param array $sortableFields Array of sortable fields with labels
      */
-    public function applySort(?string $sortField, ?string $sortDirection, array $sortableFields): void;
+    public function applySort(?string $sortField, ?string $sortDirection, array $sortableFields, ?array $defaultSort, ?string $reorderable): void;
 
     /**
      * Paginate the data and return records with pagination metadata.

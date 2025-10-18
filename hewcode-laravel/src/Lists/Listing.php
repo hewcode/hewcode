@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Route;
 use ReflectionClass;
 use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
+use Hewcode\Hewcode\Support\Expose;
 use Hewcode\Hewcode\Contracts\Discoverable;
 use ReflectionException;
 use Illuminate\Support\Facades\Hash;
@@ -58,6 +59,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     public array $bulkActions = [];
     public int $perPage = 15;
     protected ?Closure $bgColorUsing = null;
+    protected ?string $reorderableColumn = null;
 
     // URL persistence settings
     protected bool $persistFiltersInUrl = false;
@@ -212,6 +214,14 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     public function bgColor(Closure $callback): self
     {
         $this->bgColorUsing = $callback;
+
+        return $this;
+    }
+
+    public function reorderable(?string $column = 'order'): self
+    {
+        $this->reorderableColumn = $column;
+        $this->defaultSort ??= [$column, 'asc'];
 
         return $this;
     }
@@ -451,7 +461,13 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
             );
         }
 
-        $this->driver->applySort($sortField, $sortDirection, $sortableFields);
+        $this->driver->applySort(
+            $sortField,
+            $sortDirection,
+            $sortableFields,
+            $this->defaultSort,
+            $this->reorderableColumn,
+        );
     }
 
     public function toData(): array
@@ -566,6 +582,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
             'bulkActions' => array_map(function (BulkAction $bulkAction) {
                 return $bulkAction->component($this->component)->toData();
             }, array_filter($this->bulkActions, fn (BulkAction $bulkAction) => $bulkAction->isVisible())),
+            'reorderable' => $this->reorderableColumn,
         ];
     }
 
@@ -633,5 +650,46 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         }
 
         return null;
+    }
+
+    #[Expose]
+    public function reorder(int $recordId, int $newPosition): bool
+    {
+        if (!$this->reorderableColumn) {
+            return false;
+        }
+
+        $model = $this->getModel();
+
+        if (!$model) {
+            return false;
+        }
+
+        $record = $model->newQuery()->findOrFail($recordId);
+        $oldPosition = $record->{$this->reorderableColumn};
+
+        // Update the record with the new position
+        $record->{$this->reorderableColumn} = $newPosition;
+        $record->save();
+
+        // Shift other records' positions
+        $modelClass = get_class($model);
+        if ($newPosition > $oldPosition) {
+            // Moving down - shift items up between old and new position
+            $modelClass::query()
+                ->where('id', '!=', $recordId)
+                ->where($this->reorderableColumn, '>', $oldPosition)
+                ->where($this->reorderableColumn, '<=', $newPosition)
+                ->decrement($this->reorderableColumn);
+        } else {
+            // Moving up - shift items down between new and old position
+            $modelClass::query()
+                ->where('id', '!=', $recordId)
+                ->where($this->reorderableColumn, '>=', $newPosition)
+                ->where($this->reorderableColumn, '<', $oldPosition)
+                ->increment($this->reorderableColumn);
+        }
+
+        return true;
     }
 }

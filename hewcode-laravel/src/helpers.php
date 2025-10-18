@@ -2,6 +2,9 @@
 
 namespace Hewcode\Hewcode;
 
+use Hewcode\Hewcode\Support\Expose;
+use ReflectionMethod;
+
 function flattenLocaleArray(array $array, string $prefix = ''): array
 {
     $result = [];
@@ -30,4 +33,9 @@ function generateComponentHash(string $component, ?string $route = null): string
     $userId = auth()->id();
 
     return hash_hmac('sha256', $component . '|' . $route . '|' . $userId, config('app.key'));
+}
+
+function exposed(object $component, string $method): bool
+{
+    return count((new ReflectionMethod($component, $method))->getAttributes(Expose::class)) > 0;
 }
