@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, ListChecks } from 'lucide-react';
 import { useState } from 'react';
 import { throttle } from 'throttle-debounce';
 import useTranslator from '../../hooks/useTranslator.js';
@@ -56,6 +56,9 @@ const TableHeader = ({
   reorderable = null,
   isReordering = false,
   onToggleReordering = null,
+  hasBulkActions = false,
+  isBulkSelecting = false,
+  onToggleBulkSelection = null,
 }) => {
   const [search, setSearch] = useState(currentValues.search || '');
   const { __ } = useTranslator();
@@ -107,8 +110,19 @@ const TableHeader = ({
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         )}
+        {hasBulkActions && (
+          <Button
+            variant={isBulkSelecting ? 'default' : 'outline'}
+            size="icon"
+            onClick={onToggleBulkSelection}
+            className="h-9 w-9"
+            title={isBulkSelecting ? __('hewcode.common.done') : __('hewcode.common.bulk_select')}
+          >
+            <ListChecks className="h-4 w-4" />
+          </Button>
+        )}
         {/*separator between above items and the tabs when needed*/}
-        {(showSearch || (showFilter && filters.length > 0) || allColumns.some((col) => col.togglable) || reorderable) && tabs.length > 0 && (
+        {(showSearch || (showFilter && filters.length > 0) || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && tabs.length > 0 && (
           <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />
         )}
         {tabs.length > 0 && <TabsActions tabs={tabs} activeTab={activeTab} onTabChange={onTab} />}

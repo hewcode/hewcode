@@ -72,8 +72,7 @@ const DataTable = ({
   const [selectedRecords, setSelectedRecords] = useState(new Set());
   const [orderedRecords, setOrderedRecords] = useState(records);
   const [isReordering, setIsReordering] = useState(false);
-
-  const { fetch } = useFetch();
+  const [isBulkSelecting, setIsBulkSelecting] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -235,6 +234,17 @@ const DataTable = ({
     setSelectedRecords(newSelection);
   };
 
+  const handleToggleBulkSelection = () => {
+    if (isBulkSelecting) {
+      // Exiting bulk selection mode - clear selections
+      setSelectedRecords(new Set());
+      setIsBulkSelecting(false);
+    } else {
+      // Entering bulk selection mode
+      setIsBulkSelecting(true);
+    }
+  };
+
   const renderCellContent = (item, column) => {
     if (column.render) {
       return column.render(item[column.key], item);
@@ -389,7 +399,7 @@ const DataTable = ({
 
   return (
     <div className="w-full">
-      {((showSearch || showActions || filters || allColumns.some((col) => col.togglable) || reorderable) && (
+      {((showSearch || showActions || filters || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && (
         <TableHeader
           showSearch={showSearch}
           showFilter={showFilter}
@@ -415,11 +425,14 @@ const DataTable = ({
           reorderable={reorderable}
           isReordering={isReordering}
           onToggleReordering={handleToggleReordering}
+          hasBulkActions={hasBulkActions}
+          isBulkSelecting={isBulkSelecting}
+          onToggleBulkSelection={handleToggleBulkSelection}
         />
       )) ||
         null}
 
-      {hasBulkActions && selectedRecords.size > 0 && (
+      {isBulkSelecting && selectedRecords.size > 0 && (
         <BulkActions
           selectedCount={selectedRecords.size}
           bulkActions={bulkActions}
@@ -433,7 +446,7 @@ const DataTable = ({
           <ShadcnTableHeader className={theadClassName}>
             <TableRow>
               {isReorderingActive && <TableColumnHeader label="" className={`${thClassName} w-8`} />}
-              {hasBulkActions && (
+              {isBulkSelecting && (
                 <TableColumnHeader
                   label={
                     <Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label="Select all" />
@@ -466,7 +479,7 @@ const DataTable = ({
                         <GripVertical className="text-muted-foreground h-4 w-4" />
                       </TableCell>
                     )}
-                    {hasBulkActions && (
+                    {isBulkSelecting && (
                       <TableCell className={tdClassName}>
                         <Checkbox
                           checked={selectedRecords.has(record.id)}

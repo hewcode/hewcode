@@ -18,6 +18,7 @@ return [
         'showing_x_to_y_of_z_results' => 'Showing {from} to {to} of {total} results',
         'reorder' => 'Reorder',
         'done' => 'Done',
+        'bulk_select' => 'Bulk Select',
     ],
 
 ];
