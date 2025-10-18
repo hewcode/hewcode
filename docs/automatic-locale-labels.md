@@ -1,6 +1,44 @@
 # Automatic Locale Labels
 
-TextColumn automatically resolves column labels from your application's translation files when no explicit label is provided. This feature enables internationalization and consistent labeling across your application.
+TextColumn automatically resolves column labels from your application's translation files when no explicit label is provided. This feature enables consistent labeling, reduces repetition, and makes internationalization effortless.
+
+## Why Use Automatic Labels?
+
+**Without automatic labels**, you repeat yourself constantly:
+
+```php
+TextColumn::make('id')->label('Post ID'),
+TextColumn::make('title')->label('Article Title'),
+TextColumn::make('content')->label('Article Content'),
+TextColumn::make('status')->label('Publication Status'),
+TextColumn::make('category.name')->label('Category Name'),
+```
+
+**With automatic labels**, you set up translations once and they apply everywhere:
+
+```php
+// Translation file (lang/en/app.php)
+'posts' => [
+    'columns' => [
+        'id' => 'Post ID',
+        'title' => 'Article Title',
+        'content' => 'Article Content',
+        'status' => 'Publication Status',
+    ],
+],
+
+// In your listings - labels are automatic!
+TextColumn::make('id'),
+TextColumn::make('title'),
+TextColumn::make('content'),
+TextColumn::make('status'),
+```
+
+**Benefits:**
+- Consistency across all listings using the same column
+- Easy internationalization—just add more language files
+- Less code repetition
+- Centralized label management
 
 ## How It Works
 
@@ -127,7 +165,11 @@ TextColumn::make('published_at')->label('Custom Published Date'),
 
 ## Fallback Behavior
 
-If no translation is found, the system falls back to the original behavior:
+If no translation is found, the system falls back to the original behavior—creating a readable label from the column name:
 
+**Examples:**
 1. **Dot notation columns**: `category.name` → `"Category Name"`
 2. **Regular columns**: `created_at` → `"Created At"`
+3. **Snake case**: `user_email` → `"User Email"`
+
+This means automatic labels are completely non-breaking. Your existing columns will work exactly as before, but now you have the option to centralize and internationalize them.

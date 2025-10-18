@@ -1,39 +1,53 @@
 # Listing
 
-The `Listing` class is a powerful data table builder that provides pagination, sorting, filtering, and searching capabilities for your data. It supports both Eloquent models and iterable data sources.
+When building admin panels or data-heavy applications, you need more than just a table—you need sorting, filtering, pagination, and search that works seamlessly with your Eloquent models. Hewcode's Listing class provides this complete solution with a fluent, declarative API that transforms complex data table requirements into elegant, maintainable code.
 
-## Key Features
+## When To Use Listings
 
-- 📊 **Pagination** - Automatic pagination with customizable items per page
-- 🔍 **Global Search** - Search across multiple columns with a single input
-- 🎯 **Filters** - Advanced filtering with multiple filter types
-- ⬆️⬇️ **Sorting** - Multi-column sorting with relationship support
-- 🗂️ **Tabs** - Quick navigation between different data views with badges
-- 🎨 **Row Styling** - Conditional row background colors
-- 👁️ **Column Visibility** - User-controlled column toggling
-- 🔄 **Drag-and-Drop Reordering** - Reorder records with visual feedback
-- ☑️ **Bulk Actions** - Perform actions on multiple selected records
-- 🔗 **Relationship Support** - Sort and search on related models
-- 💾 **State Persistence** - Save preferences in URL or session
-- 🌐 **Internationalization** - Automatic locale-based labels
+Use Hewcode Listings when you need to:
 
-## Discovery API (Recommended)
+- Display tabular data from Eloquent models with user-driven sorting and filtering
+- Build admin interfaces that work with complex data relationships
+- Provide search functionality across multiple fields without writing custom queries  
+- Maintain user preferences for table state across sessions or in shareable URLs
+- Enable bulk operations on multiple selected records
+- Create filterable reports or data exports
 
-The Discovery API provides a clean, attribute-based approach to organizing multiple listings and actions in your controllers. This is the recommended way to use listings in modern Hewcode applications.
+Listings handle the heavy lifting of query building, request parsing, and data transformation—letting you focus on business logic instead of boilerplate.
 
-### Quick Example
+## How It Works
+
+When a user interacts with your listing (sorts, filters, searches), here's the flow:
+
+```
+Browser Request → Laravel Controller → Listing Class → Query Builder → Database
+     ↓                                        ↓
+Frontend Props ← Data Transformation ← Paginated Results
+```
+
+The Listing class:
+1. Receives the HTTP request parameters (sort, filters, search, page)
+2. Applies them to your Eloquent query builder automatically
+3. Executes the query with proper eager loading
+4. Transforms results into a frontend-ready format
+5. Returns pagination metadata, column definitions, and current state
+
+You configure what's possible (which columns are sortable, what filters exist), and Listing handles the execution.
+
+## Your First Listing
+
+Let's start with the absolute minimum. In your controller, create a method that returns a Listing:
 
 ```php
-use Hewcode\Hewcode\Discovery;
+use Hewcode\Hewcode\Discovery\Discovery;
 use Hewcode\Hewcode\Lists;
-use Hewcode\Hewcode\Actions;
 use Hewcode\Hewcode\Contracts\ResourceController;
 
 class PostController extends Controller implements ResourceController
 {
     public function index(): Response
     {
-        return Inertia::render('posts/index', Discovery\Discovery::for($this));
+        return Inertia::render('posts/index', Discovery::for($this));
     }
 
     public function canAccess(?string $method = '__invoke'): bool
@@ -45,129 +59,234 @@ class PostController extends Controller implements ResourceController
     public function posts(): Lists\Listing
     {
         return Lists\Listing::make()
-            ->query(Post::query()->with(['user', 'category']))
+            ->query(Post::query())
             ->columns([
-                Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
+                Lists\Schema\TextColumn::make('title'),
                 Lists\Schema\TextColumn::make('status'),
-            ])
-            ->tabs([
-                Lists\Tabs\Tab::make('all')
-                    ->label('All')
-                    ->badge(fn () => Post::query()->count()),
-                Lists\Tabs\Tab::make('published')
-                    ->label('Published')
-                    ->badge(fn () => Post::query()->where('status', PostStatus::PUBLISHED)->count())
-                    ->query(fn (Builder $query) => $query->where('status', PostStatus::PUBLISHED)),
-            ])
-            ->defaultTab('all')
-            ->persistInSession();
-    }
-
-    #[Actions\Expose]
-    public function actions(): Actions\Actions
-    {
-        return Actions\Actions::make([
-            Action::make('export')->label('Export Posts'),
-        ]);
+            ]);
     }
 }
 ```
 
-**Key Benefits:**
-- Clean separation of concerns with attributed methods
-- Automatic discovery and data transformation
-- Flexible API for adding custom data
-- Type-safe with the `Discoverable` interface
+On the frontend, just spread the props:
 
-For detailed information about the Discovery API, see the [Discovery Documentation](discovery.md).
+```tsx
+import { DataTable } from '@hewcode/react';
+import { usePage } from '@inertiajs/react';
 
-## Basic Usage
-
-### With Eloquent Models
-
-```php
-use Hewcode\Hewcode\Lists;
-
-$listing = Lists\Listing::make()
-    ->query(Post::query()->with(['user', 'category']))
-    ->columns([
-        Lists\Schema\TextColumn::make('title'),
-        Lists\Schema\TextColumn::make('status'),
-    ])
-    ->toData();
+export default function Index() {
+    const { posts } = usePage().props;
+    
+    return <DataTable {...posts} />;
+}
 ```
 
-### With Iterable Data
+That's it. You now have a paginated table with two columns showing your posts.
+
+### Adding Sorting and Search
+
+Add sorting and search capabilities with simple method calls:
 
 ```php
-$data = [
-    ['name' => 'John', 'email' => 'john@example.com'],
-    ['name' => 'Jane', 'email' => 'jane@example.com'],
-];
-
-$listing = Lists\Listing::make()
-    ->data($data)
-    ->columns([
-        Lists\Schema\TextColumn::make('name'),
-        Lists\Schema\TextColumn::make('email'),
-    ])
-    ->toData();
+#[Lists\Expose]
+public function posts(): Lists\Listing
+{
+    return Lists\Listing::make()
+        ->query(Post::query())
+        ->columns([
+            Lists\Schema\TextColumn::make('title')
+                ->sortable()      // Clickable column header
+                ->searchable(),   // Included in global search
+            Lists\Schema\TextColumn::make('status')
+                ->sortable(),
+        ])
+        ->defaultSort('created_at', 'desc');
+}
 ```
 
-## Configuration Methods
+Now users can click column headers to sort and use the search box to filter.
+
+### Working with Relationships
+
+Display related data with dot notation:
+
+```php
+#[Lists\Expose]
+public function posts(): Lists\Listing
+{
+    return Lists\Listing::make()
+        ->query(Post::query()->with('user', 'category'))  // Eager load!
+        ->columns([
+            Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
+            Lists\Schema\TextColumn::make('user.name')
+                ->label('Author')
+                ->sortable()
+                ->searchable(),
+            Lists\Schema\TextColumn::make('category.name')
+                ->sortable(),
+        ]);
+}
+```
+
+**Important:** Always eager load relationships with `->with()` to avoid N+1 query problems.
+
+## How Discovery Works
+
+Discovery scans your controller for methods tagged with `#[Lists\Expose]`, calls them to get Listing configurations, and passes them as props to your Inertia component. The method name (`posts`) becomes the prop name.
+
+You can customize the prop name by passing it to the attribute:
+
+```php
+#[Lists\Expose('recentPosts')]
+public function posts(): Lists\Listing
+{
+    // Available in frontend as props.recentPosts
+    return Lists\Listing::make()...;
+}
+```
+
+## Essential Configuration
+
+These are the most commonly used configuration methods you'll need for typical listings.
 
 ### Columns
 
-Define the columns to display in your listing:
+Define which data columns to display. See [TextColumn](text-column.md) for detailed column customization.
 
 ```php
 ->columns([
-    Lists\Schema\TextColumn::make('id'),
-    Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
-    Lists\Schema\TextColumn::make('user.name')->label('Author'),
+    TextColumn::make('id'),
+    TextColumn::make('title')->sortable()->searchable(),
+    TextColumn::make('user.name')->label('Author')->sortable(),
 ])
 ```
 
+Each column can be independently configured for sorting, searching, formatting, and styling.
+
 ### Default Sorting
 
-Set the default sort column and direction:
+Set which column is sorted by default and in which direction:
 
 ```php
-->defaultSort('created_at', 'desc')  // Default: 'asc'
+->defaultSort('created_at', 'desc')  // Second param defaults to 'asc'
 ```
+
+Users can still change the sort by clicking column headers, but this sets the initial state.
 
 ### Pagination
 
-Control the number of items per page:
+Control how many items appear per page:
 
 ```php
 ->perPage(20)  // Default: 15
 ```
 
+Users can typically change this in the UI, but this sets the default.
+
 ### Filters
 
-Add filters to allow users to narrow down results:
+Add filters to let users narrow down results. Filters appear in a UI panel separate from the table:
 
 ```php
-use Hewcode\Hewcode\Lists;
+use Hewcode\Hewcode\Lists\Filters;
 
 ->filters([
     Lists\Filters\SelectFilter::make('status')
         ->label('Status')
-        ->options(PostStatus::class),
+        ->options(PostStatus::class),  // Enum or array
     Lists\Filters\SelectFilter::make('category')
         ->label('Category')
-        ->field('category_id')
-        ->options(Category::pluck('name', 'id')->toArray()),
+        ->field('category_id')  // Which DB field to filter
+        ->options(Category::pluck('name', 'id')->toArray())
+        ->multiple()  // Allow multiple selections
+        ->searchable(),  // Add search to dropdown
     Lists\Filters\DateRangeFilter::make('published_date')
         ->label('Published Date')
         ->field('published_at'),
 ])
 ```
 
+**Filter types:**
+- `SelectFilter` - Dropdown selection (single or multiple)
+- `DateRangeFilter` - Start and end date picker
+
+Filters automatically apply to your query based on user selections.
+
+## Common Patterns
+
+These patterns cover 80% of typical listing use cases.
+
+### Status Badge Columns
+
+Display status fields as color-coded badges:
+
+```php
+TextColumn::make('status')
+    ->badge(true, 'secondary')  // Display as badge with variant
+    ->getStateUsing(fn ($record) => $record->status->getLabel())  // Get friendly label
+    ->color(fn ($record) => match ($record->status) {  // Dynamic color
+        PostStatus::DRAFT => 'warning',
+        PostStatus::PUBLISHED => 'success',
+        PostStatus::ARCHIVED => 'secondary',
+    })
+```
+
+### Formatted Date Columns
+
+Display dates in a readable format:
+
+```php
+TextColumn::make('published_at')
+    ->label('Published')
+    ->sortable()
+    ->getStateUsing(fn ($record) => $record->published_at?->format('M j, Y'))
+```
+
+### Relationship Columns with Badges
+
+Show related data with visual styling:
+
+```php
+TextColumn::make('category.name')
+    ->sortable()
+    ->searchable()
+    ->badge()
+    ->color(fn ($record) => $record->category->color)  // Use category's color
+```
+
+### Togglable Columns
+*
+Let users show/hide columns they don't need:
+
+```php
+TextColumn::make('content')
+    ->searchable()
+    ->wrap()
+    ->togglable(),  // User can hide this column
+TextColumn::make('id')
+    ->togglable(true, true),  // Togglable and hidden by default
+TextColumn::make('created_at')
+    ->togglable(isToggledHiddenByDefault: true),  // Hidden by default
+```
+
+### Secondary Information Display
+
+Show additional context under the main column value:
+
+```php
+TextColumn::make('title')
+    ->sortable()
+    ->searchable()
+    ->after(fn ($record) => $record->slug),  // Show slug below title
+```
+
+## Advanced Features
+
+These features handle more complex use cases.
+
 ### Tabs
 
-Add tabs to provide quick filtering and navigation between different data views:
+Tabs provide quick navigation between different data views, perfect for status-based filtering or common queries:
 
 ```php
 use Hewcode\Hewcode\Lists;
@@ -175,74 +294,88 @@ use Illuminate\Database\Eloquent\Builder;
 
 ->tabs([
     Lists\Tabs\Tab::make('all')
-        ->label('All')
-        ->badge(fn () => Post::query()->count()),
+        ->label('All Posts')
+        ->badge(fn () => Post::count()),  // Show count in badge
     Lists\Tabs\Tab::make('published')
         ->label('Published')
-        ->badge(fn () => Post::query()->where('status', PostStatus::PUBLISHED)->count())
+        ->badge(fn () => Post::where('status', PostStatus::PUBLISHED)->count())
         ->query(fn (Builder $query) => $query->where('status', PostStatus::PUBLISHED)),
     Lists\Tabs\Tab::make('drafts')
         ->label('Drafts')
-        ->badge(fn () => Post::query()->where('status', PostStatus::DRAFT)->count())
+        ->badge(fn () => Post::where('status', PostStatus::DRAFT)->count())
         ->query(fn (Builder $query) => $query->where('status', PostStatus::DRAFT)),
 ])
-->defaultTab('all')
+->defaultTab('all')  // Which tab is active by default
 ```
 
-**Tab Configuration:**
-
-- `make()` - Create a tab with a unique identifier
-- `label()` - Display label for the tab
-- `badge()` - Optional badge showing count or other information
-- `query()` - Query modifier function to filter results for this tab
-- `defaultTab()` - Set which tab is active by default
+**How tabs work:**
+- Each tab can modify the base query with the `query()` callback
+- Badges update dynamically and show counts or other metrics
+- The default tab is active when no tab parameter is in the request
+- Tab state persists based on your persistence configuration
 
 ### Row Background Colors
 
-Add conditional row styling:
+Add visual indicators with conditional row styling:
 
 ```php
-->bgColor(fn (Post $post) => match ($post->status) {
-    PostStatus::DRAFT => 'warning',
-    PostStatus::PUBLISHED => 'success',
-    default => null,
+->bgColor(fn ($record) => match ($record->status) {
+    PostStatus::DRAFT => 'warning',      // Yellow background
+    PostStatus::PUBLISHED => 'success',  // Green background
+    PostStatus::ARCHIVED => 'secondary', // Gray background
+    default => null,                     // No special color
 })
 ```
 
-### Reordering
+Colors use your theme's color system: `primary`, `secondary`, `success`, `danger`, `warning`, `info`.
 
-Enable drag-and-drop row reordering by specifying an order column:
+### Drag-and-Drop Reordering
+
+Enable users to reorder records visually:
 
 ```php
-->reorderable('order')  // Enable reordering using the 'order' column
+->reorderable('order')  // Column name that stores the order
 ```
 
 **Requirements:**
-- Your model must have an integer column for storing the order (e.g., `order`)
-- The column should have a default value (e.g., `0`)
+- Your model must have an integer column (e.g., `order`, `position`, `sort_order`)
+- The column should have a default value (typically `0`)
+- Only works with Eloquent queries (not iterable data)
 
-**Complete example:**
+**Example migration:**
 ```php
-Lists\Listing::make()
-    ->query(Post::query()->with(['user', 'category']))
-    ->reorderable('order')  // Enable reordering
-    ->columns([
-        Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
-        Lists\Schema\TextColumn::make('status'),
-    ])
-    ->perPage(10);
+$table->integer('order')->default(0);
 ```
 
-**Notes:**
-- Reordering is only available with Eloquent models (not iterable data)
-- The order column can be named anything (defaults to 'order')
-- Reordering mode disables regular sorting while active
+When reordering is enabled, users can drag rows to reposition them, and the order column updates automatically.
+
+### Row Actions
+
+Add action buttons that appear on each row:
+
+```php
+use Hewcode\Hewcode\Actions;
+
+->actions([
+    Actions\Action::make('edit')
+        ->label('Edit')
+        ->color('primary')
+        ->action(fn ($record) => redirect()->route('posts.edit', $record)),
+    Actions\Action::make('delete')
+        ->label('Delete')
+        ->color('danger')
+        ->action(fn ($record) => $record->delete()),
+])
+```
+
+Actions receive the current record and can perform any operation.
 
 ### Bulk Actions
 
-Add bulk actions that users can perform on multiple selected records:
+Let users select multiple rows and perform batch operations:
 
 ```php
+use Hewcode\Hewcode\Actions;
 use Illuminate\Support\Collection;
 
 ->bulkActions([
@@ -256,132 +389,182 @@ use Illuminate\Support\Collection;
         ->action(fn (Collection $records) => 
             $records->each->update(['status' => PostStatus::PUBLISHED])
         ),
-    Actions\BulkAction::make('archive')
-        ->label('Archive Selected')
-        ->color('secondary')
-        ->action(fn (Collection $records) => 
-            $records->each->update(['status' => PostStatus::ARCHIVED])
-        ),
+    Actions\BulkAction::make('export')
+        ->label('Export to CSV')
+        ->action(fn (Collection $records) => $this->exportToCsv($records)),
 ])
 ```
 
+Bulk actions receive a Collection of selected records. Users select rows with checkboxes and then choose an action from the bulk actions menu.
+
+## State Persistence
+
+Listings can remember user preferences so they don't lose their filters, sorts, or search terms when navigating away. You have two persistence strategies: URL and session.
+
+### Understanding Persistence Strategies
+
+| Feature | URL Persistence | Session Persistence | No Persistence |
+|---------|----------------|---------------------|----------------|
+| Shareable state | ✅ Yes | ❌ No | ❌ No |
+| Bookmarkable | ✅ Yes | ❌ No | ❌ No |
+| Private to user | ❌ No | ✅ Yes | ✅ Yes |
+| Clean URLs | ❌ No | ✅ Yes | ✅ Yes |
+| Survives restart | ✅ Yes | ⚠️ Depends on session config | ❌ No |
+| Best for | Shareable reports, public listings | User preferences, private tables | Exploratory browsing |
+
 ### URL Persistence
 
-Control which interactions persist in the URL. By default, nothing persists in the URL to provide a cleaner experience:
+State is stored in query parameters, making listings shareable and bookmarkable:
 
 ```php
-// Enable specific URL persistence
-->persistSearchInUrl()      // Search terms persist in URL
-->persistSortInUrl()        // Sort column/direction persist in URL
-->persistFiltersInUrl()     // Filter values persist in URL
-->persistColumnsInUrl()     // Column visibility persist in URL
+// Enable specific features
+->persistSearchInUrl()      // ?search=laravel
+->persistSortInUrl()        // ?sort=title&direction=asc
+->persistFiltersInUrl()     // ?filter[status]=published
+->persistColumnsInUrl()     // ?columns[content]=false
 
-// Or enable all at once
-->persistInUrl()            // All interactions persist in URL
-
-// You can also disable persistence explicitly
-->persistSearchInUrl(false)
+// Or enable everything at once
+->persistInUrl()
 ```
 
-**Benefits of URL persistence:**
-- Bookmarkable/shareable URLs with current table state
-- Browser back/forward navigation preserves table state
-- Page refresh maintains current filters/search/sort
+**When to use URL persistence:**
+- Reports that users share with colleagues
+- Public data views where anyone can access the same filtered view
+- When you want browser back/forward to work with table state
+- Analytics dashboards where filters define different views
 
-**Benefits of disabled persistence (default):**
-- Cleaner URLs without query parameters
-- No URL clutter when exploring data
-- Better UX for users who don't want URL changes
+**Example URL with persistence:**
+```
+/posts?search=laravel&sort=created_at&direction=desc&filter[status]=published&tab=featured
+```
 
 ### Session Persistence
 
-Control which interactions persist in the user's session. This provides state persistence without cluttering URLs:
+State is stored server-side in the user's session, keeping URLs clean:
 
 ```php
-// Enable specific session persistence
-->persistSearchInSession()      // Search terms persist in session
-->persistSortInSession()        // Sort column/direction persist in session
-->persistFiltersInSession()     // Filter values persist in session
-->persistColumnsInSession()     // Column visibility persist in session
+// Enable specific features
+->persistSearchInSession()
+->persistSortInSession()
+->persistFiltersInSession()
+->persistColumnsInSession()
 
-// Or enable all at once
-->persistInSession()            // All interactions persist in session
-
-// You can also provide a custom session key
-->sessionKey('my_custom_listing_key')
+// Or enable everything at once
 ->persistInSession()
 
-// Mix session and URL persistence
-->persistSearchInUrl()          // Search shows in URL
-->persistSortInSession()        // Sort persists in session only
+// Optionally customize the session key
+->sessionKey('my_custom_key')
+->persistInSession()
 ```
 
-**Benefits of session persistence:**
-- State persists across page visits without URL changes
-- Clean URLs while maintaining user preferences
-- Great for user-specific table configurations
-- Automatic cleanup when session expires
+**When to use session persistence:**
+- Personal preference settings (which columns a user likes to see)
+- Frequently filtered views where users return to the same filters
+- When you want clean URLs without query parameters
+- Private user-specific table configurations
 
-**Session vs URL persistence:**
-- **Session**: Private to user, doesn't affect URLs, expires with session
-- **URL**: Shareable, bookmarkable, visible in browser history
-- **Both**: You can enable both for maximum flexibility
+**How it works:**
+The session key is auto-generated from your controller class and method name, ensuring each listing has unique storage. State persists until the session expires or is cleared.
 
-## Complete Examples
+### Mixing Strategies
 
-### Using Discovery API (Recommended)
-
-Here's a comprehensive example using the modern Discovery API:
+You can combine URL and session persistence for different features:
 
 ```php
-use Hewcode\Hewcode\Discovery;
+->persistSearchInUrl()        // Search shows in URL (shareable)
+->persistSortInSession()      // Sort is private preference
+->persistFiltersInSession()   // Filters are private preference
+->persistColumnsInSession()   // Column visibility is private
+```
+
+This keeps URLs shareable while maintaining private preferences.
+
+### Disabling Persistence
+
+By default, nothing persists (providing the cleanest UX for exploratory use). To explicitly disable:
+
+```php
+->persistSearchInUrl(false)
+->persistSortInSession(false)
+```
+
+## Working with Iterable Data
+
+While Listings work best with Eloquent models, you can also use arrays or collections:
+
+```php
+#[Lists\Expose]
+public function stats(): Lists\Listing
+{
+    $data = [
+        ['name' => 'John Doe', 'email' => 'john@example.com', 'role' => 'Admin'],
+        ['name' => 'Jane Smith', 'email' => 'jane@example.com', 'role' => 'User'],
+    ];
+
+    return Lists\Listing::make()
+        ->data($data)  // Use ->data() instead of ->query()
+        ->columns([
+            Lists\Schema\TextColumn::make('name')->sortable()->searchable(),
+            Lists\Schema\TextColumn::make('email')->searchable(),
+            Lists\Schema\TextColumn::make('role'),
+        ]);
+}
+```
+
+**Limitations with iterable data:**
+- No relationship support
+- No drag-and-drop reordering
+- Less performant for large datasets
+
+For production use with large datasets, always prefer Eloquent models.
+
+## Complete Real-World Example
+
+Here's a comprehensive example showing most features working together:
+
+```php
+use Hewcode\Hewcode\Discovery\Discovery;
 use Hewcode\Hewcode\Lists;
 use Hewcode\Hewcode\Actions;
 use Hewcode\Hewcode\Contracts\ResourceController;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class PostController extends Controller implements ResourceController
 {
     public function index(): Response
     {
-        return Inertia::render('posts/index', Discovery\Discovery::for($this)->with('title', 'My Posts'));
+        return Inertia::render('posts/index', Discovery::for($this));
     }
 
     public function canAccess(?string $method = '__invoke'): bool
     {
-        return match ($method) {
-            'index', 'show' => auth()->user()?->can('view-posts') ?? false,
-            'create', 'store' => auth()->user()?->can('create-posts') ?? false,
-            'edit', 'update' => auth()->user()?->can('edit-posts') ?? false,
-            'destroy' => auth()->user()?->can('delete-posts') ?? false,
-            default => false,
-        };
+        return auth()->user()?->can('manage-posts') ?? false;
     }
 
     #[Lists\Expose]
     public function posts(): Lists\Listing
     {
         return Lists\Listing::make()
+            // Eager load relationships to avoid N+1
             ->query(Post::query()->with(['user', 'category']))
-            ->reorderable('order')  // Enable drag-and-drop reordering
+            // Define columns with various features
             ->columns([
-                Lists\Schema\TextColumn::make('id')->togglable(true, true),
+                Lists\Schema\TextColumn::make('id')
+                    ->togglable(true, true),  // Hidden by default
                 Lists\Schema\TextColumn::make('title')
                     ->sortable()
                     ->searchable()
-                    ->after(fn (Post $post) => $post->slug),
-                Lists\Schema\TextColumn::make('content')
-                    ->searchable()
-                    ->wrap()
-                    ->togglable(),
+                    ->after(fn ($record) => $record->slug),  // Show slug below
                 Lists\Schema\TextColumn::make('status')
                     ->sortable()
                     ->badge(true, 'secondary')
-                    ->getStateUsing(fn (Post $post) => $post->status->getLabel()),
-                Lists\Schema\TextColumn::make('published_at')
-                    ->label('Published At')
-                    ->sortable()
-                    ->getStateUsing(fn (Post $post) => $post->published_at?->format('M j, Y'))
-                    ->togglable(),
+                    ->getStateUsing(fn ($record) => $record->status->getLabel())
+                    ->color(fn ($record) => match ($record->status) {
+                        PostStatus::DRAFT => 'warning',
+                        PostStatus::PUBLISHED => 'success',
+                        PostStatus::ARCHIVED => 'secondary',
+                    }),
                 Lists\Schema\TextColumn::make('user.name')
                     ->label('Author')
                     ->sortable()
@@ -391,38 +574,48 @@ class PostController extends Controller implements ResourceController
                     ->sortable()
                     ->searchable()
                     ->badge()
-                    ->color(fn (Post $post) => $post->category->color)
-                    ->togglable(),
-                Lists\Schema\TextColumn::make('created_at')
-                    ->label('Created At')
+                    ->color(fn ($record) => $record->category->color),
+                Lists\Schema\TextColumn::make('published_at')
+                    ->label('Published')
                     ->sortable()
-                    ->getStateUsing(fn (Post $post) => $post->created_at->format('M j, Y g:i A'))
+                    ->getStateUsing(fn ($record) => 
+                        $record->published_at?->format('M j, Y')
+                    ),
+                Lists\Schema\TextColumn::make('created_at')
+                    ->sortable()
+                    ->getStateUsing(fn ($record) => 
+                        $record->created_at->format('M j, Y g:i A')
+                    )
                     ->togglable(isToggledHiddenByDefault: true),
             ])
+            // Set default sort
             ->defaultSort('created_at', 'desc')
-            ->bgColor(fn (Post $post) => match ($post->status) {
+            // Add status-based row colors
+            ->bgColor(fn ($record) => match ($record->status) {
                 PostStatus::DRAFT => 'warning',
                 PostStatus::PUBLISHED => 'success',
                 default => null,
             })
+            // Add tabs for quick filtering
             ->tabs([
                 Lists\Tabs\Tab::make('all')
                     ->label('All')
-                    ->badge(fn () => Post::query()->count()),
+                    ->badge(fn () => Post::count()),
                 Lists\Tabs\Tab::make('published')
                     ->label('Published')
-                    ->badge(fn () => Post::query()->where('status', PostStatus::PUBLISHED)->count())
-                    ->query(fn (Builder $query) => $query->where('status', PostStatus::PUBLISHED)),
+                    ->badge(fn () => Post::where('status', PostStatus::PUBLISHED)->count())
+                    ->query(fn (Builder $query) => 
+                        $query->where('status', PostStatus::PUBLISHED)
+                    ),
                 Lists\Tabs\Tab::make('drafts')
                     ->label('Drafts')
-                    ->badge(fn () => Post::query()->where('status', PostStatus::DRAFT)->count())
-                    ->query(fn (Builder $query) => $query->where('status', PostStatus::DRAFT)),
-                Lists\Tabs\Tab::make('archived')
-                    ->label('Archived')
-                    ->badge(fn () => Post::query()->where('status', PostStatus::ARCHIVED)->count())
-                    ->query(fn (Builder $query) => $query->where('status', PostStatus::ARCHIVED)),
+                    ->badge(fn () => Post::where('status', PostStatus::DRAFT)->count())
+                    ->query(fn (Builder $query) => 
+                        $query->where('status', PostStatus::DRAFT)
+                    ),
             ])
             ->defaultTab('all')
+            // Add filters
             ->filters([
                 Lists\Filters\SelectFilter::make('status')
                     ->label('Status')
@@ -430,22 +623,26 @@ class PostController extends Controller implements ResourceController
                 Lists\Filters\SelectFilter::make('category')
                     ->label('Category')
                     ->field('category_id')
-                    ->options(Category::pluck('name', 'id')->toArray())
-                    ->multiple(),
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->multiple()
+                    ->preload(),
                 Lists\Filters\DateRangeFilter::make('published_date')
                     ->label('Published Date')
                     ->field('published_at'),
             ])
+            // Add row actions
             ->actions([
                 Actions\Action::make('edit')
                     ->label('Edit')
                     ->color('primary')
-                    ->action('edit'),
+                    ->action(fn ($record) => redirect()->route('posts.edit', $record)),
                 Actions\Action::make('delete')
                     ->label('Delete')
                     ->color('danger')
-                    ->action('delete'),
+                    ->action(fn ($record) => $record->delete()),
             ])
+            // Add bulk actions
             ->bulkActions([
                 Actions\BulkAction::make('delete')
                     ->label('Delete Selected')
@@ -457,14 +654,10 @@ class PostController extends Controller implements ResourceController
                     ->action(fn (Collection $records) => 
                         $records->each->update(['status' => PostStatus::PUBLISHED])
                     ),
-                Actions\BulkAction::make('archive')
-                    ->label('Archive Selected')
-                    ->color('secondary')
-                    ->action(fn (Collection $records) => 
-                        $records->each->update(['status' => PostStatus::ARCHIVED])
-                    ),
             ])
-            ->perPage(10)
+            // Configure pagination
+            ->perPage(15)
+            // Persist state in session (not URL for clean links)
             ->persistInSession();
     }
 
@@ -472,126 +665,11 @@ class PostController extends Controller implements ResourceController
     public function actions(): Actions\Actions
     {
         return Actions\Actions::make([
-            Action::make('test')
-                ->color('warning')
-                ->action('test'),
+            Actions\Action::make('create')
+                ->label('New Post')
+                ->color('primary')
+                ->action(fn () => redirect()->route('posts.create')),
         ]);
     }
 }
-```
-
-### Using Direct Listing (Legacy)
-
-Here's the same example using the direct listing approach:
-
-```php
-public function index(): Response
-{
-    return Inertia::render('posts/index', [
-        'posts' => Lists\Listing::make()
-            ->query(Post::query()->with(['user', 'category']))
-            ->columns([
-                Lists\Schema\TextColumn::make('id'),
-                Lists\Schema\TextColumn::make('title')
-                    ->sortable()
-                    ->searchable()
-                    ->after(fn (Post $post) => $post->slug),
-                // ... (same column configuration as above)
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->bgColor(fn (Post $post) => match ($post->status) {
-                PostStatus::DRAFT => 'warning',
-                PostStatus::PUBLISHED => 'success',
-                default => null,
-            })
-            ->filters([
-                // ... (same filter configuration as above)
-            ])
-            ->perPage(10)
-            ->persistSearchInUrl()          // Search appears in URL for sharing
-            ->persistSortInSession()        // Sort persists in session only
-            ->persistFiltersInSession()     // Filters persist privately in session
-            ->toData(),
-        'title' => 'My Posts',
-    ]);
-}
-```
-
-## Request Parameters
-
-The listing automatically handles these request parameters:
-
-- `search` - Global search term
-- `sort` - Sort field
-- `direction` - Sort direction (`asc` or `desc`)
-- `page` - Current page number
-- `tab` - Active tab identifier
-- `filter.*` - Filter values
-
-## Output Format
-
-The `toData()` method returns an array with the following structure:
-
-```php
-[
-    'records' => [...], // Array of record data
-    'pagination' => [
-        'currentPage' => 1,
-        'totalPages' => 10,
-        'totalItems' => 150,
-        'itemsPerPage' => 15,
-    ],
-    'columns' => [...], // Column metadata
-    'sortable' => [...], // Sortable field names
-    'filters' => [...], // Filter definitions
-    'tabs' => [...], // Tab definitions with badges
-    'urlPersistence' => [
-        'persistFiltersInUrl' => false,
-        'persistSortInUrl' => false,
-        'persistColumnsInUrl' => false,
-        'persistSearchInUrl' => true,
-    ],
-    'sessionPersistence' => [
-        'persistFiltersInSession' => true,
-        'persistSortInSession' => true,
-        'persistColumnsInSession' => false,
-        'persistSearchInSession' => false,
-        'sessionKey' => 'chisel_listing_App\\Http\\Controllers\\PostController_00000000123abc',
-    ],
-    'currentValues' => [
-        'search' => 'John Doe',
-        'sort' => 'created_at',
-        'direction' => 'desc',
-        'tab' => 'published',
-        'filter' => [
-            'status' => 'published',
-            'category' => '1',
-        ],
-        'columns' => [
-            'title' => true,
-            'content' => false,
-            'status' => true,
-        ],
-    ],
-]
-```
-
-## Relationship Support
-
-The listing fully supports Eloquent relationships:
-
-```php
-// Searching and sorting on relationships
-TextColumn::make('user.name')
-    ->sortable()
-    ->searchable()
-
-// Deep relationships
-TextColumn::make('category.parent.name')
-```
-
-When using relationships, make sure to eager load them in your query:
-
-```php
-->query(Post::query()->with(['user', 'category.parent']))
 ```
