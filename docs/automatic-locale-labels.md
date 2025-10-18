@@ -97,32 +97,6 @@ return [
 ];
 ```
 
-### Multi-language Example
-
-```php
-<?php
-// lang/es/app.php
-
-return [
-    'posts' => [
-        'columns' => [
-            'id' => 'ID del Artículo',
-            'title' => 'Título del Artículo',
-            'content' => 'Contenido del Artículo',
-            'status' => 'Estado de Publicación',
-            'published_at' => 'Fecha de Publicación',
-            'created_at' => 'Fecha de Creación',
-        ],
-    ],
-    'categories' => [
-        'columns' => [
-            'name' => 'Nombre de Categoría',
-            'description' => 'Descripción de Categoría',
-        ],
-    ],
-];
-```
-
 ## Examples in Practice
 
 ### Before (Manual Labels)
@@ -151,122 +125,9 @@ TextColumn::make('user.name'),    // → 'Full Name' (from users translations)
 TextColumn::make('published_at')->label('Custom Published Date'),
 ```
 
-## Complete Listing Example
-
-```php
-use Hewcode\Hewcode\Discovery\Discovery;
-use Hewcode\Hewcode\Contracts\ResourceController;
-
-class PostController extends Controller implements ResourceController
-{
-    public function index(): Response
-    {
-        return Inertia::render('posts/index', Discovery::for($this));
-    }
-
-    public function canAccess(?string $method = '__invoke'): bool
-    {
-        return auth()->user()?->can('manage-posts') ?? false;
-    }
-
-    #[Lists\Expose]
-    public function posts(): Lists\Listing
-    {
-        return Lists\Listing::make()
-            ->query(Post::query()->with(['user', 'category']))
-            ->columns([
-                // Automatic labels from app.posts.columns.*
-                TextColumn::make('id'),        // → 'Post ID'
-                TextColumn::make('title'),     // → 'Article Title'
-                TextColumn::make('content'),   // → 'Article Content'
-                TextColumn::make('status'),    // → 'Publication Status'
-
-                // Automatic labels from related models
-                TextColumn::make('category.name'), // → from app.categories.columns.name
-                TextColumn::make('user.name'),     // → from app.users.columns.name
-
-                // Explicit labels still work and take precedence
-                TextColumn::make('published_at')
-                    ->label('Custom Publication Date'),
-            ]);
-    }
-}
-```
-
 ## Fallback Behavior
 
 If no translation is found, the system falls back to the original behavior:
 
 1. **Dot notation columns**: `category.name` → `"Category Name"`
 2. **Regular columns**: `created_at` → `"Created At"`
-
-## Best Practices
-
-### 1. Organize by Model
-
-Keep translations organized by model to maintain clarity:
-
-```php
-return [
-    'posts' => [
-        'columns' => [
-            // All post-related column translations
-        ],
-    ],
-    'users' => [
-        'columns' => [
-            // All user-related column translations
-        ],
-    ],
-];
-```
-
-### 2. Consistent Naming
-
-Use consistent naming patterns across models:
-
-```php
-'created_at' => 'Creation Date',  // Not "Created On", "Date Created", etc.
-'updated_at' => 'Last Modified',  // Consistent across all models
-```
-
-### 3. Relationship Columns
-
-Remember that relationship columns resolve to the related model's translations:
-
-```php
-// In your listings
-TextColumn::make('author.name'),      // Uses app.users.columns.name
-TextColumn::make('category.parent.name'), // Uses app.categories.columns.name
-
-// In your translations
-'users' => [
-    'columns' => [
-        'name' => 'Author Name',  // Will be used for author.name
-    ],
-],
-'categories' => [
-    'columns' => [
-        'name' => 'Category Name', // Will be used for category.name AND category.parent.name
-    ],
-],
-```
-
-### 4. Override When Needed
-
-Use explicit labels when the automatic translation doesn't fit the context:
-
-```php
-TextColumn::make('user.name')
-    ->label('Article Author'), // More specific than generic 'Full Name'
-```
-
-## Migration Strategy
-
-If you have existing listings with manual labels, you can migrate gradually:
-
-1. **Set up translation files** with your current labels
-2. **Remove explicit labels** one at a time and verify the automatic resolution
-3. **Update translations** as needed for better consistency
-
-This allows you to maintain functionality while cleaning up repetitive label definitions across your application.
