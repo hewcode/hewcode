@@ -46,6 +46,8 @@ class PostController extends Controller implements ResourceController
                 Lists\Schema\TextColumn::make('title')
                     ->sortable()
                     ->searchable(),
+                Lists\Schema\TextColumn::make('published_at')
+                    ->date(),
                 Lists\Schema\TextColumn::make('user.name')
                     ->label('Author')
                     ->badge(variant: 'outline'),
@@ -107,6 +109,7 @@ New to Hewcode? Follow this path to mastery:
 **[Authorization](authorization.md)** - Secure your listings and actions with the ResourceController contract and Laravel's authorization system.
 
 ### 4. Advanced Features
+- **[Config](config.md)** - Customize global defaults like date and datetime formats
 - **[Automatic Locale Labels](automatic-locale-labels.md)** - Internationalize your column labels automatically
 - **Filters, Tabs, and Actions** - Build complex UIs with minimal code (covered in Listing docs)
 
@@ -131,6 +134,7 @@ Listings can save user preferences in URLs (shareable) or sessions (private). Th
 | Installation | [Installation](installation.md) |
 | Building data tables | [Listing](listing.md) |
 | Formatting columns | [TextColumn](text-column.md) |
+| Configuration | [Config](config.md) |
 | Securing endpoints | [Authorization](authorization.md) |
 | Translation support | [Automatic Locale Labels](automatic-locale-labels.md) |
 

@@ -6,6 +6,7 @@
 - [Label Configuration](#label-configuration)
 - [Sorting and Searching](#sorting-and-searching)
 - [Data Transformation](#data-transformation)
+- [Date and DateTime Formatting](#date-and-datetime-formatting)
 - [Visual Styling](#visual-styling)
 - [Before and After Content](#before-and-after-content)
 - [Visibility Control](#visibility-control)
@@ -25,7 +26,10 @@ The `TextColumn` class is the primary column type for displaying text data in li
 | Make it sortable | `->sortable()` | `TextColumn::make('title')->sortable()` |
 | Include in search | `->searchable()` | `TextColumn::make('email')->searchable()` |
 | Custom label | `->label()` | `->label('Full Name')` |
-| Format dates | `->getStateUsing()` | `->getStateUsing(fn ($r) => $r->date->format('M j'))` |
+| Format dates | `->date()` | `->date()` or `->date(format: 'Y-m-d')` |
+| Format datetimes | `->datetime()` | `->datetime()` or `->datetime(format: 'Y-m-d H:i:s')` |
+| Relative dates | `->date()` or `->datetime()` | `->date(relative: true)` |
+| Custom formatting | `->getStateUsing()` | `->getStateUsing(fn ($r) => $r->date->format('M j'))` |
 | Display as badge | `->badge()` | `->badge()` or `->badge(true, 'outline')` |
 | Dynamic colors | `->color()` | `->color(fn ($r) => $r->status->color())` |
 | Show relationships | Dot notation | `TextColumn::make('user.name')` |
@@ -171,6 +175,115 @@ TextColumn::make('created_at')
     ->formatStateUsing(fn (Carbon $date) => $date->format('M j, Y g:i A'))
 ```
 
+<a name="date-and-datetime-formatting"></a>
+## Date and DateTime Formatting
+
+TextColumn provides convenient methods for formatting date and datetime values using configurable default formats.
+
+### Basic Date Formatting
+
+The `date()` method formats date values using the default date format (`M j, Y`):
+
+```php
+TextColumn::make('published_at')
+    ->date()
+```
+
+This automatically handles:
+- Carbon instances
+- DateTime objects
+- String dates (parsed with Carbon)
+- Null values (returns null)
+
+### Basic DateTime Formatting
+
+The `datetime()` method formats datetime values using the default datetime format (`M j, Y g:i A`):
+
+```php
+TextColumn::make('created_at')
+    ->datetime()
+```
+
+### Custom Format
+
+Override the default format for a specific column using the `format` parameter:
+
+```php
+TextColumn::make('published_at')
+    ->date(format: 'Y-m-d')  // Returns: 2024-10-19
+
+TextColumn::make('created_at')
+    ->datetime(format: 'Y-m-d H:i:s')  // Returns: 2024-10-19 14:30:00
+
+TextColumn::make('event_date')
+    ->date(format: 'F j, Y')  // Returns: October 19, 2024
+```
+
+### Relative Date Formatting
+
+Display dates in relative format (e.g., "2 days ago", "3 hours ago") using the `relative` parameter:
+
+```php
+TextColumn::make('created_at')
+    ->date(relative: true)
+    // Returns: "2 days ago", "3 weeks ago", etc.
+
+TextColumn::make('updated_at')
+    ->datetime(relative: true)
+    // Returns: "5 minutes ago", "1 hour ago", etc.
+```
+
+### Combining Parameters
+
+You can use both parameters together, though the `relative` parameter takes precedence:
+
+```php
+TextColumn::make('published_at')
+    ->date(format: 'Y-m-d', relative: false)  // Uses custom format
+
+TextColumn::make('posted_at')
+    ->date(format: 'Y-m-d', relative: true)  // Uses relative format, ignores custom format
+```
+
+### Configuring Default Formats
+
+You can customize the default date and datetime formats globally using the Config class. See the [Config documentation](config.md) for details.
+
+```php
+use Hewcode\Hewcode\Support\Config;
+
+// In a service provider or bootstrap file
+Config::dateFormat('Y-m-d');
+Config::datetimeFormat('Y-m-d H:i:s');
+```
+
+### When to Use date() vs getStateUsing()
+
+Use `date()` or `datetime()` when you want simple, consistent date formatting:
+
+```php
+// ✅ Simple and clean
+TextColumn::make('published_at')->date()
+
+// ✅ With relative time
+TextColumn::make('created_at')->date(relative: true)
+
+// ❌ More verbose for simple formatting
+TextColumn::make('published_at')
+    ->getStateUsing(fn ($record) => $record->published_at?->format('M j, Y'))
+```
+
+Use `getStateUsing()` when you need complex logic or conditional formatting:
+
+```php
+TextColumn::make('published_at')
+    ->getStateUsing(fn ($record) => 
+        $record->published_at 
+            ? $record->published_at->format('M j, Y')
+            : 'Not published'
+    )
+```
+
 <a name="visual-styling"></a>
 ## Visual Styling
 
@@ -306,16 +419,54 @@ TextColumn::make('title')
 
 ### Formatted Date Column
 
-Display dates in a readable format:
+Display dates in a readable format using the convenient `date()` method:
 
 ```php
 TextColumn::make('published_at')
     ->label('Published')
     ->sortable()
-    ->getStateUsing(fn ($record) => $record->published_at?->format('M j, Y'))
+    ->date()
 ```
 
-**Why getStateUsing?** Carbon objects can't be directly converted to strings. This transforms them into the format you want.
+For custom date formats:
+
+```php
+TextColumn::make('published_at')
+    ->label('Published')
+    ->sortable()
+    ->date(format: 'Y-m-d')  // ISO 8601 format
+```
+
+For relative dates:
+
+```php
+TextColumn::make('published_at')
+    ->label('Published')
+    ->sortable()
+    ->date(relative: true)  // "2 days ago"
+```
+
+### Formatted DateTime Column
+
+Display datetimes with time information:
+
+```php
+TextColumn::make('created_at')
+    ->label('Created')
+    ->sortable()
+    ->datetime()
+```
+
+With custom format:
+
+```php
+TextColumn::make('created_at')
+    ->label('Created')
+    ->sortable()
+    ->datetime(format: 'Y-m-d H:i:s')
+```
+
+**Why use date()/datetime()?** These methods automatically handle null values and different date types (Carbon, DateTime, strings), making your code cleaner and more robust.
 
 ### Status Badge with Dynamic Color
 
@@ -429,6 +580,55 @@ TextColumn::make('category.parent.name')
 <a name="common-recipes"></a>
 ## Common Recipes
 
+### How to Format Dates Consistently
+
+Use the `date()` method for consistent date formatting across your application:
+
+```php
+TextColumn::make('published_at')
+    ->date()
+```
+
+Or customize the format for specific needs:
+
+```php
+TextColumn::make('published_at')
+    ->date(format: 'F j, Y')  // January 15, 2024
+```
+
+### How to Format DateTimes with Time
+
+Use the `datetime()` method for full datetime display:
+
+```php
+TextColumn::make('created_at')
+    ->datetime()
+```
+
+Or with a custom format:
+
+```php
+TextColumn::make('created_at')
+    ->datetime(format: 'Y-m-d H:i:s')  // 2024-01-15 14:30:00
+```
+
+### How to Show Relative Dates
+
+Use the `relative` parameter for human-friendly relative times:
+
+```php
+TextColumn::make('created_at')
+    ->label('Posted')
+    ->date(relative: true)
+    // Returns: "2 hours ago", "3 days ago", etc.
+
+TextColumn::make('updated_at')
+    ->datetime(relative: true)
+    // Returns: "5 minutes ago", "1 week ago", etc.
+```
+
+**Note:** When using `relative: true`, the format parameter is ignored since relative dates don't use custom formats.
+
 ### How to Format Phone Numbers
 
 ```php
@@ -453,10 +653,12 @@ TextColumn::make('is_active')
 ```php
 TextColumn::make('created_at')
     ->label('Posted')
-    ->getStateUsing(fn ($record) => $record->created_at->diffForHumans())
+    ->date(relative: true)
 ```
 
 **Result:** "2 hours ago", "3 days ago", etc.
+
+**Note:** Use the `relative` parameter for a cleaner approach instead of `formatStateUsing()` with `diffForHumans()`.
 
 ### How to Display Arrays or JSON
 

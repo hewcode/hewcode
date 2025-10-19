@@ -1,0 +1,77 @@
+<?php
+
+namespace Hewcode\Hewcode\Support;
+
+class Config
+{
+    protected array $config = [];
+
+    public function __construct()
+    {
+        $this->config = [
+            'date_format' => 'M j, Y',
+            'datetime_format' => 'M j, Y g:i A',
+        ];
+    }
+
+    public function get(string $key, mixed $default = null): mixed
+    {
+        return $this->config[$key] ?? $default;
+    }
+
+    public function set(string $key, mixed $value): self
+    {
+        $this->config[$key] = $value;
+
+        return $this;
+    }
+
+    public function setDateFormat(string $format): self
+    {
+        return $this->set('date_format', $format);
+    }
+
+    public function setDatetimeFormat(string $format): self
+    {
+        return $this->set('datetime_format', $format);
+    }
+
+    public function getDateFormat(): string
+    {
+        return $this->get('date_format');
+    }
+
+    public function getDatetimeFormat(): string
+    {
+        return $this->get('datetime_format');
+    }
+
+    // Static convenience methods that use the container
+
+    public static function dateFormat(?string $format = null): string|self
+    {
+        $instance = app(self::class);
+        
+        if ($format === null) {
+            return $instance->getDateFormat();
+        }
+
+        return $instance->setDateFormat($format);
+    }
+
+    public static function datetimeFormat(?string $format = null): string|self
+    {
+        $instance = app(self::class);
+        
+        if ($format === null) {
+            return $instance->getDatetimeFormat();
+        }
+
+        return $instance->setDatetimeFormat($format);
+    }
+
+    public static function instance(): self
+    {
+        return app(self::class);
+    }
+}

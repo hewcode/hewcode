@@ -4,6 +4,7 @@ namespace Hewcode\Hewcode;
 
 use Hewcode\Hewcode\Http\Controllers\HewcodeController;
 use Hewcode\Hewcode\Http\InertiaProps;
+use Hewcode\Hewcode\Support\Config;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
@@ -22,6 +23,13 @@ class HewcodeServiceProvider extends PackageServiceProvider
             ->name('hewcode')
             ->hasConfigFile()
             ->hasTranslations();
+    }
+
+    public function packageRegistered()
+    {
+        $this->app->singleton(Config::class, function ($app) {
+            return new Config();
+        });
     }
 
     public function packageBooted()
