@@ -483,11 +483,13 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
             ->map(fn(Column $column) => $column->getSortField())
             ->toArray();
 
+        $iconRegistry = [];
+
         return [
             'component' => $this->component,
             'hash' => generateComponentHash($this->component),
             'route' => Route::currentRouteName(),
-            'records' => $result['records']->map(function (Model $record) use ($visibleColumns) {
+            'records' => $result['records']->map(function (Model $record) use ($visibleColumns, &$iconRegistry) {
                 $data = [];
 
                 foreach ($visibleColumns as $column) {
@@ -503,6 +505,15 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
                     if ($color = $column->getColor($record)) {
                         $data[$column->getName() . '_color'] = $color;
+                    }
+
+                    if ($icon = $column->getIcon($record)) {
+                        $data[$column->getName() . '_icon'] = $icon;
+                        
+                        // Register icon SVG (deduplicated)
+                        if (!isset($iconRegistry[$icon['name']])) {
+                            $iconRegistry[$icon['name']] = svg($icon['name'])->toHtml();
+                        }
                     }
                 }
 
@@ -542,6 +553,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
                     'hidden' => !$column->isVisible(),
                 ];
             }, $visibleColumns),
+            'icons' => $iconRegistry,
             'allColumns' => array_map(function (Column $column) {
                 return [
                     'key' => $column->getName(),

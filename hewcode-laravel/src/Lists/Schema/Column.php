@@ -33,6 +33,9 @@ abstract class Column extends Component implements WithVisibility
     protected bool $labelExplicitlySet = false;
     protected bool $togglable = false;
     protected bool $isToggledHiddenByDefault = false;
+    protected string|Closure|null $iconUsing = null;
+    protected string $iconPosition = 'before';
+    protected int $iconSize = 16;
 
     public function __construct(string $name)
     {
@@ -139,6 +142,36 @@ abstract class Column extends Component implements WithVisibility
         $this->omitUsing = $callback;
 
         return $this;
+    }
+
+    public function icon(string|Closure $icon, string $position = 'before', int $size = 16): static
+    {
+        $this->iconUsing = $icon;
+        $this->iconPosition = $position;
+        $this->iconSize = $size;
+
+        return $this;
+    }
+
+    public function getIcon($record): ?array
+    {
+        if (!$this->iconUsing) {
+            return null;
+        }
+
+        $iconName = $this->iconUsing instanceof Closure
+            ? $this->evaluate($this->iconUsing, ['record' => $record])
+            : $this->iconUsing;
+
+        if (!$iconName) {
+            return null;
+        }
+
+        return [
+            'name' => $iconName,
+            'position' => $this->iconPosition,
+            'size' => $this->iconSize,
+        ];
     }
 
     public function togglable(bool $togglable = true, bool $isToggledHiddenByDefault = false): static

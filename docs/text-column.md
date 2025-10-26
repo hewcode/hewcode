@@ -8,6 +8,7 @@
 - [Data Transformation](#data-transformation)
 - [Date and DateTime Formatting](#date-and-datetime-formatting)
 - [Visual Styling](#visual-styling)
+- [Icons](#icons)
 - [Before and After Content](#before-and-after-content)
 - [Visibility Control](#visibility-control)
 - [Relationship Columns](#relationship-columns)
@@ -29,6 +30,8 @@ The `TextColumn` class is the primary column type for displaying text data in li
 | Format dates | `->date()` | `->date()` or `->date(format: 'Y-m-d')` |
 | Format datetimes | `->datetime()` | `->datetime()` or `->datetime(format: 'Y-m-d H:i:s')` |
 | Relative dates | `->date()` or `->datetime()` | `->date(relative: true)` |
+| Add icon | `->icon()` | `->icon('lucide-circle-check')` |
+| Dynamic icon | `->icon()` | `->icon(fn($r) => match($r->status) {...})` |
 | Custom formatting | `->getStateUsing()` | `->getStateUsing(fn ($r) => $r->date->format('M j'))` |
 | Display as badge | `->badge()` | `->badge()` or `->badge(true, 'outline')` |
 | Dynamic colors | `->color()` | `->color(fn ($r) => $r->status->color())` |
@@ -325,6 +328,59 @@ TextColumn::make('status')
         PostStatus::DRAFT => 'warning',
         PostStatus::PUBLISHED => 'success',
         default => 'secondary',
+    })
+```
+
+<a name="icons"></a>
+## Icons
+
+Add icons to columns using the `icon()` method. Icons are rendered using Lucide icons via an SVG sprite system.
+
+### Basic Icon
+
+```php
+TextColumn::make('email')
+    ->icon('lucide-mail')
+```
+
+### Dynamic Icons
+
+```php
+TextColumn::make('status')
+    ->badge()
+    ->icon(fn($record) => match($record->status) {
+        PostStatus::PUBLISHED => 'lucide-circle-check',
+        PostStatus::DRAFT => 'lucide-pencil',
+        PostStatus::ARCHIVED => 'lucide-archive',
+        default => null,
+    })
+```
+
+### Icon Position and Size
+
+```php
+TextColumn::make('priority')
+    ->icon('lucide-flag', position: 'after', size: 20)
+```
+
+**Parameters**:
+- `$icon` - Icon name (must use `lucide-` prefix) or closure returning icon name
+- `position` - `'before'` (default) or `'after'`
+- `size` - Icon size in pixels (default: 16)
+
+**Icon Names**: Browse available icons at [lucide.dev/icons](https://lucide.dev/icons/). All icons must use the `lucide-` prefix (e.g., `lucide-circle-check`, `lucide-pencil`).
+
+### Icons with Badges
+
+Icons integrate seamlessly with badges, appearing inside the badge with proper spacing and color:
+
+```php
+TextColumn::make('status')
+    ->badge(true, 'secondary')
+    ->icon(fn($r) => match($r->status) {
+        'active' => 'lucide-circle-check',
+        'pending' => 'lucide-clock',
+        default => null,
     })
 ```
 

@@ -43,6 +43,7 @@ const DataTable = ({
     totalItems: 0,
     itemsPerPage: 20,
   },
+  icons = {},
   urlPersistence = {
     persistFiltersInUrl: false,
     persistSortInUrl: false,
@@ -257,6 +258,24 @@ const DataTable = ({
     const beforeContent = item[column.key + '_before'];
     const afterContent = item[column.key + '_after'];
     const badgeColor = item[column.key + '_color'];
+    const iconData = item[column.key + '_icon'];
+
+    // Create icon element if icon data exists
+    const iconElement = iconData ? (
+      <svg 
+        width={iconData.size} 
+        height={iconData.size} 
+        className="inline-block flex-shrink-0 !size-auto"
+        style={{ width: iconData.size, height: iconData.size }}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <use href={`#${iconData.name}`} />
+      </svg>
+    ) : null;
 
     let mainContent;
     if (column.badge) {
@@ -282,9 +301,35 @@ const DataTable = ({
         }
       }
 
-      mainContent = <ShadcnBadge {...badgeProps}>{item[column.key]}</ShadcnBadge>;
+      // Include icon inside badge if present and position is 'before'
+      mainContent = (
+        <ShadcnBadge {...badgeProps}>
+          {iconData?.position === 'before' && iconElement}
+          {item[column.key]}
+          {iconData?.position === 'after' && iconElement}
+        </ShadcnBadge>
+      );
     } else {
       mainContent = item[column.key];
+
+      // Handle icon rendering for non-badge cells
+      if (iconElement) {
+        if (iconData.position === 'before') {
+          mainContent = (
+            <span className="inline-flex items-center gap-2">
+              {iconElement}
+              {mainContent}
+            </span>
+          );
+        } else if (iconData.position === 'after') {
+          mainContent = (
+            <span className="inline-flex items-center gap-2">
+              {mainContent}
+              {iconElement}
+            </span>
+          );
+        }
+      }
     }
 
     // If there's before or after content, wrap in a div
@@ -399,6 +444,26 @@ const DataTable = ({
 
   return (
     <div className="w-full">
+      {/* SVG Sprite for icons */}
+      {Object.keys(icons).length > 0 && (
+        <svg style={{ display: 'none' }} aria-hidden="true">
+          {Object.entries(icons).map(([name, svg]) => {
+            // Extract the SVG content and wrap it in a symbol
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svg, 'image/svg+xml');
+            const svgElement = doc.querySelector('svg');
+            
+            if (!svgElement) return null;
+            
+            return (
+              <symbol key={name} id={name} viewBox={svgElement.getAttribute('viewBox') || '0 0 24 24'}>
+                <g dangerouslySetInnerHTML={{ __html: svgElement.innerHTML }} />
+              </symbol>
+            );
+          })}
+        </svg>
+      )}
+
       {((showSearch || showActions || filters || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && (
         <TableHeader
           showSearch={showSearch}
