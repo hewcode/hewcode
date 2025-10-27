@@ -1,0 +1,60 @@
+{
+  "sections": [
+    {
+      "title": "Getting Started",
+      "items": [
+        {
+          "title": "Introduction",
+          "path": "README.md"
+        },
+        {
+          "title": "Installation",
+          "path": "installation.md"
+        }
+      ]
+    },
+    {
+      "title": "Listing",
+      "items": [
+        {
+          "title": "Overview",
+          "path": "listing.md"
+        },
+        {
+          "title": "Text Column",
+          "path": "text-column.md"
+        },
+        {
+          "title": "Authorization",
+          "path": "authorization.md"
+        }
+      ]
+    },
+    {
+      "title": "Frontend",
+      "items": [
+        {
+          "title": "Modals",
+          "path": "modals.md"
+        },
+        {
+          "title": "Toasts",
+          "path": "toasts.md"
+        }
+      ]
+    },
+    {
+      "title": "Configuration",
+      "items": [
+        {
+          "title": "Config",
+          "path": "config.md"
+        },
+        {
+          "title": "Automatic Locale Labels",
+          "path": "automatic-locale-labels.md"
+        }
+      ]
+    }
+  ]
+}

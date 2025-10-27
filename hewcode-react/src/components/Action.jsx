@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useModalManager from '../hooks/use-modal-manager.jsx';
 import useFetch from '../hooks/useFetch.js';
 import { Button } from './ui/button';
 
@@ -10,12 +11,25 @@ const colorMap = {
   danger: 'destructive',
 };
 
-export default function Action({ route, component, hash, name, label, color = 'primary', args = {}, recordId, onSuccess, onError }) {
+export default function Action({
+  route,
+  component,
+  hash,
+  name,
+  label,
+  requiresConfirmation,
+  color = 'primary',
+  args = {},
+  recordId,
+  onSuccess,
+  onError,
+}) {
   const [loading, setLoading] = useState(false);
+  const modal = useModalManager();
 
   const { fetch } = useFetch();
 
-  const handleClick = async () => {
+  const submit = async () => {
     setLoading(true);
 
     try {
@@ -26,7 +40,7 @@ export default function Action({ route, component, hash, name, label, color = 'p
           component,
           hash,
           context: {
-            recordId,
+            recordId: recordId?.toString(),
           },
           call: {
             name: 'mountAction',
@@ -46,12 +60,22 @@ export default function Action({ route, component, hash, name, label, color = 'p
     } catch (error) {
       if (onError) {
         onError(error);
-      } else {
-        console.error('Action error:', error);
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClick = async () => {
+    if (requiresConfirmation) {
+      const confirmed = await modal.confirm();
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    await submit();
   };
 
   if (!hash) {

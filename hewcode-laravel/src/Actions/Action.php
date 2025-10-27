@@ -21,6 +21,7 @@ class Action implements Discoverable, HasRecord, WithVisibility
     public string $label;
     public string $color = 'primary';
     public ?Closure $action = null;
+    public bool|Closure $requiresConfirmation = false;
 
     public static function make(string $name): static
     {
@@ -63,6 +64,17 @@ class Action implements Discoverable, HasRecord, WithVisibility
         return $this;
     }
 
+    public function requiresConfirmation(bool|Closure $requiresConfirmation = true): static
+    {
+        $this->requiresConfirmation = $requiresConfirmation;
+
+        return $this;
+    }
+
+    public function getRequiresConfirmation(): bool
+    {
+        return $this->evaluate($this->requiresConfirmation);
+    }
 
     public function execute(array $args = []): mixed
     {
@@ -94,6 +106,7 @@ class Action implements Discoverable, HasRecord, WithVisibility
             'label' => $this->label,
             'color' => $this->color,
             'hash' => generateComponentHash($this->component, Route::currentRouteName()),
+            'requiresConfirmation' => $this->getRequiresConfirmation(),
         ];
     }
 }

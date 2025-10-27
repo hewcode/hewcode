@@ -1,9 +1,9 @@
-import { usePage } from '@inertiajs/react';
+import { useLocaleContext } from '../contexts/locale-context.js';
 
 let translator = null;
 
 export default function useTranslator() {
-  const { messages, locale } = usePage().props.hewcode.locale;
+  const { messages, locale } = useLocaleContext();
 
   translator = (key, params = {}) => {
     let translation = messages[key] || key;

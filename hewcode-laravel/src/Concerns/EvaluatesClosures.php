@@ -6,8 +6,12 @@ use Closure;
 
 trait EvaluatesClosures
 {
-    protected function evaluate(Closure $callback, array $additionalParameters = []): mixed
+    protected function evaluate(mixed $callback, array $additionalParameters = []): mixed
     {
+        if (! $callback instanceof Closure) {
+            return $callback;
+        }
+
         // Get class-specific evaluation parameters
         $globalParameters = method_exists($this, 'getEvaluationParameters')
             ? $this->getEvaluationParameters()

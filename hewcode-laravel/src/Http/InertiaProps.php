@@ -17,6 +17,7 @@ class InertiaProps implements ProvidesInertiaProperties
                     'messages' => flattenLocaleArray(is_array(__('hewcode::hewcode')) ? __('hewcode::hewcode') : [], 'hewcode'),
                 ],
                 'csrfToken' => csrf_token(),
+                'developerMode' => config('app.debug', false),
             ],
         ];
     }

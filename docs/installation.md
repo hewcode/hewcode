@@ -36,6 +36,38 @@ Install the Hewcode React package:
 npm install @hewcode/react
 ```
 
+### Setup Inertia Provider
+
+Update your Inertia app setup (typically in `resources/js/app.tsx`) to wrap your app with the `HewcodeProvider`:
+
+```tsx
+import HewcodeProvider from '@hewcode/react/Provider';
+
+createInertiaApp({
+    // ...
+    setup({el, App, props}) {
+        const root = createRoot(el);
+
+        root.render(
+            <HewcodeProvider {...props}>
+                <App {...props} />
+            </HewcodeProvider>
+        );
+    },
+    // ...
+});
+```
+
+### Import Hewcode Styles
+
+Add Hewcode's global styles to your application's CSS file (typically `resources/css/app.css`):
+
+```css
+@import '@hewcode/react/styles/globals.css';
+```
+
+This import should be placed at the top of your CSS file, before any custom styles.
+
 <a name="configuration"></a>
 ## Configuration
 

@@ -19,6 +19,13 @@ return [
         'reorder' => 'Reorder',
         'done' => 'Done',
         'bulk_select' => 'Bulk Select',
+        'confirm' => 'Confirm',
+        'cancel' => 'Cancel',
+    ],
+
+    'confirmation' => [
+        'are_you_sure' => 'Are you sure?',
+        'this_action_cannot_be_undone' => 'This action cannot be undone.',
     ],
 
 ];

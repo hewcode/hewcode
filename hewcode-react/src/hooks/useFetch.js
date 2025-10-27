@@ -6,7 +6,7 @@ export default function useFetch() {
 
   return {
     fetch: async (url, options = {}) => {
-      return _fetch(url, options, { csrfToken: hewcode.csrfToken });
+      return _fetch(url, options, hewcode);
     },
   };
 }
