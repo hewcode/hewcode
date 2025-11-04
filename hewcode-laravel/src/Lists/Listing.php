@@ -5,8 +5,8 @@ namespace Hewcode\Hewcode\Lists;
 use BadMethodCallException;
 use Hewcode\Hewcode\Concerns\InteractsWithActions;
 use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Concerns\RequiresVisibility;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
@@ -37,7 +37,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 {
     use InteractsWithModel;
     use InteractsWithActions;
-    use HasVisibility;
+    use RequiresVisibility;
     use EvaluatesClosures;
 
     protected ListingDriver $driver;
@@ -509,7 +509,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
                     if ($icon = $column->getIcon($record)) {
                         $data[$column->getName() . '_icon'] = $icon;
-                        
+
                         // Register icon SVG (deduplicated)
                         if (!isset($iconRegistry[$icon['name']])) {
                             $iconRegistry[$icon['name']] = svg($icon['name'])->toHtml();

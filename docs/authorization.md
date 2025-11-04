@@ -1,58 +1,64 @@
 # Authorization
 
-- [The ResourceController Contract](#the-resourcecontroller-contract)
-- [Why It's Required](#why-its-required)
-- [Method-Specific Authorization](#method-specific-authorization)
+- [Securing Listings](#securing-listings)
+- [Securing Actions](#securing-actions)
+- [Using Laravel Policies](#using-laravel-policies)
 
-<a name="the-resourcecontroller-contract"></a>
-## The ResourceController Contract
+<a name="securing-listings"></a>
+## Securing Listings
 
-Controllers that use Discovery to expose listings and actions must implement the `ResourceController` contract. This ensures that only authorized users can access your endpoints.
+Every listing and action must explicitly declare who can access it using the `->visible()` method. This ensures that unauthorized users cannot access your data.
 
 ```php
-use Hewcode\Hewcode\Contracts\ResourceController;
+use Hewcode\Hewcode\Discovery\Discovery;
+use Hewcode\Hewcode\Lists;
 
-class PostController extends Controller implements ResourceController
+class PostController extends Controller
 {
-    public function canAccess(?string $method = '__invoke'): bool
-    {
-        // Return true if the current user can access this method
-        return auth()->user()?->can('manage-posts') ?? false;
-    }
-
     #[Lists\Expose]
     public function posts(): Lists\Listing
     {
         return Lists\Listing::make()
+            ->visible(auth()->user()?->can('view-posts') ?? false) // Required: control access
             ->query(Post::query())
             ->columns([/* ... */]);
     }
 }
 ```
 
-<a name="why-its-required"></a>
-## Why It's Required
+If `->visible()` returns `false`, the listing will not be exposed to the frontend.
 
-When Discovery calls your exposed methods to get listing data or execute actions, it first checks if the user is authorized by calling `canAccess()` with the method name. If it returns `false`, a 403 error is thrown.
+<a name="securing-actions"></a>
+## Securing Actions
 
-Without this contract, your exposed endpoints would be unprotected.
-
-<a name="method-specific-authorization"></a>
-## Method-Specific Authorization
-
-The `canAccess()` method receives the target method name, allowing different permissions per action:
+Row actions and bulk actions must also use `->visible()`:
 
 ```php
-public function canAccess(?string $method = '__invoke'): bool
-{
-    return match ($method) {
-        'index', 'show' => auth()->user()?->can('view-posts') ?? false,
-        'create', 'store' => auth()->user()?->can('create-posts') ?? false,
-        'edit', 'update' => auth()->user()?->can('edit-posts') ?? false,
-        'destroy' => auth()->user()?->can('delete-posts') ?? false,
-        default => false,
-    };
-}
+use Hewcode\Hewcode\Actions;
+
+->actions([
+    Actions\Action::make('edit')
+        ->label('Edit')
+        ->visible(auth()->user()?->can('edit-posts') ?? false)
+        ->action(fn ($record) => redirect()->route('posts.edit', $record)),
+    Actions\Action::make('delete')
+        ->label('Delete')
+        ->visible(auth()->user()?->can('delete-posts') ?? false)
+        ->action(fn ($record) => $record->delete()),
+])
+```
+
+<a name="using-laravel-policies"></a>
+## Using Laravel Policies
+
+For cleaner authorization logic, use Laravel's authorization policies:
+
+```php
+// In your Listing
+->visible(auth()->user()?->can('view', Post::class) ?? false)
+
+// In your Actions
+->visible(auth()->user()?->can('update', $record) ?? false)
 ```
 
 Use whatever authorization logic your application needs—Laravel policies, gates, role checks, or custom logic.

@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\ResourceController;
+use Hewcode\Hewcode\Contracts\WithVisibility;
 use Hewcode\Hewcode\Support\Expose;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
@@ -48,23 +49,15 @@ class HewcodeController extends Controller
         $controller = $route?->getController();
         $method = Str::parseCallback($route->action['uses'])[1];
 
-        if (! $controller instanceof ResourceController) {
-            if (app()->environment('local')) {
-                throw new RuntimeException("Controller for route [$routeName] must implement ".ResourceController::class);
-            }
-
-            abort(403);
-        }
-
-        if (! $controller->canAccess($method)) {
-            abort(403, app()->environment('local') ? 'Access denied' : '');
-        }
-
         if (! method_exists($controller, $component)) {
             abort(404, app()->environment('local') ? "Component [$component] not found on controller ".get_class($controller) : '');
         }
 
         $component = $controller->{$component}();
+
+        if (! $component instanceof WithVisibility || ! $component->isVisible()) {
+            abort(403, app()->environment('local') ? 'Access denied' : '');
+        }
 
         if ($component instanceof ResolvesRecord) {
             if ($recordId) {

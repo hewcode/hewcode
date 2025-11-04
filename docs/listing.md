@@ -68,26 +68,21 @@ You configure what's possible (which columns are sortable, what filters exist), 
 Let's start with the absolute minimum. In your controller, create a method that returns a Listing:
 
 ```php
-use Hewcode\Hewcode\Discovery\Discovery;
+use Hewcode\Hewcode\Props;
 use Hewcode\Hewcode\Lists;
-use Hewcode\Hewcode\Contracts\ResourceController;
 
-class PostController extends Controller implements ResourceController
+class PostController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('posts/index', Discovery::for($this));
-    }
-
-    public function canAccess(?string $method = '__invoke'): bool
-    {
-        return auth()->user()?->can('manage-posts') ?? false;
+        return Inertia::render('posts/index', Props\Props::for($this)->components(['posts']));
     }
 
     #[Lists\Expose]
     public function posts(): Lists\Listing
     {
         return Lists\Listing::make()
+            ->visible(auth()->user()?->can('manage-posts') ?? false) // Required
             ->query(Post::query())
             ->columns([
                 Lists\Schema\TextColumn::make('title'),
@@ -161,18 +156,24 @@ public function posts(): Lists\Listing
 
 **Important:** Always eager load relationships with `->with()` to avoid N+1 query problems.
 
-<a name="how-discovery-works"></a>
-## How Discovery Works
+<a name="how-props-works"></a>
+## How Props Works
 
-Discovery scans your controller for methods tagged with `#[Lists\Expose]`, calls them to get Listing configurations, and passes them as props to your Inertia component. The method name (`posts`) becomes the prop name.
+Props gives you explicit control over which component methods are exposed. You declare which methods to expose via `->components()`, and those methods must have the `#[Lists\Expose]` or `#[Actions\Expose]` attribute. Props calls each method and passes the results as props to your Inertia component.
 
-You can customize the prop name by passing it to the attribute:
+The method name becomes the prop name:
 
 ```php
-#[Lists\Expose('recentPosts')]
+Props\Props::for($this)->components(['posts', 'actions'])
+// Frontend receives props.posts and props.actions
+```
+
+Each method must have the appropriate attribute:
+
+```php
+#[Lists\Expose]
 public function posts(): Lists\Listing
 {
-    // Available in frontend as props.recentPosts
     return Lists\Listing::make()...;
 }
 ```
@@ -570,29 +571,24 @@ For production use with large datasets, always prefer Eloquent models.
 Here's a comprehensive example showing most features working together:
 
 ```php
-use Hewcode\Hewcode\Discovery\Discovery;
+use Hewcode\Hewcode\Props;
 use Hewcode\Hewcode\Lists;
 use Hewcode\Hewcode\Actions;
-use Hewcode\Hewcode\Contracts\ResourceController;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
-class PostController extends Controller implements ResourceController
+class PostController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('posts/index', Discovery::for($this));
-    }
-
-    public function canAccess(?string $method = '__invoke'): bool
-    {
-        return auth()->user()?->can('manage-posts') ?? false;
+        return Inertia::render('posts/index', Props\Props::for($this)->components(['posts', 'actions']));
     }
 
     #[Lists\Expose]
     public function posts(): Lists\Listing
     {
         return Lists\Listing::make()
+            ->visible(auth()->user()?->can('manage-posts') ?? false) // Required
             // Eager load relationships to avoid N+1
             ->query(Post::query()->with(['user', 'category']))
             // Define columns with various features

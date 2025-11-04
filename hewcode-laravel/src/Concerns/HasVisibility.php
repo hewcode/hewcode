@@ -6,7 +6,7 @@ use Closure;
 
 trait HasVisibility
 {
-    protected bool|Closure $visible = true;
+    protected bool|Closure|null $visible = null;
 
     public function visible(bool|Closure $visible): static
     {
@@ -17,6 +17,10 @@ trait HasVisibility
 
     public function isVisible(): bool
     {
+        if ($this->visible === null) {
+            return true;
+        }
+
         if (is_bool($this->visible)) {
             return $this->visible;
         }

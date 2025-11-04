@@ -20,27 +20,22 @@ See the [Installation Guide](installation.md) for detailed instructions and requ
 Here's how little code it takes to build a fully-featured data table with sorting, searching, filtering, and pagination:
 
 ```php
-use Hewcode\Hewcode\Discovery\Discovery;
+use Hewcode\Hewcode\Props;
 use Hewcode\Hewcode\Lists;
-use Hewcode\Hewcode\Contracts\ResourceController;
 
-class PostController extends Controller implements ResourceController
+class PostController extends Controller
 {
     public function index(): Response
     {
-        // Discovery automatically finds and transforms your listings
-        return Inertia::render('posts/index', Discovery::for($this));
+        // Props explicitly exposes selected component methods
+        return Inertia::render('posts/index', Props\Props::for($this)->components(['posts']));
     }
 
-    public function canAccess(?string $method = '__invoke'): bool
-    {
-        return auth()->check(); // Secure your listings with authorization
-    }
-
-    #[Lists\Expose] // This attribute tells Discovery to expose this listing
+    #[Lists\Expose] // This attribute marks this as an exposed component
     public function posts(): Lists\Listing
     {
         return Lists\Listing::make()
+            ->visible(auth()->check()) // Required: control who can access this listing
             ->query(Post::query()->with('user', 'category'))
             ->columns([
                 Lists\Schema\TextColumn::make('title')
@@ -84,8 +79,8 @@ Building data-heavy interfaces typically requires hundreds of lines of boilerpla
 
 **Instead of writing custom controllers, query builders, and request handlers for each table, you write:**
 - Fluent, readable column definitions
-- Automatic relationship handling  
-- Built-in authorization with ResourceController
+- Automatic relationship handling
+- Required authorization control with ->visible()
 - Zero-configuration pagination and search
 - State persistence in sessions or URLs
 
@@ -100,23 +95,26 @@ Building data-heavy interfaces typically requires hundreds of lines of boilerpla
 New to Hewcode? Follow this path to mastery:
 
 ### 1. Start Here
+**[Props](props.md)** - The explicit data exposure system. Learn how to pass controller data to your views with security in mind.
+
+### 2. Build Your Listings
 **[Listing](listing.md)** - The core data table builder. Start with "Your First Listing" for the simplest example, then explore features as you need them.
 
-### 2. Build Your Columns  
+### 3. Build Your Columns
 **[TextColumn](text-column.md)** - Learn to format, style, and customize your data display. Covers relationships, badges, conditional formatting, and more.
 
-### 3. Understand Authorization
-**[Authorization](authorization.md)** - Secure your listings and actions with the ResourceController contract and Laravel's authorization system.
+### 4. Understand Authorization
+**[Authorization](authorization.md)** - Secure your listings and actions using the ->visible() method.
 
-### 4. Advanced Features
+### 5. Advanced Features
 - **[Config](config.md)** - Customize global defaults like date and datetime formats
 - **[Automatic Locale Labels](automatic-locale-labels.md)** - Internationalize your column labels automatically
 - **Filters, Tabs, and Actions** - Build complex UIs with minimal code (covered in Listing docs)
 
 ## Core Concepts
 
-### Discovery API
-The Discovery API uses PHP 8 attributes to automatically detect and transform listings in your controllers. Methods tagged with `#[Lists\Expose]` become data sources for your frontend components. This keeps your controllers clean and your data transformation automatic.
+### Props System
+The Props system uses PHP 8 attributes to explicitly control which component methods are exposed. You declare which methods to expose via `->components()`, and those methods must be tagged with `#[Lists\Expose]` or `#[Actions\Expose]`. This makes your data flow explicit and prevents accidental exposure of unintended data.
 
 ### Listing System  
 The Listing class builds data tables from Eloquent models or arrays. It handles query building, pagination, sorting, searching, and filtering—transforming complex requirements into simple method chains.
@@ -132,6 +130,7 @@ Listings can save user preferences in URLs (shareable) or sessions (private). Th
 | Feature | Documentation |
 |---------|---------------|
 | Installation | [Installation](installation.md) |
+| Passing controller data | [Props](props.md) |
 | Building data tables | [Listing](listing.md) |
 | Formatting columns | [TextColumn](text-column.md) |
 | Configuration | [Config](config.md) |
@@ -187,22 +186,15 @@ Always eager load when using relationship columns to avoid N+1 queries:
 - **URL persistence** for shareable views (reports, filtered lists)
 - **No persistence** for exploratory browsing
 
-### Implement canAccess Properly
-The ResourceController contract is your security layer. Be explicit:
+### Use ->visible() for Authorization
+Control access to listings and actions by using the required ->visible() method:
 
 ```php
-public function canAccess(?string $method = '__invoke'): bool
-{
-    // ✅ Explicit per-method authorization
-    return match ($method) {
-        'index' => auth()->user()?->can('view-posts') ?? false,
-        'edit' => auth()->user()?->can('edit-posts') ?? false,
-        default => false,
-    };
-    
-    // ❌ Too permissive
-    // return auth()->check();
-}
+// ✅ Explicit authorization on each listing
+->visible(auth()->user()?->can('view-posts') ?? false)
+
+// ❌ Too permissive
+// ->visible(auth()->check())
 ```
 
 ## Next Steps

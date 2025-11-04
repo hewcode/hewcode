@@ -4,19 +4,18 @@ namespace Hewcode\Hewcode\Actions;
 
 use Hewcode\Hewcode\Concerns\InteractsWithActions;
 use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Concerns\RequiresVisibility;
 use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
-use function Hewcode\Hewcode\generateComponentHash;
 
 class Actions implements Discoverable, MountsActions, ResolvesRecord, WithVisibility
 {
     use InteractsWithModel;
     use InteractsWithActions;
-    use HasVisibility;
+    use RequiresVisibility;
     use EvaluatesClosures;
 
     protected ?string $component = null;
