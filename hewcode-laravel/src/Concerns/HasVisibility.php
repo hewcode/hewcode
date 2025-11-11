@@ -8,7 +8,7 @@ trait HasVisibility
 {
     protected bool|Closure|null $visible = null;
 
-    public function visible(bool|Closure $visible): static
+    public function visible(bool|Closure $visible = true): static
     {
         $this->visible = $visible;
 

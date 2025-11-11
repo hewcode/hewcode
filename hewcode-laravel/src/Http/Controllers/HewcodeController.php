@@ -6,16 +6,11 @@ use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
-use Hewcode\Hewcode\Contracts\ResourceController;
 use Hewcode\Hewcode\Contracts\WithVisibility;
-use Hewcode\Hewcode\Support\Expose;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
-use ReflectionMethod;
-use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use function Hewcode\Hewcode\exposed;
 use function Hewcode\Hewcode\generateComponentHash;
@@ -47,7 +42,7 @@ class HewcodeController extends Controller
         $route = Route::getRoutes()->getByName($routeName);
 
         $controller = $route?->getController();
-        $method = Str::parseCallback($route->action['uses'])[1];
+        // $method = Str::parseCallback($route->action['uses'])[1];
 
         if (! method_exists($controller, $component)) {
             abort(404, app()->environment('local') ? "Component [$component] not found on controller ".get_class($controller) : '');

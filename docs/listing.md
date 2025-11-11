@@ -5,7 +5,6 @@
 - [Your First Listing](#your-first-listing)
     - [Adding Sorting and Search](#adding-sorting-and-search)
     - [Working with Relationships](#working-with-relationships)
-- [How Discovery Works](#how-discovery-works)
 - [Essential Configuration](#essential-configuration)
     - [Columns](#columns)
     - [Default Sorting](#default-sorting)

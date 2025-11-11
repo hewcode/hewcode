@@ -4,14 +4,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import useFetch from '../../hooks/useFetch.js';
 import { getContrastColor, getTailwindBadgeClasses, getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import Action from '../Action.jsx';
+import Badge from '../support/badge.jsx';
 import { Badge as ShadcnBadge } from '../ui/badge.jsx';
 import { Checkbox } from '../ui/checkbox.jsx';
 import { TableHeader as ShadcnTableHeader, Table, TableBody, TableCell, TableRow } from '../ui/table.jsx';
-import Badge from './Badge.jsx';
 import BulkActions from './BulkActions.jsx';
 import Pagination from './Pagination.jsx';
 import TableColumnHeader from './TableColumnHeader.jsx';
@@ -262,10 +261,10 @@ const DataTable = ({
 
     // Create icon element if icon data exists
     const iconElement = iconData ? (
-      <svg 
-        width={iconData.size} 
-        height={iconData.size} 
-        className="inline-block flex-shrink-0 !size-auto"
+      <svg
+        width={iconData.size}
+        height={iconData.size}
+        className="inline-block !size-auto flex-shrink-0"
         style={{ width: iconData.size, height: iconData.size }}
         fill="none"
         stroke="currentColor"
@@ -346,6 +345,7 @@ const DataTable = ({
     return mainContent;
   };
 
+  /* Apply filters */
   onFilter ||= (state) => {
     setFilterState(state);
 
@@ -452,9 +452,9 @@ const DataTable = ({
             const parser = new DOMParser();
             const doc = parser.parseFromString(svg, 'image/svg+xml');
             const svgElement = doc.querySelector('svg');
-            
+
             if (!svgElement) return null;
-            
+
             return (
               <symbol key={name} id={name} viewBox={svgElement.getAttribute('viewBox') || '0 0 24 24'}>
                 <g dangerouslySetInnerHTML={{ __html: svgElement.innerHTML }} />

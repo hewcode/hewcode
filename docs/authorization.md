@@ -10,7 +10,6 @@
 Every listing and action must explicitly declare who can access it using the `->visible()` method. This ensures that unauthorized users cannot access your data.
 
 ```php
-use Hewcode\Hewcode\Discovery\Discovery;
 use Hewcode\Hewcode\Lists;
 
 class PostController extends Controller

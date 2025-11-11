@@ -1,12 +1,11 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import useFetch from '../../hooks/useFetch.js';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
 import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select as ShadcnSelect } from '../ui/select.jsx';
-import Label from './Label.jsx';
-import TextInput from './TextInput.jsx';
+import Label from './label.jsx';
+import TextInput from './text-input.jsx';
 
 export default function Select({
   label,
@@ -18,12 +17,8 @@ export default function Select({
   clearable = true,
   multiple = false,
   searchable = false,
-  route,
-  component,
-  hash,
-  filterName,
-  relationshipName,
-  relationshipTitleColumn,
+  searchUsing = null,
+  error = null,
 }) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,42 +26,27 @@ export default function Select({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedOptionsCache, setSelectedOptionsCache] = useState(new Map());
 
-  const { fetch } = useFetch();
-
   const performSearch = useCallback(
     async (query) => {
-      if (!searchable || !query.trim() || !route || !hash) {
+      if (!searchable || !query.trim()) {
         setSearchResults([]);
         return;
       }
 
       setIsSearching(true);
       try {
-        const response = await fetch('/_hewcode', {
-          method: 'POST',
-          body: {
-            route,
-            component,
-            hash,
-            call: {
-              name: 'mountComponent',
-              params: ['filters.' + filterName + '.getSearchResults', query],
-            },
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data || []);
+        if (searchUsing) {
+          setSearchResults(await searchUsing(query));
+        } else {
+          setSearchResults(options.filter((option) => option.label.toLowerCase().includes(query.trim().toLowerCase())));
         }
       } catch (error) {
-        console.error('Search error:', error);
         setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
     },
-    [searchable, route, component, hash, filterName],
+    [searchable, searchUsing],
   );
 
   useEffect(() => {
@@ -274,6 +254,7 @@ export default function Select({
             </div>
           </PopoverContent>
         </Popover>
+        {error && <p className="text-sm text-red-500">{error}</p>}
       </div>
     );
   }
@@ -293,6 +274,7 @@ export default function Select({
           ))}
         </SelectContent>
       </ShadcnSelect>
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }

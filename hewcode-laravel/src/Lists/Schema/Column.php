@@ -9,6 +9,8 @@ use Hewcode\Hewcode\Contracts\WithVisibility;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use function Hewcode\Hewcode\generateFieldLabel;
+use function Hewcode\Hewcode\resolveLocaleLabel;
 
 abstract class Column extends Component implements WithVisibility
 {
@@ -30,7 +32,6 @@ abstract class Column extends Component implements WithVisibility
     protected ?Closure $afterUsing = null;
     protected ?Closure $omitUsing = null;
     protected ?Model $model = null;
-    protected bool $labelExplicitlySet = false;
     protected bool $togglable = false;
     protected bool $isToggledHiddenByDefault = false;
     protected string|Closure|null $iconUsing = null;
@@ -40,14 +41,7 @@ abstract class Column extends Component implements WithVisibility
     public function __construct(string $name)
     {
         $this->name = $name;
-
-        // Handle dot notation for labels - convert "category.name" to "Category Name"
-        if (str_contains($name, '.')) {
-            $parts = explode('.', $name);
-            $this->label = str(implode(' ', $parts))->title()->toString();
-        } else {
-            $this->label = str($name)->title()->toString();
-        }
+        $this->label = generateFieldLabel($name);
 
         $this->setUp();
     }
@@ -65,7 +59,6 @@ abstract class Column extends Component implements WithVisibility
     public function label(string $label): static
     {
         $this->label = $label;
-        $this->labelExplicitlySet = true;
 
         return $this;
     }
@@ -191,55 +184,20 @@ abstract class Column extends Component implements WithVisibility
     {
         $this->model = $model;
 
-        // If no label was explicitly set, try to resolve it from locale
-        if (!$this->labelExplicitlySet && $model) {
-            $this->resolveLocaleLabel();
-        }
-
         return $this;
-    }
-
-    protected function resolveLocaleLabel(): void
-    {
-        if (!$this->model) {
-            return;
-        }
-
-        // Handle relationship columns like "category.name"
-        if (str_contains($this->name, '.')) {
-            $parts = explode('.', $this->name);
-            $relationshipName = $parts[0];
-            $columnName = $parts[1];
-
-            // Try to get the related model's table name
-            if ($this->model->isRelation($relationshipName)) {
-                $relationship = $this->model->{$relationshipName}();
-                $relatedModel = $relationship->getRelated();
-                $relatedTableName = $relatedModel->getTable();
-                $pluralModel = Str::camel($relatedTableName);
-
-                $localeKey = "app.{$pluralModel}.columns.{$columnName}";
-            } else {
-                // Fallback to current model if relationship doesn't exist
-                $tableName = $this->model->getTable();
-                $pluralModel = Str::camel($tableName);
-                $localeKey = "app.{$pluralModel}.columns.{$this->name}";
-            }
-        } else {
-            // Regular column - use current model
-            $tableName = $this->model->getTable();
-            $pluralModel = Str::camel($tableName);
-            $localeKey = "app.{$pluralModel}.columns.{$this->name}";
-        }
-
-        if (function_exists('trans') && trans($localeKey) !== $localeKey) {
-            $this->label = trans($localeKey);
-        }
     }
 
     public function getLabel(): string
     {
-        return $this->label;
+        if ($this->label) {
+            return $this->label;
+        }
+
+        if ($this->model) {
+            return resolveLocaleLabel($this->name, $this->model);
+        }
+
+        return Str::headline($this->name);
     }
 
     public function isSortable(): bool
@@ -329,17 +287,8 @@ abstract class Column extends Component implements WithVisibility
         return $parameters;
     }
 
-    protected function getDefaultValue($record)
+    protected function getDefaultValue(mixed $record)
     {
-        if ($record instanceof Model) {
-            // Handle dot notation for relationships
-            if (str_contains($this->name, '.')) {
-                return data_get($record, $this->name);
-            }
-
-            return $record->getAttribute($this->name);
-        }
-
         return data_get($record, $this->name);
     }
 }

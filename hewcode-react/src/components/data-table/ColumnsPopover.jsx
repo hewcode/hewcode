@@ -1,18 +1,17 @@
-import { Columns3, Check } from 'lucide-react';
-import { Badge } from '../ui/badge.jsx';
+import { Check, Columns3 } from 'lucide-react';
+import useTranslator from '../../hooks/useTranslator.js';
+import CompactButton from '../support/compact-button.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
-import useTranslator from '../../hooks/useTranslator.js';
-import CompactButton from './CompactButton.jsx';
 
 export default function ColumnsPopover({ columns, columnVisibility, onColumnVisibilityChange, onBulkColumnVisibilityChange }) {
   const { __ } = useTranslator();
 
-  const togglableColumns = columns.filter(col => col.togglable);
+  const togglableColumns = columns.filter((col) => col.togglable);
 
   const handleShowAll = () => {
     const newVisibility = { ...columnVisibility };
-    togglableColumns.forEach(column => {
+    togglableColumns.forEach((column) => {
       newVisibility[column.key] = true;
     });
 
@@ -20,7 +19,7 @@ export default function ColumnsPopover({ columns, columnVisibility, onColumnVisi
       onBulkColumnVisibilityChange(newVisibility);
     } else {
       // Fallback to individual calls if bulk function not available
-      togglableColumns.forEach(column => {
+      togglableColumns.forEach((column) => {
         if (!columnVisibility[column.key]) {
           onColumnVisibilityChange(column.key, true);
         }
@@ -30,7 +29,7 @@ export default function ColumnsPopover({ columns, columnVisibility, onColumnVisi
 
   const handleHideAll = () => {
     const newVisibility = { ...columnVisibility };
-    togglableColumns.forEach(column => {
+    togglableColumns.forEach((column) => {
       newVisibility[column.key] = false;
     });
 
@@ -38,7 +37,7 @@ export default function ColumnsPopover({ columns, columnVisibility, onColumnVisi
       onBulkColumnVisibilityChange(newVisibility);
     } else {
       // Fallback to individual calls if bulk function not available
-      togglableColumns.forEach(column => {
+      togglableColumns.forEach((column) => {
         if (columnVisibility[column.key]) {
           onColumnVisibilityChange(column.key, false);
         }
@@ -48,7 +47,7 @@ export default function ColumnsPopover({ columns, columnVisibility, onColumnVisi
 
   const handleReset = () => {
     const newVisibility = { ...columnVisibility };
-    togglableColumns.forEach(column => {
+    togglableColumns.forEach((column) => {
       newVisibility[column.key] = !column.isToggledHiddenByDefault;
     });
 
@@ -56,7 +55,7 @@ export default function ColumnsPopover({ columns, columnVisibility, onColumnVisi
       onBulkColumnVisibilityChange(newVisibility, true); // true indicates this is a reset
     } else {
       // Fallback to individual calls if bulk function not available
-      togglableColumns.forEach(column => {
+      togglableColumns.forEach((column) => {
         const defaultVisibility = !column.isToggledHiddenByDefault;
         if (columnVisibility[column.key] !== defaultVisibility) {
           onColumnVisibilityChange(column.key, defaultVisibility);
@@ -93,15 +92,13 @@ export default function ColumnsPopover({ columns, columnVisibility, onColumnVisi
             {togglableColumns.map((column) => (
               <div key={column.key} className="flex items-center space-x-2">
                 <div
-                  className="flex h-4 w-4 items-center justify-center rounded-sm border border-primary cursor-pointer"
+                  className="border-primary flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm border"
                   onClick={() => onColumnVisibilityChange(column.key, !columnVisibility[column.key])}
                 >
-                  {columnVisibility[column.key] && (
-                    <Check className="h-3 w-3" />
-                  )}
+                  {columnVisibility[column.key] && <Check className="h-3 w-3" />}
                 </div>
                 <label
-                  className="text-sm font-medium cursor-pointer flex-1"
+                  className="flex-1 cursor-pointer text-sm font-medium"
                   onClick={() => onColumnVisibilityChange(column.key, !columnVisibility[column.key])}
                 >
                   {column.label}
@@ -111,7 +108,7 @@ export default function ColumnsPopover({ columns, columnVisibility, onColumnVisi
           </div>
 
           {togglableColumns.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-muted-foreground py-4 text-center text-sm">
               {__('hewcode.common.no_togglable_columns') || 'No columns can be toggled'}
             </p>
           )}

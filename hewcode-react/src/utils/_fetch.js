@@ -3,7 +3,11 @@ import { router } from '@inertiajs/react';
 /**
  * Wrapper around fetch to handle common tasks like setting headers, parsing JSON, and error handling.
  */
-export default async function _fetch(url, options = {}, hewcode) {
+export default async function _fetch(url, options = {}, hewcode, vanilla = false) {
+  if (vanilla) {
+    return fetchJson(url, options, hewcode);
+  }
+
   return fetchWithInertia(url, options, hewcode);
 }
 

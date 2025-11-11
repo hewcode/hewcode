@@ -19,7 +19,7 @@ trait InteractsWithModel
 
         if ($this->resolveRecordUsing) {
             if ($isArray) {
-                return collect($ids)->map(fn($id) => ($this->resolveRecordUsing)($id));
+                return collect($ids)->map(fn ($id) => ($this->resolveRecordUsing)($id));
             } else {
                 return ($this->resolveRecordUsing)($ids);
             }
@@ -61,8 +61,12 @@ trait InteractsWithModel
         return $this;
     }
 
-    public function model(object $model): static
+    public function model(object|string $model): static
     {
+        if (is_string($model) && class_exists($model)) {
+            $model = new $model;
+        }
+
         $this->model = $model;
 
         return $this;

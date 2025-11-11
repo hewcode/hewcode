@@ -1,14 +1,11 @@
 <?php
 
-namespace Hewcode\Hewcode\Lists\Filters;
+namespace Hewcode\Hewcode\Forms\Schema;
 
 use Hewcode\Hewcode\Support\Expose;
-use Illuminate\Database\Eloquent\Model;
 
-class SelectFilter extends Filter
+class Select extends Field
 {
-    public string $type = 'select';
-
     public array $options = [];
 
     public bool $multiple = false;
@@ -142,7 +139,12 @@ class SelectFilter extends Filter
         return null;
     }
 
-    public function toData(): array
+    protected function getFieldType(): string
+    {
+        return 'select';
+    }
+
+    public function getFieldSpecificData(): array
     {
         $options = collect($this->options)
             ->map(function ($label, $value) {
@@ -156,10 +158,10 @@ class SelectFilter extends Filter
             $options = $this->getPreloadedOptions();
         }
 
-        return array_merge(parent::toData(), [
+        return [
             'options' => $options,
             'multiple' => $this->multiple,
             'searchable' => $this->searchable,
-        ]);
+        ];
     }
 }

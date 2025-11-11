@@ -30,7 +30,6 @@ use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Support\Expose;
 use Hewcode\Hewcode\Contracts\Discoverable;
 use ReflectionException;
-use Illuminate\Support\Facades\Hash;
 use function Hewcode\Hewcode\generateComponentHash;
 
 class Listing implements Discoverable, MountsActions, MountsComponents, ResolvesRecord, WithVisibility
@@ -333,7 +332,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     {
         if ($this->cachedColumns === null) {
             $this->cachedColumns = collect($this->columns)
-                ->filter(fn(Column $column) => $column->isVisible())
+                ->filter(fn (Column $column) => $column->isVisible())
                 ->values()
                 ->all();
         }
@@ -429,8 +428,8 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         $visibleColumns = collect($this->getCachedColumns());
 
         $searchableFields = $visibleColumns
-            ->filter(fn(Column $column) => $column->isSearchable())
-            ->map(fn(Column $column) => $column->getSearchField())
+            ->filter(fn (Column $column) => $column->isSearchable())
+            ->map(fn (Column $column) => $column->getSearchField())
             ->toArray();
 
         if ($searchTerm = $this->getRequestOrSession('search')) {
@@ -448,8 +447,8 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         $this->driver->applyFilters($this->filters);
 
         $sortableFields = $visibleColumns
-            ->filter(fn(Column $column) => $column->isSortable())
-            ->mapWithKeys(fn(Column $column) => [$column->getSortField() => $column->getLabel()])
+            ->filter(fn (Column $column) => $column->isSortable())
+            ->mapWithKeys(fn (Column $column) => [$column->getSortField() => $column->getLabel()])
             ->toArray();
 
         $sortField = $this->getRequestOrSession('sort', $this->defaultSort[0] ?? null);
@@ -479,8 +478,8 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         $visibleColumns = $this->getCachedColumns();
 
         $sortableFields = collect($visibleColumns)
-            ->filter(fn(Column $column) => $column->isSortable())
-            ->map(fn(Column $column) => $column->getSortField())
+            ->filter(fn (Column $column) => $column->isSortable())
+            ->map(fn (Column $column) => $column->getSortField())
             ->toArray();
 
         $iconRegistry = [];

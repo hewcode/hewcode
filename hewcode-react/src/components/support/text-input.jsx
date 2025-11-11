@@ -1,9 +1,9 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import { Input } from '../ui/input.jsx';
 import { cn } from '../../lib/utils';
-import IconButton from './IconButton.jsx';
-import Label from './Label.jsx';
+import { Input } from '../ui/input.jsx';
+import IconButton from './icon-button.jsx';
+import Label from './label.jsx';
 
 const TextInput = ({
   value,
@@ -39,16 +39,14 @@ const TextInput = ({
   return (
     <div className={cn('w-full', className)}>
       {/* Label */}
-      {label && (
-        <Label required={required}>
-          {label}
-        </Label>
-      )}
+      {label && <Label required={required}>{label}</Label>}
 
       {/* Input Container */}
       <div className="relative">
         {/* Prefix Icon */}
-        {prefixIcon && <PrefixIcon className="left-3 w-4 h-4 text-muted-foreground absolute top-1/2 -translate-y-1/2 transform pointer-events-none" />}
+        {prefixIcon && (
+          <PrefixIcon className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+        )}
 
         {/* Input */}
         <Input
@@ -70,7 +68,7 @@ const TextInput = ({
 
         {/* Suffix Icon, Text, or Reveal Button */}
         {hasSuffix && (
-          <div className="right-3 absolute top-1/2 -translate-y-1/2 transform">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 transform">
             {revealable && type === 'password' ? (
               <IconButton
                 icon={isRevealed ? EyeOff : Eye}
@@ -81,19 +79,19 @@ const TextInput = ({
                 disabled={disabled}
               />
             ) : suffixIcon ? (
-              <SuffixIcon className="w-5 h-5 text-muted-foreground" />
+              <SuffixIcon className="text-muted-foreground h-5 w-5" />
             ) : (
-              <span className="text-sm text-muted-foreground">{suffixText}</span>
+              <span className="text-muted-foreground text-sm">{suffixText}</span>
             )}
           </div>
         )}
       </div>
 
       {/* Error Message */}
-      {hasError && <p className="mt-1 text-sm text-destructive">{error}</p>}
+      {hasError && <p className="text-destructive mt-1 text-sm">{error}</p>}
 
       {/* Description */}
-      {description && !hasError && <p className="mt-2 text-sm text-muted-foreground">{description}</p>}
+      {description && !hasError && <p className="text-muted-foreground mt-2 text-sm">{description}</p>}
     </div>
   );
 };

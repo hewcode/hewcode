@@ -3,10 +3,15 @@
 namespace Hewcode\Hewcode\Props;
 
 use Exception;
+use Hewcode\Hewcode\Contracts\Discoverable;
+use Hewcode\Hewcode\Contracts\HasRecord;
+use Hewcode\Hewcode\Contracts\ResolvesRecord;
+use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
 use ReflectionException;
 use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
+use Hewcode\Hewcode\Forms\Expose as FormsExpose;
 use Illuminate\Contracts\Support\Arrayable;
 use RuntimeException;
 use InvalidArgumentException;
@@ -16,6 +21,7 @@ class Props implements Arrayable
     protected array $data = [];
     protected ?object $controller = null;
     protected array $componentNames = [];
+    protected ?Model $record = null;
 
     public static function make(?object $controller, array $data = []): static
     {
@@ -40,9 +46,17 @@ class Props implements Arrayable
         return new static($controller);
     }
 
+    public function record(?Model $record): static
+    {
+        $this->record = $record;
+
+        return $this;
+    }
+
     public function toArray(): array
     {
         $discovered = $this->discoverComponents();
+
         return array_merge($this->data, $discovered);
     }
 
@@ -91,14 +105,15 @@ class Props implements Arrayable
                 );
             }
 
-            // Method must have either Lists\Expose or Actions\Expose attribute
+            // Method must have either Lists\Expose, Actions\Expose, or Forms\Expose attribute
             $listingAttributes = $method->getAttributes(ListingExpose::class);
             $actionsAttributes = $method->getAttributes(ActionsExpose::class);
+            $formsAttributes = $method->getAttributes(FormsExpose::class);
 
-            if (empty($listingAttributes) && empty($actionsAttributes)) {
+            if (empty($listingAttributes) && empty($actionsAttributes) && empty($formsAttributes)) {
                 throw new InvalidArgumentException(
                     sprintf(
-                        'Method %s::%s() must have either #[Lists\\Expose] or #[Actions\\Expose] attribute',
+                        'Method %s::%s() must have either #[Lists\\Expose], #[Actions\\Expose], or #[Forms\\Expose] attribute',
                         get_class($this->controller),
                         $componentName
                     )
@@ -118,39 +133,31 @@ class Props implements Arrayable
             }
 
             // Call the method to get the component
-            try {
-                $result = $method->invoke($this->controller);
+            $component = $method->invoke($this->controller);
 
-                // Validate that result implements Discoverable interface
-                if (! method_exists($result, 'component') || ! method_exists($result, 'toData')) {
-                    throw new InvalidArgumentException(
-                        sprintf(
-                            'Method %s::%s() must return an object with component() and toData() methods',
-                            get_class($this->controller),
-                            $componentName
-                        )
-                    );
-                }
-
-                // Convert to data format
-                $discovered[$componentName] = $result->component($componentName)->toData();
-
-            } catch (Exception $e) {
-                if ($e instanceof InvalidArgumentException) {
-                    throw $e;
-                }
-
-                throw new RuntimeException(
+            // Validate that result implements Discoverable interface
+            if (! $component instanceof Discoverable) {
+                throw new InvalidArgumentException(
                     sprintf(
-                        'Error calling component method %s::%s(): %s',
+                        'Method %s::%s() must return an instance of Discoverable (Lists, Actions, or Forms)',
                         get_class($this->controller),
-                        $componentName,
-                        $e->getMessage()
-                    ),
-                    0,
-                    $e
+                        $componentName
+                    )
                 );
             }
+
+            $component->component($componentName);
+
+            if ($component instanceof ResolvesRecord && $this->record) {
+                $component->model($this->record);
+            }
+
+            if ($component instanceof HasRecord && $this->record) {
+                $component->record($this->record);
+            }
+
+            // Convert to data format
+            $discovered[$componentName] = $component->toData();
         }
 
         return $discovered;

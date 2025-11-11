@@ -1,12 +1,12 @@
 import { Filter } from 'lucide-react';
+import useTranslator from '../../hooks/useTranslator.js';
+import CompactButton from '../support/compact-button.jsx';
+import DateRangePicker from '../support/date-range-picker.jsx';
+import TextInput from '../support/text-input.jsx';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
-import useTranslator from '../../hooks/useTranslator.js';
-import CompactButton from './CompactButton.jsx';
-import DateRangePicker from './DateRangePicker.jsx';
-import Select from './Select.jsx';
-import TextInput from './TextInput.jsx';
+import SelectFilter from './SelectFilter.jsx';
 
 export default function FiltersPopover({ filters, state, onFilter, route, component, hash }) {
   const { __ } = useTranslator();
@@ -15,10 +15,10 @@ export default function FiltersPopover({ filters, state, onFilter, route, compon
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="gap-2 relative">
+        <Button variant="outline" size="icon" className="relative gap-2">
           <Filter className="h-4 w-4" />
           {!!activeFiltersCount && (
-            <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-5 w-5 rounded-full absolute -top-2 -right-2">
+            <Badge variant="secondary" className="absolute -right-2 -top-2 ml-1 h-5 w-5 rounded-full px-1 py-0 text-xs">
               {activeFiltersCount}
             </Badge>
           )}
@@ -36,7 +36,7 @@ export default function FiltersPopover({ filters, state, onFilter, route, compon
           <div className="space-y-3">
             {filters.map((filter) => (
               <div key={filter.name}>
-                <label className="text-sm font-medium mb-2 block">{filter.label}</label>
+                {/*<label className="mb-2 block text-sm font-medium">{filter.label}</label>*/}
                 {{
                   select: renderSelectFilter,
                   'date-range': renderDateRangeFilter,
@@ -44,6 +44,7 @@ export default function FiltersPopover({ filters, state, onFilter, route, compon
                   // Add more filter types here
                 }[filter.type]?.({
                   filter,
+                  label: filter.label,
                   state: state?.[filter.name] || null,
                   onChange: (value) => {
                     onFilter({ ...state, [filter.name]: value });
@@ -61,9 +62,10 @@ export default function FiltersPopover({ filters, state, onFilter, route, compon
   );
 }
 
-function renderSelectFilter({ filter, state, onChange, route, component, hash }) {
+function renderSelectFilter({ filter, label, state, onChange, route, component, hash }) {
   return (
-    <Select
+    <SelectFilter
+      label={label}
       options={filter.options}
       value={state}
       onChange={onChange}
@@ -73,19 +75,18 @@ function renderSelectFilter({ filter, state, onChange, route, component, hash })
       component={component}
       hash={hash}
       filterName={filter.name}
-      relationshipName={filter.relationshipName}
-      relationshipTitleColumn={filter.relationshipTitleColumn}
     />
   );
 }
 
-function renderDateRangeFilter({ filter, state, onChange }) {
-  return <DateRangePicker from={state?.from || ''} to={state?.to || ''} onChange={onChange} />;
+function renderDateRangeFilter({ filter, label, state, onChange }) {
+  return <DateRangePicker label={label} from={state?.from || ''} to={state?.to || ''} onChange={onChange} />;
 }
 
-function renderTextFilter({ filter, state, onChange }) {
+function renderTextFilter({ filter, label, state, onChange }) {
   return (
     <TextInput
+      label={label}
       value={state || ''}
       onChange={(value) => onChange(value)}
       placeholder={filter.placeholder || ''}

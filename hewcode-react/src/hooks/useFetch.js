@@ -5,8 +5,8 @@ export default function useFetch() {
   const { hewcode } = usePage().props;
 
   return {
-    fetch: async (url, options = {}) => {
-      return _fetch(url, options, hewcode);
+    fetch: async (url, options = {}, vanilla = false) => {
+      return _fetch(url, options, hewcode, vanilla);
     },
   };
 }
