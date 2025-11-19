@@ -15,6 +15,7 @@ trait InteractsWithActions
         // Check regular actions first
         /** @var Action|null $action */
         $action = collect($this->getMountableActions())
+            ->filter(fn (Action $action) => $action->record($this->record)->isVisible())
             ->first(fn (Action $action) => $action->name === $name);
 
         if (! $action) {

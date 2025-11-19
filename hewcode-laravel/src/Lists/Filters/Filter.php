@@ -3,13 +3,21 @@
 namespace Hewcode\Hewcode\Lists\Filters;
 
 use Closure;
+use Hewcode\Hewcode\Concerns\HasFormSchema;
+use Hewcode\Hewcode\Concerns\HasLabel;
+use Hewcode\Hewcode\Concerns\HasModel;
+use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 
 class Filter extends Component
 {
-    public string $label;
+    use HasFormSchema;
+    use HasLabel;
+    use HasModel;
+    use HasVisibility;
+
     public string $name;
     public string $field;
     public string $type = 'text';
@@ -21,13 +29,6 @@ class Filter extends Component
     public static function make(string $name): static
     {
         return (new static())->name($name);
-    }
-
-    public function label(string $label): static
-    {
-        $this->label = $label;
-
-        return $this;
     }
 
     public function name(string $name): static
@@ -71,7 +72,6 @@ class Filter extends Component
         return $this;
     }
 
-
     public function validate(): void
     {
         if (! empty($this->rules)) {
@@ -90,15 +90,6 @@ class Filter extends Component
     public function filled(): bool
     {
         return $this->resolvedState !== null && $this->resolvedState !== '';
-    }
-
-    public function toData(): array
-    {
-        return [
-            'label' => $this->label,
-            'name' => $this->name,
-            'type' => $this->type,
-        ];
     }
 
     /**

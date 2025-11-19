@@ -13,6 +13,8 @@
     - [Custom Fill Logic](#custom-fill-logic)
     - [Conditional Fields](#conditional-fields)
     - [Relationships](#relationships)
+    - [Custom Footer Actions](#custom-footer-actions)
+    - [Field State Transformation](#field-state-transformation)
 - [Complete Real-World Example](#complete-real-world-example)
 - [Reference](#reference)
     - [Available Field Types](#reference-available-field-types)
@@ -191,6 +193,21 @@ Date and time selection:
 ```php
 Forms\Schema\DateTimePicker::make('published_at')
     ->label('Published At')
+```
+
+Configure which components to show:
+
+```php
+// Date only
+Forms\Schema\DateTimePicker::make('birth_date')
+    ->time(false)
+
+// Time only
+Forms\Schema\DateTimePicker::make('meeting_time')
+    ->date(false)
+
+// Both date and time (default)
+Forms\Schema\DateTimePicker::make('published_at')
 ```
 
 <a name="validation"></a>
@@ -386,6 +403,152 @@ Forms\Schema\Select::make('tags')
     ->preload()
 ```
 
+**Custom query modification:**
+
+Modify the relationship query for filtering or scoping:
+
+```php
+Forms\Schema\Select::make('author_id')
+    ->label('Author')
+    ->relationship(
+        relationshipName: 'author',
+        titleColumn: 'name',
+        modifyQueryUsing: fn ($query) => $query->where('active', true)
+    )
+    ->searchable()
+    ->preload()
+```
+
+**How relationship fields save:**
+
+When using `relationship()`, the field automatically handles saving:
+- **BelongsTo**: Uses `associate()` to set the foreign key
+- **BelongsToMany**: Uses `sync()` to update the pivot table
+- For multiple selections, combine with `multiple()` method
+
+<a name="custom-footer-actions"></a>
+### Custom Footer Actions
+
+Add custom action buttons to the form footer alongside the default submit button:
+
+```php
+use Hewcode\Hewcode\Actions;
+
+#[Forms\Expose]
+public function form(): Forms\Form
+{
+    return Forms\Form::make()
+        ->model(Post::class)
+        ->visible()
+        ->schema([
+            Forms\Schema\TextInput::make('title')->required(),
+            Forms\Schema\Textarea::make('content')->required(),
+        ])
+        ->footerActions([
+            Actions\Action::make('save_draft')
+                ->label('Save as Draft')
+                ->color('secondary')
+                ->action(function (array $data, ?Post $record) {
+                    $data['status'] = PostStatus::DRAFT;
+                    if ($record) {
+                        $record->update($data);
+                    } else {
+                        Post::create($data);
+                    }
+                }),
+            Actions\Action::make('publish')
+                ->label('Publish Now')
+                ->color('primary')
+                ->action(function (array $data, ?Post $record) {
+                    $data['status'] = PostStatus::PUBLISHED;
+                    $data['published_at'] = now();
+                    if ($record) {
+                        $record->update($data);
+                    } else {
+                        Post::create($data);
+                    }
+                }),
+        ]);
+}
+```
+
+**Conditional footer actions:**
+
+Show or hide actions based on the current record:
+
+```php
+->footerActions([
+    Actions\Action::make('unpublish')
+        ->label('Unpublish')
+        ->color('warning')
+        ->visible(fn (?Post $record) => $record?->status === PostStatus::PUBLISHED)
+        ->action(fn (Post $record) => $record->update(['status' => PostStatus::DRAFT])),
+])
+```
+
+<a name="field-state-transformation"></a>
+### Field State Transformation
+
+Transform field data when loading from or saving to the database.
+
+**Format when loading (read transformation):**
+
+```php
+Forms\Schema\TextInput::make('price')
+    ->formatStateUsing(fn ($state) => $state ? $state / 100 : null)  // Convert cents to dollars
+```
+
+**Transform when saving (write transformation):**
+
+```php
+Forms\Schema\TextInput::make('price')
+    ->setStateUsing(fn ($state) => $state ? $state * 100 : null)  // Convert dollars to cents
+```
+
+**Prevent saving to database:**
+
+Use `dehydrated(false)` for computed or display-only fields:
+
+```php
+Forms\Schema\TextInput::make('full_name')
+    ->formatStateUsing(fn ($record) => $record->first_name . ' ' . $record->last_name)
+    ->dehydrated(false)  // Don't save this to the database
+```
+
+**Custom save logic:**
+
+Handle complex save scenarios with `saveUsing()`:
+
+```php
+Forms\Schema\Select::make('tags')
+    ->label('Tags')
+    ->options(Tag::pluck('name', 'id')->toArray())
+    ->multiple()
+    ->dehydrated(false)  // Don't try to save as a regular field
+    ->saveUsing(function ($state, $record) {
+        // Custom sync logic
+        $record->tags()->sync($state);
+    })
+```
+
+**Common use cases:**
+
+```php
+// Hash password before saving
+Forms\Schema\TextInput::make('password')
+    ->setStateUsing(fn ($state) => bcrypt($state))
+
+// JSON encode array data
+Forms\Schema\Textarea::make('settings')
+    ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT))
+    ->setStateUsing(fn ($state) => json_decode($state, true))
+
+// Format currency for display
+Forms\Schema\TextInput::make('amount')
+    ->formatStateUsing(fn ($state) => number_format($state / 100, 2))
+    ->setStateUsing(fn ($state) => (int) ($state * 100))
+```
+
 <a name="complete-real-world-example"></a>
 ## Complete Real-World Example
 
@@ -564,6 +727,8 @@ Date and time selection.
 **Methods:**
 - `make(string $name)` - Create field
 - `label(string $label)` - Set label
+- `time(bool $time = true)` - Enable/disable time picker
+- `date(bool $date = true)` - Enable/disable date picker
 - `default(mixed $value)` - Set default value
 - `required()` - Mark as required
 

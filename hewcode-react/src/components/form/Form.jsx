@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useFetch from '../../hooks/useFetch.js';
+import Action from '../Action.jsx';
 import DateTimePicker from '../support/date-time-picker.jsx';
 import TextInput from '../support/text-input.jsx';
 import Textarea from '../support/textarea.jsx';
-import { Button } from '../ui/button.jsx';
 import Select from './select.jsx';
 
 const fieldComponentMap = {
@@ -23,10 +23,10 @@ export default function Form({
   route = null,
   onSuccess = null,
   onError = null,
-  submitButtonLabel = 'Save',
-  showCancel = true,
-  onCancel = null,
-  recordId = null,
+  onFinish = null,
+  onChange = null,
+  footerActions = null,
+  additionalFooterActions = (state) => [],
 }) {
   const [formData, setFormData] = useState(() => {
     const initial = {};
@@ -39,6 +39,14 @@ export default function Form({
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { fetch } = useFetch();
+
+  useEffect(() => {
+    const updatedData = {};
+    fields.forEach((field) => {
+      updatedData[field.name] = state[field.name] ?? field.default ?? '';
+    });
+    setFormData(updatedData);
+  }, [state]);
 
   const handleFieldChange = (fieldName, value) => {
     setFormData((prev) => ({
@@ -53,48 +61,13 @@ export default function Form({
         return newErrors;
       });
     }
-  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    setIsSubmitting(true);
-
-    fetch('/_hewcode', {
-      method: 'POST',
-      body: {
-        route,
-        component,
-        hash,
-        context: {
-          recordId: recordId?.toString(),
-        },
-        call: {
-          name: 'mountAction',
-          params: {
-            name: 'submit',
-            args: {
-              data: formData,
-            },
-          },
-        },
-      },
-      onSuccess: () => {
-        if (onSuccess) {
-          onSuccess(formData);
-        }
-      },
-      onError: (serverErrors) => {
-        // Server returns validation errors
-        setErrors(serverErrors);
-        if (onError) {
-          onError(serverErrors);
-        }
-      },
-      onFinish: () => {
-        setIsSubmitting(false);
-      },
-    });
+    if (onChange) {
+      onChange({
+        ...formData,
+        [fieldName]: value,
+      });
+    }
   };
 
   const renderField = ({ attributes, name, type, ...field }) => {
@@ -124,19 +97,45 @@ export default function Form({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form className="space-y-6">
       <div className="space-y-4">{fields.map((field) => renderField(field))}</div>
 
-      <div className="flex justify-end gap-2">
-        {showCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
-          </Button>
-        )}
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : submitButtonLabel}
-        </Button>
-      </div>
+      {footerActions?.length > 0 && (
+        <div className="flex justify-end gap-2">
+          {footerActions.map((action) => (
+            <Action
+              key={action.name}
+              onStart={() => setIsSubmitting(true)}
+              onSuccess={() => {
+                if (onSuccess) {
+                  onSuccess(action, formData);
+                }
+              }}
+              onError={(serverErrors) => {
+                if (action.name === 'submit') {
+                  setErrors(serverErrors);
+                }
+
+                if (onError) {
+                  onError(action, serverErrors, formData);
+                }
+              }}
+              onFinish={() => {
+                if (action.name === 'submit') {
+                  setIsSubmitting(false);
+                }
+
+                if (onFinish) {
+                  onFinish(action, formData);
+                }
+              }}
+              {...action}
+              additionalArgs={{ data: formData }}
+            />
+          ))}
+        </div>
+      )}
+      {additionalFooterActions(formData)}
     </form>
   );
 }

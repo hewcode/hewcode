@@ -21,6 +21,12 @@ return [
         'bulk_select' => 'Bulk Select',
         'confirm' => 'Confirm',
         'cancel' => 'Cancel',
+        'from' => 'From',
+        'to' => 'To',
+        'from_label' => 'From ":label"',
+        'to_label' => 'To ":label"',
+        'loading' => 'Loading...',
+        'apply_filters' => 'Apply Filters',
     ],
 
     'confirmation' => [

@@ -2,12 +2,29 @@
 
 namespace Hewcode\Hewcode\Lists\Filters;
 
+use Hewcode\Hewcode\Forms;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 
 class DateRangeFilter extends Filter
 {
     public string $type = 'date-range';
+
+    public function getFormSchema(): array
+    {
+        return [
+            Forms\Schema\DateTimePicker::make('from')
+                ->label(__('hewcode::hewcode.common.from_label', [
+                    'label' => $this->getLabel(),
+                ]))
+                ->time(false),
+            Forms\Schema\DateTimePicker::make('to')
+                ->label(__('hewcode::hewcode.common.to_label', [
+                    'label' => $this->getLabel(),
+                ]))
+                ->time(false),
+        ];
+    }
 
     public function modifyQuery(Builder|\Illuminate\Database\Eloquent\Builder $query, mixed $value): void
     {
@@ -52,16 +69,6 @@ class DateRangeFilter extends Filter
 
             return true;
         });
-    }
-
-    public function toData(): array
-    {
-        $state = $this->getState();
-
-        return array_merge(parent::toData(), [
-            'from' => $state['from'] ?? '',
-            'to' => $state['to'] ?? '',
-        ]);
     }
 }
 

@@ -11,6 +11,7 @@ use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Forms\Form;
 use Hewcode\Hewcode\Lists\Drivers\EloquentDriver;
 use Hewcode\Hewcode\Lists\Drivers\IterableDriver;
 use Hewcode\Hewcode\Lists\Drivers\ListingDriver;
@@ -59,6 +60,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     public int $perPage = 15;
     protected ?Closure $bgColorUsing = null;
     protected ?string $reorderableColumn = null;
+    protected bool $deferFiltering = false;
 
     // URL persistence settings
     protected bool $persistFiltersInUrl = false;
@@ -73,6 +75,8 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
     protected bool $persistSearchInSession = false;
     protected bool $persistTabInSession = false;
     protected ?string $sessionKey = null;
+
+    public array $filtersState = [];
 
     public static function make(): self
     {
@@ -316,6 +320,13 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         return $this;
     }
 
+    public function deferFiltering(bool $defer = true): self
+    {
+        $this->deferFiltering = $defer;
+
+        return $this;
+    }
+
     /** @return array<Column> */
     protected function getEvaluationParameters(): array
     {
@@ -419,6 +430,16 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         return $requestValue ?? ($shouldPersistInSession ? $this->getFromSession($key, $default) : $default);
     }
 
+    /** @return array<Filter> */
+    private function getFilters(): array
+    {
+        return collect($this->filters)
+            ->map(fn (Filter $filter) => $filter->model($this->getModel()))
+            ->filter(fn (Filter $filter) => $filter->isVisible())
+            ->values()
+            ->all();
+    }
+
     private function prepareData(): void
     {
         if (!isset($this->driver)) {
@@ -439,12 +460,20 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         // Pre-resolve filter values using session-aware logic
         $resolvedFilterValues = $this->getRequestOrSession('filter', []);
 
+        $filters = $this->getFilters();
+        $this->filtersState = $resolvedFilterValues ?? [];
+
         // Call resolveState on each filter to set up their resolved state
-        foreach ($this->filters as $filter) {
+        foreach ($filters as $filter) {
             $filter->resolveState($resolvedFilterValues ?? []);
+            $this->filtersState[$filter->name] = $filter->getState();
         }
 
-        $this->driver->applyFilters($this->filters);
+        if (request('clear') === 'filters') {
+            $this->filtersState = [];
+        }
+
+        $this->driver->applyFilters($filters);
 
         $sortableFields = $visibleColumns
             ->filter(fn (Column $column) => $column->isSortable())
@@ -529,9 +558,8 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
                     if (!empty($visibleActions)) {
                         $data['_row_actions'] = array_reduce($visibleActions, function ($carry, Action $action) use ($record) {
-                            $carry[$action->name] = array_merge($action->component($this->component)->toData(), [
-                                'recordId' => $record->getKey(),
-                            ]);
+                            $carry[$action->name] = $action->component($this->component)->toData();
+
                             return $carry;
                         }, []);
                     }
@@ -563,9 +591,8 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
                 ];
             }, $this->columns),
             'sortable' => array_values($sortableFields),
-            'filters' => array_map(function (Filter $filter) {
-                return $filter->toData();
-            }, $this->filters),
+            'deferFiltering' => $this->deferFiltering,
+            'filtersForm' => $this->filtersForm()->toData(),
             'tabs' => array_map(function (Tab $tab) {
                 return $tab->toData();
             }, $this->tabs),
@@ -575,13 +602,6 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
                 'persistSortInUrl' => $this->persistSortInUrl,
                 'persistColumnsInUrl' => $this->persistColumnsInUrl,
                 'persistSearchInUrl' => $this->persistSearchInUrl,
-            ],
-            'sessionPersistence' => [
-                'persistFiltersInSession' => $this->persistFiltersInSession,
-                'persistSortInSession' => $this->persistSortInSession,
-                'persistColumnsInSession' => $this->persistColumnsInSession,
-                'persistSearchInSession' => $this->persistSearchInSession,
-                'sessionKey' => $this->getSessionKey(),
             ],
             'currentValues' => ([
                 'search' => $this->getRequestOrSession('search'),
@@ -643,7 +663,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
     public function getFilter(string $name): ?Filter
     {
-        foreach ($this->filters as $filter) {
+        foreach ($this->getFilters() as $filter) {
             if ($filter->name === $name) {
                 return $filter;
             }
@@ -661,6 +681,24 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         }
 
         return null;
+    }
+
+    public function filtersForm(): Form
+    {
+        return Form::make()
+            ->component('filtersForm')
+            ->model($this->getModel())
+            ->visible($this->visible)
+            ->fillUsing(fn () => $this->filtersState)
+            ->schema(
+                collect($this->getFilters())
+                    ->map(fn (Filter $filter) => $filter->getFormSchema())
+                    ->filter()
+                    ->flatten()
+                    ->values()
+                    ->all()
+            )
+            ->submitAction(fn (Action $action) => $action->hidden());
     }
 
     #[Expose]

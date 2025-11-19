@@ -29,7 +29,8 @@ const DataTable = ({
   searchPlaceholder,
   headerActions = [],
   sortable = [],
-  filters = null,
+  filtersForm = null,
+  deferFiltering = false,
   tabs = [],
   activeTab = null,
   onSearch,
@@ -464,14 +465,15 @@ const DataTable = ({
         </svg>
       )}
 
-      {((showSearch || showActions || filters || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && (
+      {((showSearch || showActions || filtersForm || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && (
         <TableHeader
           showSearch={showSearch}
           showFilter={showFilter}
           showActions={showActions}
           searchPlaceholder={searchPlaceholder}
-          filters={filters}
           filterState={filterState}
+          filtersForm={filtersForm}
+          deferFiltering={deferFiltering}
           tabs={tabs}
           activeTab={activeTab}
           onSearch={onSearch}

@@ -3,36 +3,36 @@
 namespace Hewcode\Hewcode\Forms\Schema;
 
 use Closure;
-use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Concerns\HasDefault;
+use Hewcode\Hewcode\Concerns\HasLabel;
+use Hewcode\Hewcode\Concerns\HasModel;
+use Hewcode\Hewcode\Concerns\HasPlaceholder;
 use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\InteractsWithRecord;
 use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Hewcode\Hewcode\Forms\Schema\Concerns\HasValidationRules;
 use Hewcode\Hewcode\Support\Component;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
-use function Hewcode\Hewcode\generateFieldLabel;
-use function Hewcode\Hewcode\resolveLocaleLabel;
 
 abstract class Field extends Component implements WithVisibility, HasRecord
 {
+    use HasLabel;
+    use HasPlaceholder;
+    use HasDefault;
+    use HasModel;
     use HasVisibility;
     use HasValidationRules;
-    use EvaluatesClosures;
     use InteractsWithRecord;
 
     protected string $name;
-    protected ?string $label = null;
-    protected ?string $placeholder = null;
-    protected mixed $default = null;
-    protected ?Model $model = null;
+    protected bool $dehydrated = true;
     protected ?Closure $formatStateUsing = null;
+    protected ?Closure $dehydrateStateUsing = null;
+    protected ?Closure $saveUsing = null;
 
     public function __construct(string $name)
     {
         $this->name = $name;
-        $this->label = generateFieldLabel($name);
 
         $this->setUp();
     }
@@ -47,30 +47,9 @@ abstract class Field extends Component implements WithVisibility, HasRecord
         return new static($name);
     }
 
-    public function label(string $label): static
+    public function dehydrated(bool $dehydrated = true): static
     {
-        $this->label = $label;
-
-        return $this;
-    }
-
-    public function placeholder(string $placeholder): static
-    {
-        $this->placeholder = $placeholder;
-
-        return $this;
-    }
-
-    public function default(mixed $value): static
-    {
-        $this->default = $value;
-
-        return $this;
-    }
-
-    public function model(?Model $model): static
-    {
-        $this->model = $model;
+        $this->dehydrated = $dehydrated;
 
         return $this;
     }
@@ -82,22 +61,23 @@ abstract class Field extends Component implements WithVisibility, HasRecord
         return $this;
     }
 
+    public function setStateUsing(Closure $callback): static
+    {
+        $this->dehydrateStateUsing = $callback;
+
+        return $this;
+    }
+
+    public function saveUsing(Closure $callback): static
+    {
+        $this->saveUsing = $callback;
+
+        return $this;
+    }
+
     public function getName(): string
     {
         return $this->name;
-    }
-
-    public function getLabel(): string
-    {
-        if ($this->label) {
-            return $this->label;
-        }
-
-        if ($this->model) {
-            return resolveLocaleLabel($this->name, $this->model);
-        }
-
-        return Str::headline($this->name);
     }
 
     public function getPlaceholder(): ?string
@@ -105,9 +85,9 @@ abstract class Field extends Component implements WithVisibility, HasRecord
         return $this->placeholder;
     }
 
-    public function getDefault(): mixed
+    public function getDehydrated(): bool
     {
-        return $this->default;
+        return $this->dehydrated;
     }
 
     public function formatState(mixed $state): mixed
@@ -117,6 +97,34 @@ abstract class Field extends Component implements WithVisibility, HasRecord
         }
 
         return $state;
+    }
+
+    public function dehydrateState(mixed $state, array $data, array $params): mixed
+    {
+        if (! $this->dehydrated) {
+            return $state;
+        }
+
+        if ($this->dehydrateStateUsing) {
+            return $this->evaluate($this->dehydrateStateUsing, array_merge([
+                'state' => $state,
+                'data' => $data,
+            ], $params));
+        }
+
+        return $state;
+    }
+
+    public function saveState(mixed $state, array $data): void
+    {
+        if (! $this->saveUsing) {
+            return;
+        }
+
+        $this->evaluate($this->saveUsing, [
+            'state' => $state,
+            'data' => $data,
+        ]);
     }
 
     /**
@@ -140,10 +148,10 @@ abstract class Field extends Component implements WithVisibility, HasRecord
     {
         return array_merge([
             'type' => $this->getFieldType(),
-            'name' => $this->name,
+            'name' => $this->getName(),
             'label' => $this->getLabel(),
-            'placeholder' => $this->placeholder,
-            'default' => $this->default,
+            'placeholder' => $this->getPlaceholder(),
+            'default' => $this->getDefault(),
             'required' => $this->isRequired(),
         ], $this->getFieldSpecificData());
     }

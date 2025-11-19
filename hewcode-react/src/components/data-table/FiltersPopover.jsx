@@ -1,14 +1,12 @@
 import { Filter } from 'lucide-react';
 import useTranslator from '../../hooks/useTranslator.js';
+import Form from '../form/Form.jsx';
 import CompactButton from '../support/compact-button.jsx';
-import DateRangePicker from '../support/date-range-picker.jsx';
-import TextInput from '../support/text-input.jsx';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
-import SelectFilter from './SelectFilter.jsx';
 
-export default function FiltersPopover({ filters, state, onFilter, route, component, hash }) {
+export default function FiltersPopover({ deferFiltering, state, onFilter, filtersForm }) {
   const { __ } = useTranslator();
   const activeFiltersCount = Object.entries(state || {}).filter(([_, value]) => value !== null && value !== '').length;
 
@@ -34,66 +32,33 @@ export default function FiltersPopover({ filters, state, onFilter, route, compon
           </div>
 
           <div className="space-y-3">
-            {filters.map((filter) => (
-              <div key={filter.name}>
-                {/*<label className="mb-2 block text-sm font-medium">{filter.label}</label>*/}
-                {{
-                  select: renderSelectFilter,
-                  'date-range': renderDateRangeFilter,
-                  text: renderTextFilter,
-                  // Add more filter types here
-                }[filter.type]?.({
-                  filter,
-                  label: filter.label,
-                  state: state?.[filter.name] || null,
-                  onChange: (value) => {
-                    onFilter({ ...state, [filter.name]: value });
-                  },
-                  route,
-                  component,
-                  hash,
-                })}
-              </div>
-            ))}
+            <Form
+              {...filtersForm}
+              onChange={(newState) => {
+                if (deferFiltering) return;
+
+                onFilter(newState);
+              }}
+              additionalFooterActions={(state) =>
+                [
+                  deferFiltering && (
+                    <Button
+                      key="apply-filters"
+                      type="button"
+                      variant={'default'}
+                      onClick={() => {
+                        onFilter(state);
+                      }}
+                    >
+                      {__('hewcode.common.apply_filters')}
+                    </Button>
+                  ),
+                ].filter(Boolean)
+              }
+            />
           </div>
         </div>
       </PopoverContent>
     </Popover>
-  );
-}
-
-function renderSelectFilter({ filter, label, state, onChange, route, component, hash }) {
-  return (
-    <SelectFilter
-      label={label}
-      options={filter.options}
-      value={state}
-      onChange={onChange}
-      multiple={filter.multiple}
-      searchable={filter.searchable}
-      route={route}
-      component={component}
-      hash={hash}
-      filterName={filter.name}
-    />
-  );
-}
-
-function renderDateRangeFilter({ filter, label, state, onChange }) {
-  return <DateRangePicker label={label} from={state?.from || ''} to={state?.to || ''} onChange={onChange} />;
-}
-
-function renderTextFilter({ filter, label, state, onChange }) {
-  return (
-    <TextInput
-      label={label}
-      value={state || ''}
-      onChange={(value) => onChange(value)}
-      placeholder={filter.placeholder || ''}
-      className="w-full"
-      autoComplete="off"
-      spellCheck="false"
-      type="text"
-    />
   );
 }

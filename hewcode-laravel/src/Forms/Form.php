@@ -164,6 +164,18 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
                 $this->getFields()
             ),
             'state' => $this->state,
+            'footerActions' => collect($this->getFooterActions())
+                ->filter(fn (Action $action) => $action
+                    ->component($this->component)
+                    ->record($this->getRecord())
+                    ->args([
+                        'data' => $this
+                    ])
+                    ->isVisible()
+                )
+                ->map(fn (Action $action) => $action->toData())
+                ->values()
+                ->toArray(),
         ];
     }
 
@@ -178,13 +190,21 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
 
     protected function submit(array $data): void
     {
-        $this->getFields();
+        $fields = $this->getFields();
 
         $this->state = $data;
 
         $state = $this->getState();
 
-        DB::transaction(function () use ($state) {
+        DB::transaction(function () use ($state, $fields) {
+            foreach ($fields as $field) {
+                if (! $field->getDehydrated()) {
+                    continue;
+                }
+
+                $state[$field->getName()] = $field->dehydrateState($state[$field->getName()] ?? null, $state, []);
+            }
+
             if ($this->submitUsing) {
                 $this->evaluate($this->submitUsing, [
                     'data' => $state,
@@ -195,10 +215,15 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
                     throw new RuntimeException('Either define a submitUsing handler or use an Eloquent model.');
                 }
 
-                if ($this->record instanceof Model && $this->record->exists) {
-                    $this->record->update($state);
-                } else {
-                    $this->model::create($state);
+                $record = $this->record instanceof Model && $this->record->exists
+                    ? $this->record
+                    : $this->model->newInstance();
+
+                $record->fill($state);
+                $record->save();
+
+                foreach ($fields as $field) {
+                    $field->saveState($state[$field->getName()] ?? null, $state);
                 }
             }
         });

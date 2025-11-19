@@ -1,11 +1,11 @@
 import { router } from '@inertiajs/react';
-import { Search, ArrowUpDown, ListChecks } from 'lucide-react';
+import { ArrowUpDown, ListChecks, Search } from 'lucide-react';
 import { useState } from 'react';
 import { throttle } from 'throttle-debounce';
 import useTranslator from '../../hooks/useTranslator.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
-import { Input } from '../ui/input.jsx';
 import { Button } from '../ui/button.jsx';
+import { Input } from '../ui/input.jsx';
 import ColumnsPopover from './ColumnsPopover.jsx';
 import FiltersPopover from './FiltersPopover.jsx';
 import TabsActions from './TabsActions.jsx';
@@ -29,8 +29,9 @@ const TableHeader = ({
   onFilter,
   onTab,
   filterState,
+  filtersForm,
+  deferFiltering,
   headerActions = [],
-  filters = [],
   tabs = [],
   activeTab = null,
   allColumns = [],
@@ -50,9 +51,6 @@ const TableHeader = ({
     filter: {},
     columns: {},
   },
-  component,
-  hash,
-  route,
   reorderable = null,
   isReordering = false,
   onToggleReordering = null,
@@ -88,8 +86,8 @@ const TableHeader = ({
             />
           </div>
         )}
-        {showFilter && filters.length > 0 && (
-          <FiltersPopover filters={filters} state={filterState} onFilter={onFilter} route={route} component={component} hash={hash} />
+        {showFilter && filtersForm && (
+          <FiltersPopover state={filterState} onFilter={onFilter} deferFiltering={deferFiltering} filtersForm={filtersForm} />
         )}
         {allColumns.some((col) => col.togglable) && (
           <ColumnsPopover
@@ -122,9 +120,8 @@ const TableHeader = ({
           </Button>
         )}
         {/*separator between above items and the tabs when needed*/}
-        {(showSearch || (showFilter && filters.length > 0) || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && tabs.length > 0 && (
-          <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />
-        )}
+        {(showSearch || (showFilter && filtersForm) || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) &&
+          tabs.length > 0 && <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />}
         {tabs.length > 0 && <TabsActions tabs={tabs} activeTab={activeTab} onTabChange={onTab} />}
       </div>
       {showActions && headerActions.length > 0 && <div className="flex items-center space-x-2">{headerActions}</div>}

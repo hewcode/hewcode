@@ -2,6 +2,7 @@
 
 namespace Hewcode\Hewcode\Actions;
 
+use Hewcode\Hewcode\Concerns\HasLabel;
 use Hewcode\Hewcode\Concerns\InteractsWithRecord;
 use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
@@ -9,19 +10,24 @@ use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Closure;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use function Hewcode\Hewcode\generateComponentHash;
 
 class Action implements Discoverable, HasRecord, WithVisibility
 {
-    use InteractsWithRecord, HasVisibility, EvaluatesClosures;
+    use InteractsWithRecord;
+    use HasVisibility;
+    use EvaluatesClosures;
+    use HasLabel;
 
     public ?string $component = null;
     public string $name;
-    public string $label;
     public string $color = 'primary';
     public ?Closure $action = null;
     public bool|Closure $requiresConfirmation = false;
+    public array $context = [];
+    public array|Closure $args = [];
 
     public static function make(string $name): static
     {
@@ -39,13 +45,6 @@ class Action implements Discoverable, HasRecord, WithVisibility
     {
         $this->name = $name;
         $this->label ??= ucfirst($name);
-
-        return $this;
-    }
-
-    public function label(string $label): static
-    {
-        $this->label = $label;
 
         return $this;
     }
@@ -71,9 +70,21 @@ class Action implements Discoverable, HasRecord, WithVisibility
         return $this;
     }
 
+    public function args(array|Closure $args): static
+    {
+        $this->args = $args;
+
+        return $this;
+    }
+
     public function getRequiresConfirmation(): bool
     {
         return $this->evaluate($this->requiresConfirmation);
+    }
+
+    public function getArgs(): array
+    {
+        return $this->evaluate($this->args);
     }
 
     public function execute(array $args = []): mixed
@@ -99,14 +110,24 @@ class Action implements Discoverable, HasRecord, WithVisibility
 
     public function toData(): array
     {
+        $context = $this->context;
+
+        if ($this->record) {
+            $context['recordId'] = $this->record instanceof Model
+                ? (string) $this->record->getKey()
+                : null;
+        }
+
         return [
             'component' => $this->component,
             'route' => Route::currentRouteName(),
             'name' => $this->name,
-            'label' => $this->label,
+            'label' => $this->getLabel(),
             'color' => $this->color,
             'hash' => generateComponentHash($this->component, Route::currentRouteName()),
             'requiresConfirmation' => $this->getRequiresConfirmation(),
+            'context' => $context,
+            'args' => $this->getArgs(),
         ];
     }
 }

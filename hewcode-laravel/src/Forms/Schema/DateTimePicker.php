@@ -4,8 +4,8 @@ namespace Hewcode\Hewcode\Forms\Schema;
 
 class DateTimePicker extends Field
 {
-    protected bool $withTime = true;
-    protected bool $withDate = true;
+    protected bool $time = true;
+    protected bool $date = true;
     protected ?string $format = null;
 
     protected function setUp(): void
@@ -17,11 +17,11 @@ class DateTimePicker extends Field
                 return null;
             }
 
-            if ($this->withDate && $this->withTime) {
+            if ($this->date && $this->time) {
                 return date('Y-m-d H:i:s', strtotime($state));
             }
 
-            if ($this->withTime) {
+            if ($this->time) {
                 return date('H:i:s', strtotime($state));
             }
 
@@ -29,15 +29,16 @@ class DateTimePicker extends Field
         });
     }
 
-    public function withTime(bool $withTime = true): static
+    public function time(bool $time = true): static
     {
-        $this->withTime = $withTime;
+        $this->time = $time;
+
         return $this;
     }
 
-    public function withDate(bool $withDate = true): static
+    public function date(bool $date = true): static
     {
-        $this->withDate = $withDate;
+        $this->date = $date;
         return $this;
     }
 
@@ -50,8 +51,8 @@ class DateTimePicker extends Field
     protected function getFieldType(): string
     {
         return match (true) {
-            $this->withTime && $this->withDate => 'datetime-picker',
-            $this->withTime => 'time-picker',
+            $this->time && $this->date => 'datetime-picker',
+            $this->time => 'time-picker',
             default => 'date-picker',
         };
     }
@@ -59,8 +60,8 @@ class DateTimePicker extends Field
     protected function getFieldSpecificData(): array
     {
         return [
-            'withTime' => $this->withTime,
-            'withDate' => $this->withDate,
+            'time' => $this->time,
+            'date' => $this->date,
             'format' => $this->format,
         ];
     }

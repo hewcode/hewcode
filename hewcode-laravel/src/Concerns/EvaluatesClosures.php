@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Concerns;
 
 use Closure;
+use Hewcode\Hewcode\Contracts\HasRecord;
 
 trait EvaluatesClosures
 {
@@ -21,6 +22,10 @@ trait EvaluatesClosures
         $parameters = array_merge($globalParameters, $additionalParameters);
 
         $parameters['component'] = $this;
+
+        if ($this instanceof HasRecord) {
+            $parameters['record'] = $this->getRecord();
+        }
 
         return app()->call($callback, $parameters);
     }

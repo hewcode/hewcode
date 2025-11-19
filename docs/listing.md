@@ -10,6 +10,7 @@
     - [Default Sorting](#default-sorting)
     - [Pagination](#pagination)
     - [Filters](#filters)
+    - [Deferred Filtering](#deferred-filtering)
 - [Common Patterns](#common-patterns)
 - [Advanced Features](#advanced-features)
     - [Tabs](#tabs)
@@ -248,6 +249,70 @@ use Hewcode\Hewcode\Lists\Filters;
 - `DateRangeFilter` - Start and end date picker
 
 Filters automatically apply to your query based on user selections.
+
+**Relationship filters:**
+
+Load filter options from relationships with search support:
+
+```php
+Lists\Filters\SelectFilter::make('category')
+    ->label('Category')
+    ->field('category_id')
+    ->relationship('category', 'name')  // Load from category relationship
+    ->searchable()
+    ->multiple()
+    ->preload()  // Load first 25 options immediately
+```
+
+This works identically to form relationship fields, including:
+- Automatic option loading from the related model
+- Real-time search as users type
+- Custom query modification for scoping
+
+**Custom relationship query:**
+
+```php
+Lists\Filters\SelectFilter::make('author')
+    ->label('Author')
+    ->field('author_id')
+    ->relationship(
+        relationshipName: 'author',
+        titleColumn: 'name',
+        modifyQueryUsing: fn ($query) => $query->where('active', true)
+    )
+    ->searchable()
+    ->preload()
+```
+
+<a name="deferred-filtering"></a>
+### Deferred Filtering
+
+By default, filters apply immediately as users change them. For complex queries or large datasets, you may want to defer filter application until the user explicitly clicks "Apply Filters":
+
+```php
+->filters([
+    Lists\Filters\SelectFilter::make('status')
+        ->label('Status')
+        ->options(PostStatus::class),
+    Lists\Filters\SelectFilter::make('category')
+        ->label('Category')
+        ->field('category_id')
+        ->options(Category::pluck('name', 'id')->toArray()),
+])
+->deferFiltering()  // Add "Apply Filters" button
+```
+
+**When to use deferred filtering:**
+- Complex queries that take time to execute
+- Multiple filters that users typically change together
+- Preventing unnecessary queries while users adjust filters
+- Large datasets where filtering is expensive
+
+**How it works:**
+- Users can adjust multiple filters without triggering queries
+- An "Apply Filters" button appears in the filter panel
+- A loading state shows while filters are being applied
+- The table updates only when the user clicks "Apply Filters"
 
 <a name="common-patterns"></a>
 ## Common Patterns
