@@ -7,6 +7,7 @@ class DateTimePicker extends Field
     protected bool $time = true;
     protected bool $date = true;
     protected ?string $format = null;
+    protected bool $native = true;
 
     protected function setUp(): void
     {
@@ -48,6 +49,12 @@ class DateTimePicker extends Field
         return $this;
     }
 
+    public function native(bool $native = true): static
+    {
+        $this->native = $native;
+        return $this;
+    }
+
     protected function getFieldType(): string
     {
         return match (true) {
@@ -63,6 +70,7 @@ class DateTimePicker extends Field
             'time' => $this->time,
             'date' => $this->date,
             'format' => $this->format,
+            'native' => $this->native,
         ];
     }
 }

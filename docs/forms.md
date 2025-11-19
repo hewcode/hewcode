@@ -210,6 +210,15 @@ Forms\Schema\DateTimePicker::make('meeting_time')
 Forms\Schema\DateTimePicker::make('published_at')
 ```
 
+Use custom calendar picker instead of native browser input:
+
+```php
+Forms\Schema\DateTimePicker::make('published_at')
+    ->native(false)  // Custom calendar/time picker with popover
+```
+
+The custom picker provides a consistent UI across all browsers using a calendar popover and time inputs.
+
 <a name="validation"></a>
 ### Validation
 
@@ -729,6 +738,7 @@ Date and time selection.
 - `label(string $label)` - Set label
 - `time(bool $time = true)` - Enable/disable time picker
 - `date(bool $date = true)` - Enable/disable date picker
+- `native(bool $native = true)` - Use native browser input (true) or custom picker (false)
 - `default(mixed $value)` - Set default value
 - `required()` - Mark as required
 
