@@ -39,16 +39,22 @@ class Toast
 
     public function danger(): static
     {
-        return $this->type('error');
+        return $this->error();
     }
 
     public function error(): static
     {
+        $this->title ??= __('hewcode::toasts.error.title');
+        $this->message ??= __('hewcode::toasts.error.message');
+
         return $this->type('error');
     }
 
     public function success(): static
     {
+        $this->title ??= __('hewcode::toasts.success.title');
+        $this->message ??= __('hewcode::toasts.success.message');
+
         return $this->type('success');
     }
 

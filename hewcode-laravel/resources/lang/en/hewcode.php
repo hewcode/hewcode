@@ -34,4 +34,15 @@ return [
         'this_action_cannot_be_undone' => 'This action cannot be undone.',
     ],
 
+    'toasts' => [
+        'success' => [
+            'title' => 'Operation Successful',
+            'message' => 'The operation was completed successfully.',
+        ],
+        'error' => [
+            'title' => 'Operation Failed',
+            'message' => 'There was an error completing the operation.',
+        ],
+    ],
+
 ];
