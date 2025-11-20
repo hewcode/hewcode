@@ -1,10 +1,12 @@
 import { toast } from 'sonner';
-import useTranslator from './use-translator.js';
+import useTranslator from './useTranslator.js';
 
 export default function useToastManager() {
   const { __ } = useTranslator();
 
   const toastManager = {
+    toast,
+
     success: (message = __('app.toasts.success')) => {
       toast.success(message);
     },
@@ -39,7 +41,7 @@ export default function useToastManager() {
         default:
           toast(description);
       }
-    }
+    },
   };
 
   return toastManager;

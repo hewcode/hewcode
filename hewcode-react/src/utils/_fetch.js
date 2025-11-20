@@ -1,14 +1,15 @@
 import { router } from '@inertiajs/react';
+import fireToasts from '../utils/fire-toasts.js';
 
 /**
  * Wrapper around fetch to handle common tasks like setting headers, parsing JSON, and error handling.
  */
-export default async function _fetch(url, options = {}, hewcode, vanilla = false) {
+export default async function _fetch(url, options = {}, hewcode, vanilla = false, toast) {
   if (vanilla) {
     return fetchJson(url, options, hewcode);
   }
 
-  return fetchWithInertia(url, options, hewcode);
+  return fetchWithInertia(url, options, hewcode, toast);
 }
 
 function fetchJson(url, options, hewcode) {
@@ -43,7 +44,7 @@ function fetchJson(url, options, hewcode) {
     });
 }
 
-function fetchWithInertia(url, options = {}, hewcode) {
+function fetchWithInertia(url, options = {}, hewcode, toast) {
   const inertiaOptions = {
     method: options.method || 'get',
     data: options.body || {},
@@ -52,6 +53,9 @@ function fetchWithInertia(url, options = {}, hewcode) {
       ...(options.headers || {}),
     },
     preserveScroll: true,
+    onSuccess: (page) => {
+      fireToasts(page.props.hewcode.toasts, toast);
+    },
   };
 
   return router.visit(url, inertiaOptions);

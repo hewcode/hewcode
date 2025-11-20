@@ -1,3 +1,4 @@
+import App from '../components/app.jsx';
 import { ModalRenderer } from '../components/modal-renderer';
 import { Toaster } from '../components/ui/sonner';
 import { LocaleProvider } from '../contexts/locale-context';
@@ -9,9 +10,9 @@ export default function HewcodeProvider({ children, ...props }) {
   return (
     <LocaleProvider locale={hewcode.locale}>
       <ModalProvider>
-        {children}
+        <App toasts={hewcode.toasts}>{children}</App>
         <ModalRenderer />
-        <Toaster />
+        <Toaster closeButton richColors />
       </ModalProvider>
     </LocaleProvider>
   );

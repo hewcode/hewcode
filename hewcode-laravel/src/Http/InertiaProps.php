@@ -18,6 +18,7 @@ class InertiaProps implements ProvidesInertiaProperties
                 ],
                 'csrfToken' => csrf_token(),
                 'developerMode' => config('app.debug', false),
+                'toasts' => session()->get('hewcode.toasts', []),
             ],
         ];
     }

@@ -1,7 +1,12 @@
 # Toasts
 
 - [Overview](#overview)
-- [Using Toast Notifications](#using-toast-notifications)
+- [Backend Toasts](#backend-toasts)
+  - [Basic Usage](#basic-usage)
+  - [Toast Types](#backend-toast-types)
+  - [Positioning](#positioning)
+  - [Duration and Dismissibility](#duration-and-dismissibility)
+- [Frontend Toasts](#frontend-toasts)
   - [Toast Types](#toast-types)
   - [Custom Messages](#custom-messages)
   - [Default Messages](#default-messages)
@@ -16,10 +21,152 @@
 <a name="overview"></a>
 ## Overview
 
-Hewcode provides a toast notification system built on top of [Sonner](https://sonner.emilkowal.ski/), offering beautiful, accessible, and easy-to-use notifications. The `useToastManager` hook gives you a simple API to display feedback messages to users.
+Hewcode provides a toast notification system built on top of [Sonner](https://sonner.emilkowal.ski/), offering beautiful, accessible, and easy-to-use notifications. You can trigger toasts from both your Laravel backend and React frontend.
 
-<a name="using-toast-notifications"></a>
-## Using Toast Notifications
+<a name="backend-toasts"></a>
+## Backend Toasts
+
+Trigger toast notifications from your Laravel controllers, actions, or any backend logic using the `Toast` class. Toasts are stored in the session and automatically displayed on the next page render.
+
+<a name="basic-usage"></a>
+### Basic Usage
+
+```php
+use Hewcode\Hewcode\Toasts\Toast;
+
+Toast::make()
+    ->title('Post published successfully')
+    ->success()
+    ->send();
+```
+
+<a name="backend-toast-types"></a>
+### Toast Types
+
+```php
+use Hewcode\Hewcode\Toasts\Toast;
+
+// Success toast
+Toast::make()
+    ->title('Post created successfully')
+    ->success()
+    ->send();
+
+// Error toast
+Toast::make()
+    ->title('Failed to save changes')
+    ->message('Please check your internet connection and try again.')
+    ->error()
+    ->send();
+
+// Warning toast
+Toast::make()
+    ->title('Storage limit approaching')
+    ->warning()
+    ->send();
+
+// Info toast
+Toast::make()
+    ->title('Processing in background')
+    ->message('You will be notified when the export is complete.')
+    ->info()
+    ->send();
+```
+
+Available type methods:
+- `success()` - Green, for completed actions
+- `error()` or `danger()` - Red, for errors and failures
+- `warning()` - Yellow, for caution messages
+- `info()` - Blue, for informational messages
+
+<a name="positioning"></a>
+### Positioning
+
+Control where toasts appear on screen:
+
+```php
+Toast::make()
+    ->title('Notification')
+    ->success()
+    ->topRight()    // Default
+    ->send();
+
+Toast::make()
+    ->title('Notification')
+    ->bottomLeft()
+    ->send();
+```
+
+Available position methods:
+- `topLeft()`
+- `topCenter()`
+- `topRight()` (default)
+- `bottomLeft()`
+- `bottomCenter()`
+- `bottomRight()`
+
+<a name="duration-and-dismissibility"></a>
+### Duration and Dismissibility
+
+```php
+// Custom duration (in milliseconds)
+Toast::make()
+    ->title('Session expiring soon')
+    ->info()
+    ->duration(10000)  // Show for 10 seconds
+    ->send();
+
+// Make non-dismissible
+Toast::make()
+    ->title('Critical error')
+    ->error()
+    ->dismissible(false)
+    ->send();
+```
+
+### Multiple Toasts
+
+You can send multiple toasts from a single request:
+
+```php
+public function processImport()
+{
+    Toast::make()
+        ->title('Import started')
+        ->info()
+        ->send();
+
+    // ... processing logic ...
+
+    Toast::make()
+        ->title('Import completed')
+        ->message('Processed 1,234 records successfully.')
+        ->success()
+        ->send();
+}
+```
+
+### In Actions
+
+Toasts work seamlessly with Hewcode actions:
+
+```php
+use Hewcode\Hewcode\Actions\Action;
+use Hewcode\Hewcode\Toasts\Toast;
+
+Action::make('publish')
+    ->action(function () {
+        // Your logic here
+
+        Toast::make()
+            ->title('Post published')
+            ->success()
+            ->send();
+    })
+```
+
+<a name="frontend-toasts"></a>
+## Frontend Toasts
 
 Import and use the `useToastManager` hook in any component:
 
