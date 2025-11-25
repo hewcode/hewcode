@@ -31,6 +31,15 @@
       ]
     },
     {
+      "title": "Actions",
+      "items": [
+        {
+          "title": "Overview",
+          "path": "actions.md"
+        }
+      ]
+    },
+    {
       "title": "Forms",
       "items": [
         {

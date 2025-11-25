@@ -459,24 +459,59 @@ When reordering is enabled, users can drag rows to reposition them, and the orde
 <a name="row-actions"></a>
 ### Row Actions
 
-Add action buttons that appear on each row:
+Add action buttons that appear on each row, operating on the specific record:
 
 ```php
 use Hewcode\Hewcode\Actions;
+use Hewcode\Hewcode\Forms;
 
 ->actions([
     Actions\Action::make('edit')
         ->label('Edit')
         ->color('primary')
-        ->action(fn ($record) => redirect()->route('posts.edit', $record)),
+        ->visible(fn (Post $record) => auth()->user()->can('update', $record))
+        ->action(fn (Post $record) => redirect()->route('posts.edit', $record)),
+    
+    Actions\Action::make('duplicate')
+        ->label('Duplicate')
+        ->color('secondary')
+        ->action(fn (Post $record) => $record->replicate()->save()),
+    
+    Actions\Action::make('schedule')
+        ->label('Schedule')
+        ->color('warning')
+        ->visible(fn (Post $record) => $record->status === PostStatus::DRAFT)
+        ->form([
+            Forms\Schema\DateTimePicker::make('publish_at')
+                ->label('Publish At')
+                ->required()
+                ->native(false),
+        ])
+        ->action(function (Post $record, array $data) {
+            $record->update([
+                'status' => PostStatus::SCHEDULED,
+                'published_at' => $data['publish_at'],
+            ]);
+        }),
+    
     Actions\Action::make('delete')
         ->label('Delete')
         ->color('danger')
-        ->action(fn ($record) => $record->delete()),
+        ->visible(fn (Post $record) => auth()->user()->can('delete', $record))
+        ->requiresConfirmation()
+        ->confirmationText('Delete this post?')
+        ->confirmationDescription('This action cannot be undone.')
+        ->action(fn (Post $record) => $record->delete()),
 ])
 ```
 
-Actions receive the current record and can perform any operation.
+**Row action features:**
+- **Authorization**: Use `->visible()` with closures for dynamic per-record authorization
+- **Forms**: Collect additional data before executing the action
+- **Confirmation**: Add `->requiresConfirmation()` for destructive actions
+- **Styling**: Use semantic colors (`primary`, `danger`, `warning`, etc.)
+
+Row actions automatically receive the current record as the first parameter, and form data as the second parameter if a form is defined.
 
 <a name="bulk-actions"></a>
 ### Bulk Actions
@@ -485,26 +520,97 @@ Let users select multiple rows and perform batch operations:
 
 ```php
 use Hewcode\Hewcode\Actions;
+use Hewcode\Hewcode\Toasts\Toast;
 use Illuminate\Support\Collection;
 
 ->bulkActions([
-    Actions\BulkAction::make('delete')
-        ->label('Delete Selected')
-        ->color('danger')
-        ->action(fn (Collection $records) => $records->each->delete()),
     Actions\BulkAction::make('publish')
         ->label('Publish Selected')
         ->color('primary')
-        ->action(fn (Collection $records) => 
-            $records->each->update(['status' => PostStatus::PUBLISHED])
-        ),
+        ->action(function (Collection $records) {
+            $count = $records->count();
+            
+            $records->each->update([
+                'status' => PostStatus::PUBLISHED,
+                'published_at' => now(),
+            ]);
+            
+            Toast::make()
+                ->title("Published $count Posts")
+                ->success()
+                ->send();
+        }),
+    
+    Actions\BulkAction::make('delete')
+        ->label('Delete Selected')
+        ->color('danger')
+        ->requiresConfirmation()
+        ->confirmationText('Delete selected posts?')
+        ->confirmationDescription('This action cannot be undone.')
+        ->action(function (Collection $records) {
+            $count = $records->count();
+            $records->each->delete();
+            
+            Toast::make()
+                ->title("Deleted $count Posts")
+                ->success()
+                ->send();
+        }),
+    
     Actions\BulkAction::make('export')
-        ->label('Export to CSV')
-        ->action(fn (Collection $records) => $this->exportToCsv($records)),
+        ->label('Export Selected')
+        ->color('secondary')
+        ->action(function (Collection $records) {
+            $filename = 'posts-export-' . now()->format('Y-m-d') . '.csv';
+            
+            return response()->streamDownload(function () use ($records) {
+                $file = fopen('php://output', 'w');
+                fputcsv($file, ['ID', 'Title', 'Status', 'Created']);
+                
+                foreach ($records as $record) {
+                    fputcsv($file, [
+                        $record->id,
+                        $record->title,
+                        $record->status->value,
+                        $record->created_at->format('Y-m-d'),
+                    ]);
+                }
+                
+                fclose($file);
+            }, $filename);
+        }),
+    
+    Actions\BulkAction::make('change_status')
+        ->label('Change Status')
+        ->color('warning')
+        ->form([
+            Forms\Schema\Select::make('status')
+                ->label('New Status')
+                ->options(PostStatus::class)
+                ->required(),
+        ])
+        ->action(function (Collection $records, array $data) {
+            $count = $records->count();
+            $status = PostStatus::from($data['status']);
+            
+            $records->each->update(['status' => $status]);
+            
+            Toast::make()
+                ->title("Updated $count Posts")
+                ->message("Status changed to {$status->getLabel()}")
+                ->success()
+                ->send();
+        }),
 ])
 ```
 
-Bulk actions receive a Collection of selected records. Users select rows with checkboxes and then choose an action from the bulk actions menu.
+**Bulk action features:**
+- **Selection**: Users select rows with checkboxes, then choose from the bulk actions menu
+- **Form support**: Collect additional data before executing the bulk action
+- **Confirmation**: Add `->requiresConfirmation()` for destructive operations
+- **Feedback**: Use [Toast notifications](toasts.md) to provide feedback about bulk operations
+
+Bulk actions receive a Collection of selected records as the first parameter, and form data as the second parameter if a form is defined. The action executes once with all selected records, making it efficient for batch operations.
 
 <a name="state-persistence"></a>
 ## State Persistence
@@ -776,7 +882,9 @@ class PostController extends Controller
                 ->label('New Post')
                 ->color('primary')
                 ->action(fn () => redirect()->route('posts.create')),
-        ]);
+        ])->visible(auth()->user()?->can('manage-posts') ?? false);
     }
 }
 ```
+
+For more details about standalone actions, see the [Actions documentation](actions.md).
