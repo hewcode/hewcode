@@ -4,11 +4,9 @@ namespace Hewcode\Hewcode\Actions;
 
 class BulkAction extends Action
 {
-    public function name(string $name): static
+    public function name(?string $name = null): static
     {
-        parent::name($name);
-
-        $this->name = 'bulk-' . $this->name;
+        parent::name('bulk-' . $name);
 
         return $this;
     }

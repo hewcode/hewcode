@@ -1,7 +1,7 @@
 import useFetch from '../../hooks/useFetch.js';
 import BaseSelect from '../support/select.jsx';
 
-export default function Select({ route, component, hash, ...props }) {
+export default function Select({ seal, ...props }) {
   const { fetch } = useFetch();
 
   return (
@@ -17,9 +17,7 @@ export default function Select({ route, component, hash, ...props }) {
           {
             method: 'POST',
             body: {
-              route,
-              component,
-              hash,
+              seal,
               call: {
                 name: 'mountComponent',
                 params: ['fields.' + props.name + '.getSearchResults', query],

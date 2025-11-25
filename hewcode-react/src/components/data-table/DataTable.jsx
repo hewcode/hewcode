@@ -6,7 +6,7 @@ import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getContrastColor, getTailwindBadgeClasses, getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
-import Action from '../Action.jsx';
+import Action from '../actions/Action.jsx';
 import Badge from '../support/badge.jsx';
 import { Badge as ShadcnBadge } from '../ui/badge.jsx';
 import { Checkbox } from '../ui/checkbox.jsx';
@@ -57,9 +57,7 @@ const DataTable = ({
     filter: {},
     columns: {},
   },
-  component,
-  hash,
-  route,
+  seal,
   thClassName = '',
   tdClassName = '',
   theadClassName = '',
@@ -400,9 +398,7 @@ const DataTable = ({
     fetch('/_hewcode', {
       method: 'POST',
       body: {
-        route,
-        component,
-        hash,
+        seal,
         call: {
           name: 'mountComponent',
           params: ['reorder', active.id, newIndex],
@@ -486,9 +482,7 @@ const DataTable = ({
           onBulkColumnVisibilityChange={handleBulkColumnVisibilityChange}
           urlPersistence={urlPersistence}
           currentValues={currentValues}
-          component={component}
-          hash={hash}
-          route={route}
+          seal={seal}
           reorderable={reorderable}
           isReordering={isReordering}
           onToggleReordering={handleToggleReordering}
@@ -567,7 +561,9 @@ const DataTable = ({
                       ))}
                     <TableRowActions
                       actions={
-                        record._row_actions ? Object.values(record._row_actions).map((action) => <Action key={action.name} {...action} />) : null
+                        record._row_actions
+                          ? Object.values(record._row_actions).map((action) => <Action key={action.name} seal={seal} {...action} />)
+                          : null
                       }
                     />
                   </>

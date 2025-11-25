@@ -24,16 +24,13 @@ abstract class Field extends Component implements WithVisibility, HasRecord
     use HasValidationRules;
     use InteractsWithRecord;
 
-    protected string $name;
     protected bool $dehydrated = true;
     protected ?Closure $formatStateUsing = null;
     protected ?Closure $dehydrateStateUsing = null;
     protected ?Closure $saveUsing = null;
 
-    public function __construct(string $name)
+    public function __construct()
     {
-        $this->name = $name;
-
         $this->setUp();
     }
 
@@ -44,7 +41,7 @@ abstract class Field extends Component implements WithVisibility, HasRecord
 
     public static function make(string $name): static
     {
-        return new static($name);
+        return (new static())->name($name);
     }
 
     public function dehydrated(bool $dehydrated = true): static
@@ -73,11 +70,6 @@ abstract class Field extends Component implements WithVisibility, HasRecord
         $this->saveUsing = $callback;
 
         return $this;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     public function getPlaceholder(): ?string

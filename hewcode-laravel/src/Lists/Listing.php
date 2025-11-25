@@ -5,7 +5,6 @@ namespace Hewcode\Hewcode\Lists;
 use BadMethodCallException;
 use Hewcode\Hewcode\Concerns\InteractsWithActions;
 use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\EvaluatesClosures;
 use Hewcode\Hewcode\Concerns\RequiresVisibility;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
@@ -20,28 +19,24 @@ use Hewcode\Hewcode\Actions\BulkAction;
 use Hewcode\Hewcode\Lists\Filters\Filter;
 use Hewcode\Hewcode\Lists\Schema\Column;
 use Hewcode\Hewcode\Lists\Tabs\Tab;
+use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Builder;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Route;
 use ReflectionClass;
 use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Support\Expose;
-use Hewcode\Hewcode\Contracts\Discoverable;
 use ReflectionException;
-use function Hewcode\Hewcode\generateComponentHash;
 
-class Listing implements Discoverable, MountsActions, MountsComponents, ResolvesRecord, WithVisibility
+class Listing extends Container implements MountsActions, MountsComponents, ResolvesRecord, WithVisibility
 {
     use InteractsWithModel;
     use InteractsWithActions;
     use RequiresVisibility;
-    use EvaluatesClosures;
 
     protected ListingDriver $driver;
-    public ?string $component = null;
     /** @var array<Column> */
     public array $columns = [];
     /** @var array<Column>|null */
@@ -118,13 +113,6 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
         }
 
         return new self();
-    }
-
-    public function component(string $component): static
-    {
-        $this->component = $component;
-
-        return $this;
     }
 
     public function query(Builder $query): self
@@ -513,36 +501,21 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
         $iconRegistry = [];
 
-        return [
-            'component' => $this->component,
-            'hash' => generateComponentHash($this->component),
-            'route' => Route::currentRouteName(),
+        return array_merge(parent::toData(), [
             'records' => $result['records']->map(function (Model $record) use ($visibleColumns, &$iconRegistry) {
                 $data = [];
 
                 foreach ($visibleColumns as $column) {
-                    $data[$column->getName()] = $column->getValue($record);
+                    $columnData = $column->toRecordData($record);
 
-                    if ($before = $column->getBeforeContent($record)) {
-                        $data[$column->getName() . '_before'] = $before;
+                    $icon = $columnData[$column->getName() . '_icon'] ?? null;
+
+                    // Register icon SVG (deduplicated)
+                    if ($icon && ! isset($iconRegistry[$icon['name']])) {
+                        $iconRegistry[$icon['name']] = svg($icon['name'])->toHtml();
                     }
 
-                    if ($after = $column->getAfterContent($record)) {
-                        $data[$column->getName() . '_after'] = $after;
-                    }
-
-                    if ($color = $column->getColor($record)) {
-                        $data[$column->getName() . '_color'] = $color;
-                    }
-
-                    if ($icon = $column->getIcon($record)) {
-                        $data[$column->getName() . '_icon'] = $icon;
-
-                        // Register icon SVG (deduplicated)
-                        if (!isset($iconRegistry[$icon['name']])) {
-                            $iconRegistry[$icon['name']] = svg($icon['name'])->toHtml();
-                        }
-                    }
+                    $data = array_merge($data, $columnData);
                 }
 
                 // Add row background color if specified
@@ -558,7 +531,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
                     if (!empty($visibleActions)) {
                         $data['_row_actions'] = array_reduce($visibleActions, function ($carry, Action $action) use ($record) {
-                            $carry[$action->name] = $action->component($this->component)->toData();
+                            $carry[$action->name] = $action->parent($this)->toData();
 
                             return $carry;
                         }, []);
@@ -569,18 +542,10 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
             })->values()->all(),
             'pagination' => $result['pagination'],
             'columns' => array_map(function (Column $column) {
-                return [
-                    'key' => $column->getName(),
-                    'label' => $column->getLabel(),
-                    'wrap' => $column->shouldWrap(),
-                    'badge' => $column->shouldShowBadge(),
-                    'badgeVariant' => $column->getBadgeVariant(),
-                    'togglable' => $column->isTogglable(),
-                    'isToggledHiddenByDefault' => $column->isToggledHiddenByDefault(),
-                    'hidden' => !$column->isVisible(),
-                ];
+                return $column->toData();
             }, $visibleColumns),
             'icons' => $iconRegistry,
+            // @todo: is this really necessary?
             'allColumns' => array_map(function (Column $column) {
                 return [
                     'key' => $column->getName(),
@@ -611,10 +576,10 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
                 'columns' => $this->getColumnVisibilityObject(),
             ]),
             'bulkActions' => array_map(function (BulkAction $bulkAction) {
-                return $bulkAction->component($this->component)->toData();
+                return $bulkAction->parent($this)->toData();
             }, array_filter($this->bulkActions, fn (BulkAction $bulkAction) => $bulkAction->isVisible())),
             'reorderable' => $this->reorderableColumn,
-        ];
+        ]);
     }
 
     protected function setModelContextOnColumns(Model $model): void
@@ -685,8 +650,7 @@ class Listing implements Discoverable, MountsActions, MountsComponents, Resolves
 
     public function filtersForm(): Form
     {
-        return Form::make()
-            ->component('filtersForm')
+        return Form::make('filtersForm')
             ->model($this->getModel())
             ->visible($this->visible)
             ->fillUsing(fn () => $this->filtersState)

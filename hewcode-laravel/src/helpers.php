@@ -29,12 +29,24 @@ function flattenLocaleArray(array $array, string $prefix = ''): array
     return $result;
 }
 
-function generateComponentHash(string $component, ?string $route = null): string
+function generateComponentHash(string $component, ?string $route = null, ?int $timestamp = null, ?string $nonce = null): array
 {
     $route = $route ?? request()->route()->getName();
     $userId = auth()->id();
+    $timestamp = $timestamp ?? now()->timestamp;
+    $nonce = $nonce ?? bin2hex(random_bytes(16));
 
-    return hash_hmac('sha256', $component . '|' . $route . '|' . $userId, config('app.key'));
+    $hash = hash_hmac(
+        'sha256',
+        $component . '|' . $route . '|' . $userId . '|' . $timestamp . '|' . $nonce,
+        config('app.key')
+    );
+
+    return [
+        'hash' => $hash,
+        'timestamp' => $timestamp,
+        'nonce' => $nonce,
+    ];
 }
 
 function exposed(object $component, string $method): bool

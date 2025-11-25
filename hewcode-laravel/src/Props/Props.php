@@ -2,10 +2,9 @@
 
 namespace Hewcode\Hewcode\Props;
 
-use Exception;
-use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
+use Hewcode\Hewcode\Support\Container;
 use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
 use ReflectionException;
@@ -135,18 +134,17 @@ class Props implements Arrayable
             // Call the method to get the component
             $component = $method->invoke($this->controller);
 
-            // Validate that result implements Discoverable interface
-            if (! $component instanceof Discoverable) {
+            if (! $component instanceof Container) {
                 throw new InvalidArgumentException(
                     sprintf(
-                        'Method %s::%s() must return an instance of Discoverable (Lists, Actions, or Forms)',
+                        'Method %s::%s() must return an instance of Container (List, Actions, or Form)',
                         get_class($this->controller),
                         $componentName
                     )
                 );
             }
 
-            $component->component($componentName);
+            $component->name($componentName);
 
             if ($component instanceof ResolvesRecord && $this->record) {
                 $component->model($this->record);

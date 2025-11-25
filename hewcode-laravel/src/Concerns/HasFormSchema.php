@@ -21,6 +21,6 @@ trait HasFormSchema
             return $this->evaluate($this->formSchema);
         }
 
-        return [];
+        return $this->formSchema;
     }
 }

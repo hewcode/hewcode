@@ -4,35 +4,31 @@ namespace Hewcode\Hewcode\Forms;
 
 use Closure;
 use Hewcode\Hewcode\Actions\Action;
-use Hewcode\Hewcode\Concerns\EvaluatesClosures;
 use Hewcode\Hewcode\Concerns\InteractsWithActions;
 use Hewcode\Hewcode\Concerns\InteractsWithModel;
 use Hewcode\Hewcode\Concerns\InteractsWithRecord;
 use Hewcode\Hewcode\Concerns\RequiresVisibility;
-use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Hewcode\Hewcode\Forms\Schema\Field;
+use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Toasts\Toast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use RuntimeException;
-use function Hewcode\Hewcode\generateComponentHash;
 
-class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, MountsActions, MountsComponents
+class Form extends Container implements ResolvesRecord, HasRecord, WithVisibility, MountsActions, MountsComponents
 {
     use InteractsWithModel;
     use InteractsWithRecord;
     use InteractsWithActions;
     use RequiresVisibility;
-    use EvaluatesClosures;
 
-    protected ?string $component = null;
     /** @var array<Field> */
     protected array $fields = [];
     protected array $state = [];
@@ -52,9 +48,9 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
         $this->fillUsing($this->fillForm(...));
     }
 
-    public static function make(): static
+    public static function make(?string $name = 'form'): static
     {
-        return new static();
+        return (new static())->name($name);
     }
 
     public function schema(array $fields): static
@@ -71,7 +67,7 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
         return $this;
     }
 
-    public function submitUsing(Closure $callback): static
+    public function submitUsing(?Closure $callback): static
     {
         $this->submitUsing = $callback;
 
@@ -81,13 +77,6 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
     public function submitAction(Closure $callback): static
     {
         $this->submitAction = $callback;
-
-        return $this;
-    }
-
-    public function component(string $component): static
-    {
-        $this->component = $component;
 
         return $this;
     }
@@ -154,10 +143,7 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
 
         $this->state = $this->getFillUsing();
 
-        return [
-            'component' => $this->component,
-            'route' => Route::currentRouteName(),
-            'hash' => generateComponentHash($this->component),
+        return array_merge(parent::toData(), [
             'recordId' => $this->record instanceof Model ? $this->record->getKey() : null,
             'fields' => array_map(
                 fn (Field $field) => $field->toData(),
@@ -166,17 +152,17 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
             'state' => $this->state,
             'footerActions' => collect($this->getFooterActions())
                 ->filter(fn (Action $action) => $action
-                    ->component($this->component)
+                    ->parent($this)
                     ->record($this->getRecord())
                     ->args([
-                        'data' => $this
+                        'data' => $this->state,
                     ])
                     ->isVisible()
                 )
                 ->map(fn (Action $action) => $action->toData())
                 ->values()
                 ->toArray(),
-        ];
+        ]);
     }
 
     public function getState(): array
@@ -225,6 +211,10 @@ class Form implements Discoverable, ResolvesRecord, HasRecord, WithVisibility, M
                 foreach ($fields as $field) {
                     $field->saveState($state[$field->getName()] ?? null, $state);
                 }
+
+                Toast::make()
+                    ->success()
+                    ->send();
             }
         });
     }

@@ -2,27 +2,24 @@
 
 namespace Hewcode\Hewcode\Actions;
 
+use Hewcode\Hewcode\Concerns\HasForm;
 use Hewcode\Hewcode\Concerns\HasLabel;
 use Hewcode\Hewcode\Concerns\InteractsWithRecord;
 use Hewcode\Hewcode\Concerns\HasVisibility;
-use Hewcode\Hewcode\Concerns\EvaluatesClosures;
-use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\HasRecord;
+use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Closure;
+use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Route;
-use function Hewcode\Hewcode\generateComponentHash;
 
-class Action implements Discoverable, HasRecord, WithVisibility
+class Action extends Component implements HasRecord, WithVisibility, MountsComponents
 {
     use InteractsWithRecord;
     use HasVisibility;
-    use EvaluatesClosures;
     use HasLabel;
+    use HasForm;
 
-    public ?string $component = null;
-    public string $name;
     public string $color = 'primary';
     public ?Closure $action = null;
     public bool|Closure $requiresConfirmation = false;
@@ -32,21 +29,6 @@ class Action implements Discoverable, HasRecord, WithVisibility
     public static function make(string $name): static
     {
         return (new static())->name($name);
-    }
-
-    public function component(string $component): static
-    {
-        $this->component = $component;
-
-        return $this;
-    }
-
-    public function name(string $name): static
-    {
-        $this->name = $name;
-        $this->label ??= ucfirst($name);
-
-        return $this;
     }
 
     public function color(string $color): static
@@ -89,6 +71,12 @@ class Action implements Discoverable, HasRecord, WithVisibility
 
     public function execute(array $args = []): mixed
     {
+        if (! empty($this->getFormSchema())) {
+            return response()->json([
+                'form' => $this->getForm()->toData(),
+            ]);
+        }
+
         if ($this->action) {
             return $this->evaluate($this->action, $args);
         }
@@ -119,15 +107,22 @@ class Action implements Discoverable, HasRecord, WithVisibility
         }
 
         return [
-            'component' => $this->component,
-            'route' => Route::currentRouteName(),
-            'name' => $this->name,
+            'path' => $this->getPath(),
+            'name' => $this->getName(),
             'label' => $this->getLabel(),
             'color' => $this->color,
-            'hash' => generateComponentHash($this->component, Route::currentRouteName()),
             'requiresConfirmation' => $this->getRequiresConfirmation(),
             'context' => $context,
             'args' => $this->getArgs(),
+            'mountsModal' => ! empty($this->getFormSchema()),
         ];
+    }
+
+    public function getComponent(string $type, string $name): ?Component
+    {
+        return match ($type) {
+            'form' => $this->getForm(),
+            default => null,
+        };
     }
 }

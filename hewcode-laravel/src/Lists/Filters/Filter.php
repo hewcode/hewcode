@@ -18,7 +18,6 @@ class Filter extends Component
     use HasModel;
     use HasVisibility;
 
-    public string $name;
     public string $field;
     public string $type = 'text';
     public array $rules = [];
@@ -28,16 +27,7 @@ class Filter extends Component
 
     public static function make(string $name): static
     {
-        return (new static())->name($name);
-    }
-
-    public function name(string $name): static
-    {
-        $this->name = $name;
-
-        $this->field ??= $name;
-
-        return $this;
+        return (new static())->name($name)->field($name);
     }
 
     public function field(string $field): static

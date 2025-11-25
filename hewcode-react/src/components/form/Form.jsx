@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import useFetch from '../../hooks/useFetch.js';
-import Action from '../Action.jsx';
+import Action from '../actions/Action.jsx';
 import DateTimePicker from '../support/date-time-picker.jsx';
 import TextInput from '../support/text-input.jsx';
 import Textarea from '../support/textarea.jsx';
@@ -16,11 +16,9 @@ const fieldComponentMap = {
 };
 
 export default function Form({
-  component,
-  hash,
+  seal,
   fields = [],
   state = {},
-  route = null,
   onSuccess = null,
   onError = null,
   onFinish = null,
@@ -82,9 +80,7 @@ export default function Form({
 
     return (
       <FieldComponent
-        hash={hash}
-        route={route}
-        component={component}
+        seal={seal}
         key={name}
         type={type}
         name={name}
@@ -105,6 +101,7 @@ export default function Form({
           {footerActions.map((action) => (
             <Action
               key={action.name}
+              seal={seal}
               onStart={() => setIsSubmitting(true)}
               onSuccess={() => {
                 if (onSuccess) {

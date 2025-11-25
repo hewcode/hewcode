@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Lists\Schema;
 
 use Closure;
+use Hewcode\Hewcode\Concerns\HasLabel;
 use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Hewcode\Hewcode\Support\Component;
@@ -14,9 +15,8 @@ use function Hewcode\Hewcode\resolveLocaleLabel;
 abstract class Column extends Component implements WithVisibility
 {
     use HasVisibility;
+    use HasLabel;
 
-    protected string $name;
-    protected string $label;
     protected bool $sortable = false;
     protected bool $searchable = false;
     protected ?Closure $getStateUsing = null;
@@ -37,11 +37,8 @@ abstract class Column extends Component implements WithVisibility
     protected string $iconPosition = 'before';
     protected int $iconSize = 16;
 
-    public function __construct(string $name)
+    public function __construct()
     {
-        $this->name = $name;
-        $this->label = generateFieldLabel($name);
-
         $this->setUp();
     }
 
@@ -52,14 +49,7 @@ abstract class Column extends Component implements WithVisibility
 
     public static function make(string $name): static
     {
-        return new static($name);
-    }
-
-    public function label(string $label): static
-    {
-        $this->label = $label;
-
-        return $this;
+        return (new static())->name($name);
     }
 
     public function sortable(bool $sortable = true, ?string $field = null): static
@@ -91,7 +81,6 @@ abstract class Column extends Component implements WithVisibility
 
         return $this;
     }
-
 
     public function wrap(bool $wrap = true): static
     {
@@ -174,29 +163,11 @@ abstract class Column extends Component implements WithVisibility
         return $this;
     }
 
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
     public function model(?Model $model): static
     {
         $this->model = $model;
 
         return $this;
-    }
-
-    public function getLabel(): string
-    {
-        if ($this->label) {
-            return $this->label;
-        }
-
-        if ($this->model) {
-            return resolveLocaleLabel($this->name, $this->model);
-        }
-
-        return Str::headline($this->name);
     }
 
     public function isSortable(): bool
@@ -218,7 +189,6 @@ abstract class Column extends Component implements WithVisibility
     {
         return $this->searchField ?? $this->name;
     }
-
 
     public function shouldWrap(): bool
     {
@@ -289,5 +259,44 @@ abstract class Column extends Component implements WithVisibility
     protected function getDefaultValue(mixed $record)
     {
         return data_get($record, $this->name);
+    }
+
+    public function toRecordData(Model $record): array
+    {
+        $data = [];
+
+        $data[$this->getName()] = $this->getValue($record);
+
+        if ($before = $this->getBeforeContent($record)) {
+            $data[$this->getName() . '_before'] = $before;
+        }
+
+        if ($after = $this->getAfterContent($record)) {
+            $data[$this->getName() . '_after'] = $after;
+        }
+
+        if ($color = $this->getColor($record)) {
+            $data[$this->getName() . '_color'] = $color;
+        }
+
+        if ($icon = $this->getIcon($record)) {
+            $data[$this->getName() . '_icon'] = $icon;
+        }
+
+        return $data;
+    }
+
+    public function toData(): array
+    {
+        return array_merge(parent::toData(), [
+            'key' => $this->getName(),
+            'label' => $this->getLabel(),
+            'wrap' => $this->shouldWrap(),
+            'badge' => $this->shouldShowBadge(),
+            'badgeVariant' => $this->getBadgeVariant(),
+            'togglable' => $this->isTogglable(),
+            'isToggledHiddenByDefault' => $this->isToggledHiddenByDefault(),
+            'hidden' => ! $this->isVisible(),
+        ]);
     }
 }

@@ -4,12 +4,12 @@ import fireToasts from '../utils/fire-toasts.js';
 /**
  * Wrapper around fetch to handle common tasks like setting headers, parsing JSON, and error handling.
  */
-export default async function _fetch(url, options = {}, hewcode, vanilla = false, toast) {
+export default async function _fetch(url, options = {}, hewcode, vanilla = false, toast, setHewcode) {
   if (vanilla) {
     return fetchJson(url, options, hewcode);
   }
 
-  return fetchWithInertia(url, options, hewcode, toast);
+  return fetchWithInertia(url, options, hewcode, toast, setHewcode);
 }
 
 function fetchJson(url, options, hewcode) {
@@ -37,14 +37,29 @@ function fetchJson(url, options, hewcode) {
         });
       }
 
+      if (response.ok && options.onSuccess) {
+        options.onSuccess(response);
+      }
+
+      if (!response.ok && options.onError) {
+        options.onError(response);
+      }
+
       return response;
     })
-    .catch(() => {
-      //
+    .catch((error) => {
+      if (options.onError) {
+        options.onError(error);
+      }
+    })
+    .finally(() => {
+      if (options.onFinish) {
+        options.onFinish();
+      }
     });
 }
 
-function fetchWithInertia(url, options = {}, hewcode, toast) {
+function fetchWithInertia(url, options = {}, hewcode, toast, setHewcode) {
   const inertiaOptions = {
     method: options.method || 'get',
     data: options.body || {},
@@ -54,6 +69,9 @@ function fetchWithInertia(url, options = {}, hewcode, toast) {
     },
     preserveScroll: true,
     onSuccess: (page) => {
+      if (page.props.hewcode) {
+        setHewcode(page.props.hewcode);
+      }
       fireToasts(page.props.hewcode.toasts, toast);
     },
   };

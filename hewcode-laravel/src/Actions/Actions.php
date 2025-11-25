@@ -4,21 +4,17 @@ namespace Hewcode\Hewcode\Actions;
 
 use Hewcode\Hewcode\Concerns\InteractsWithActions;
 use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\EvaluatesClosures;
 use Hewcode\Hewcode\Concerns\RequiresVisibility;
-use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Support\Container;
 
-class Actions implements Discoverable, MountsActions, ResolvesRecord, WithVisibility
+class Actions extends Container implements MountsActions, ResolvesRecord, WithVisibility
 {
     use InteractsWithModel;
     use InteractsWithActions;
     use RequiresVisibility;
-    use EvaluatesClosures;
-
-    protected ?string $component = null;
 
     public function __construct(
         /** @var Action[] $actions */
@@ -29,13 +25,6 @@ class Actions implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
     public static function make(array $actions): static
     {
         return new static($actions);
-    }
-
-    public function component(string $component): static
-    {
-        $this->component = $component;
-
-        return $this;
     }
 
     protected function getEvaluationParameters(): array
@@ -51,12 +40,14 @@ class Actions implements Discoverable, MountsActions, ResolvesRecord, WithVisibi
 
     public function toData(): array
     {
-        return collect($this->actions)
-            ->filter(fn (Action $action) => $action->isVisible())
-            ->mapWithKeys(fn (Action $action) => [
-                $action->name => $action->component($this->component)->toData(),
-            ])
-            ->toArray();
+        return array_merge(parent::toData(), [
+            'actions' => collect($this->actions)
+                ->filter(fn (Action $action) => $action->isVisible())
+                ->mapWithKeys(fn (Action $action) => [
+                    $action->name => $action->parent($this)->toData(),
+                ])
+                ->toArray(),
+        ]);
     }
 
     public function getMountableActions(): array

@@ -2,7 +2,6 @@
 
 namespace Hewcode\Hewcode\Http\Controllers;
 
-use Hewcode\Hewcode\Contracts\Discoverable;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
@@ -20,23 +19,40 @@ class HewcodeController extends Controller
     public function __invoke(Request $request): mixed
     {
         $request->validate([
-            'component' => 'required|string',
             'call.name' => 'required|string',
             'call.params' => 'sometimes|array',
             'context.recordId' => 'sometimes|string',
             'context.recordIds' => 'sometimes|array',
-            'route' => 'required|string',
-            'hash' => 'required|string',
+            'seal.component' => 'required|string',
+            'seal.route' => 'required|string',
+            'seal.hash' => 'required|string',
+            'seal.timestamp' => 'required|integer',
+            'seal.nonce' => 'required|string',
         ]);
 
-        $component = $request->input('component');
-        $routeName = $request->input('route');
+        $componentName = $request->input('seal.component');
+        $routeName = $request->input('seal.route');
         $callName = $request->input('call.name');
         $recordId = $request->input('context.recordId');
         $recordIds = $request->input('context.recordIds');
 
-        if (! hash_equals($hash = generateComponentHash($component, $routeName), $request->input('hash'))) {
-            abort(403, app()->environment('local') ? 'Invalid hash. Given ['.$request->input('hash').'], expected ['.$hash.']' : '');
+        // Check seal expiration (1 hour)
+        $maxAge = 3600;
+        $timestamp = $request->input('seal.timestamp');
+        if (time() - $timestamp > $maxAge) {
+            abort(419, app()->environment('local') ? 'Seal expired' : '');
+        }
+
+        // Verify seal hash
+        $seal = generateComponentHash(
+            $componentName,
+            $routeName,
+            $timestamp,
+            $request->input('seal.nonce')
+        );
+
+        if (! hash_equals($seal['hash'], $request->input('seal.hash'))) {
+            abort(419, app()->environment('local') ? 'Invalid seal. Given ['.$request->input('seal.hash').'], expected ['.$seal['hash'].']' : '');
         }
 
         $route = Route::getRoutes()->getByName($routeName);
@@ -44,11 +60,17 @@ class HewcodeController extends Controller
         $controller = $route?->getController();
         // $method = Str::parseCallback($route->action['uses'])[1];
 
-        if (! method_exists($controller, $component)) {
-            abort(404, app()->environment('local') ? "Component [$component] not found on controller ".get_class($controller) : '');
+        //dd($controller, $routeName, $componentName);
+
+        if (! method_exists($controller, $componentName)) {
+            abort(404, app()->environment('local') ? "Component [$componentName] not found on controller ".get_class($controller) : '');
         }
 
-        $component = $controller->{$component}();
+        $component = $controller->{$componentName}();
+
+        $component
+            ->name($componentName)
+            ->route($routeName);
 
         if (! $component instanceof WithVisibility || ! $component->isVisible()) {
             abort(403, app()->environment('local') ? 'Access denied' : '');
@@ -74,6 +96,11 @@ class HewcodeController extends Controller
 
             $actionName = $data['call']['params']['name'];
             $actionArgs = $data['call']['params']['args'] ?? [];
+
+            // remove componentName. prefix from actionName if present
+            if (str_starts_with($actionName, $componentName.'.')) {
+                $actionName = substr($actionName, strlen($componentName) + 1);
+            }
 
             return $this->mountAction($component, $actionName, $actionArgs);
         }
@@ -139,7 +166,7 @@ class HewcodeController extends Controller
         throw new HttpException(400);
     }
 
-    protected function mountAction(Discoverable&MountsActions $component, string $action, array $args): mixed
+    protected function mountAction(MountsActions $component, string $action, array $args): mixed
     {
         return $component->mountAction($action, $args);
     }
