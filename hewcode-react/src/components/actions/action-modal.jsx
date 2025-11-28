@@ -4,13 +4,11 @@ import useTranslator from '../../hooks/useTranslator.js';
 import Form from '../form/Form.jsx';
 import Modal from '../modal.jsx';
 
-const ActionModal = ({ seal, context, path, name, args, onSuccess, onError, onFinish, onClose }) => {
+const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescription, onSuccess, onError, onFinish, onClose }) => {
   const { __ } = useTranslator();
   const { fetch } = useFetch();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(null);
-
-  const title = 'implement me!';
 
   useEffect(() => {
     if (!form) {
@@ -75,7 +73,7 @@ const ActionModal = ({ seal, context, path, name, args, onSuccess, onError, onFi
   }
 
   return (
-    <Modal size="sm" title={title} onClose={onClose}>
+    <Modal size="sm" title={modalHeading} description={modalDescription} onClose={onClose}>
       <div className="py-4 text-center">
         <Form {...form} />
       </div>

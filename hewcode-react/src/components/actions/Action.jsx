@@ -18,6 +18,8 @@ export default function Action({
   path,
   name,
   label,
+  modalHeading,
+  modalDescription,
   requiresConfirmation,
   color = 'primary',
   context = {},
@@ -47,6 +49,8 @@ export default function Action({
         context,
         path,
         name,
+        modalHeading,
+        modalDescription,
         args: {
           ...args,
           ...additionalArgs,

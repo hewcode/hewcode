@@ -165,6 +165,39 @@ Actions\Action::make('schedule')
 
 When users click the action, a modal with the form appears. The action receives both the record and the form data.
 
+Customize the modal appearance with headings and descriptions:
+
+```php
+Actions\Action::make('schedule')
+    ->label('Schedule Post')
+    ->color('primary')
+    ->modalHeading('Schedule Publication')
+    ->modalDescription('Choose when and how to publish this post.')
+    ->form([
+        Forms\Schema\DateTimePicker::make('publish_at')
+            ->label('Publish At')
+            ->required()
+            ->native(false),
+        Forms\Schema\Textarea::make('notes')
+            ->label('Notes')
+            ->rows(3),
+    ])
+    ->action(function (Post $record, array $data) {
+        $record->update([
+            'status' => PostStatus::SCHEDULED,
+            'published_at' => $data['publish_at'],
+            'notes' => $data['notes'],
+        ]);
+    });
+```
+
+Both `modalHeading()` and `modalDescription()` support static strings or closures for dynamic content:
+
+```php
+->modalHeading(fn (Post $record) => "Schedule: {$record->title}")
+->modalDescription(fn (Post $record) => "This will be published on {$record->schedule_date}.")
+```
+
 <a name="authorization"></a>
 ### Authorization
 

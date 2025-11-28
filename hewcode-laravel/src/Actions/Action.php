@@ -25,6 +25,8 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
     public bool|Closure $requiresConfirmation = false;
     public array $context = [];
     public array|Closure $args = [];
+    public Closure|string|null $modalHeading = null;
+    public Closure|string|null $modalDescription = null;
 
     public static function make(string $name): static
     {
@@ -57,6 +59,30 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
         $this->args = $args;
 
         return $this;
+    }
+
+    public function modalHeading(Closure|string|null $modalHeading): static
+    {
+        $this->modalHeading = $modalHeading;
+
+        return $this;
+    }
+
+    public function modalDescription(Closure|string|null $modalDescription): static
+    {
+        $this->modalDescription = $modalDescription;
+
+        return $this;
+    }
+
+    public function getModalHeading(): ?string
+    {
+        return $this->evaluate($this->modalHeading);
+    }
+
+    public function getModalDescription(): ?string
+    {
+        return $this->evaluate($this->modalDescription);
     }
 
     public function getRequiresConfirmation(): bool
@@ -115,6 +141,8 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
             'context' => $context,
             'args' => $this->getArgs(),
             'mountsModal' => ! empty($this->getFormSchema()),
+            'modalHeading' => $this->getModalHeading() ?? $this->getLabel(),
+            'modalDescription' => $this->getModalDescription(),
         ];
     }
 
