@@ -13,9 +13,10 @@ trait HasForm
         return Form::make()
             ->parent($this)
             ->record($record = $this->getRecord())
-            ->model($record)
+            ->model($record ?? $this->getModel())
             ->visible($this->isVisible())
             ->schema($this->getFormSchema())
+            ->shareEvaluationParameters($this->getEvaluationParameters())
             ->submitUsing($this->action);
     }
 }

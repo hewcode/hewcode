@@ -42,7 +42,11 @@ class Actions extends Container implements MountsActions, ResolvesRecord, WithVi
     {
         return array_merge(parent::toData(), [
             'actions' => collect($this->actions)
-                ->filter(fn (Action $action) => $action->isVisible())
+                ->filter(fn (Action $action) => $action
+                    ->model($this->model)
+                    ->record($this->record)
+                    ->isVisible()
+                )
                 ->mapWithKeys(fn (Action $action) => [
                     $action->name => $action->parent($this)->toData(),
                 ])

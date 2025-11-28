@@ -18,6 +18,7 @@ trait InteractsWithActions
             ->filter(fn (Action $action) => $action
                 ->parent($this)
                 ->record($this->record)
+                ->model($this->model)
                 ->isVisible()
             );
 

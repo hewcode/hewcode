@@ -75,7 +75,22 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
   return (
     <Modal size="sm" title={modalHeading} description={modalDescription} onClose={onClose}>
       <div className="py-4 text-center">
-        <Form {...form} />
+        <Form
+          {...form}
+          onSuccess={async (action, state, response) => {
+            const data = await response.json();
+            const shouldClose = data.actions?.[name]?.shouldClose || false;
+
+            console.log({
+              name,
+              data: data.actions,
+            });
+
+            if (shouldClose && onClose) {
+              onClose();
+            }
+          }}
+        />
       </div>
     </Modal>
   );

@@ -7,6 +7,18 @@ use Hewcode\Hewcode\Contracts\HasRecord;
 
 trait EvaluatesClosures
 {
+    protected array $sharedEvaluationParameters = [];
+
+    public function shareEvaluationParameters(array $parameters): static
+    {
+        $this->sharedEvaluationParameters = array_merge(
+            $this->sharedEvaluationParameters,
+            $parameters,
+        );
+
+        return $this;
+    }
+
     protected function evaluate(mixed $callback, array $additionalParameters = []): mixed
     {
         if (! $callback instanceof Closure) {
@@ -17,6 +29,12 @@ trait EvaluatesClosures
         $globalParameters = method_exists($this, 'getEvaluationParameters')
             ? $this->getEvaluationParameters()
             : [];
+
+        // Merge with any shared evaluation parameters
+        $globalParameters = array_merge(
+            $globalParameters,
+            $this->sharedEvaluationParameters,
+        );
 
         // Merge with any additional parameters passed to this call
         $parameters = array_merge($globalParameters, $additionalParameters);

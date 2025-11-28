@@ -2,6 +2,8 @@
 
 namespace Hewcode\Hewcode\Toasts;
 
+use Hewcode\Hewcode\Hewcode;
+
 class Toast
 {
     protected ?string $title = null;
@@ -133,8 +135,6 @@ class Toast
 
     public function send(): void
     {
-        $currentToasts = session()->get('hewcode.toasts', []);
-        $currentToasts[] = $this->toData();
-        session()->flash('hewcode.toasts', $currentToasts);
+        Hewcode::shareWithResponse('toasts', null, $this->toData());
     }
 }

@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,7 @@ class HewcodeController extends Controller
             'call.params' => 'sometimes|array',
             'context.recordId' => 'sometimes|string',
             'context.recordIds' => 'sometimes|array',
+            'context.model' => 'sometimes|string',
             'seal.component' => 'required|string',
             'seal.route' => 'required|string',
             'seal.hash' => 'required|string',
@@ -35,6 +37,7 @@ class HewcodeController extends Controller
         $callName = $request->input('call.name');
         $recordId = $request->input('context.recordId');
         $recordIds = $request->input('context.recordIds');
+        $model = $request->input('context.model');
 
         // Check seal expiration (1 hour)
         $maxAge = 3600;
@@ -56,6 +59,8 @@ class HewcodeController extends Controller
         }
 
         $route = Route::getRoutes()->getByName($routeName);
+
+        // @todo: can we apply this route's middleware here to make sure the user has access?
 
         $controller = $route?->getController();
         // $method = Str::parseCallback($route->action['uses'])[1];
@@ -82,6 +87,12 @@ class HewcodeController extends Controller
             } elseif ($recordIds) {
                 $actionArgs['records'] = $component->resolveRecords($recordIds);
             }
+        }
+
+        if (! $recordId && ! $recordIds && $model) {
+            $modelClass = Relation::getMorphedModel($model) ?? $model;
+
+            $component->model($modelClass);
         }
 
         if ($callName === 'mountAction') {

@@ -103,9 +103,9 @@ export default function Form({
               key={action.name}
               seal={seal}
               onStart={() => setIsSubmitting(true)}
-              onSuccess={() => {
+              onSuccess={(response) => {
                 if (onSuccess) {
-                  onSuccess(action, formData);
+                  onSuccess(action, formData, response);
                 }
               }}
               onError={(serverErrors) => {

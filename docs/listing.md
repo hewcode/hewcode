@@ -466,17 +466,28 @@ use Hewcode\Hewcode\Actions;
 use Hewcode\Hewcode\Forms;
 
 ->actions([
-    Actions\Action::make('edit')
-        ->label('Edit')
-        ->color('primary')
-        ->visible(fn (Post $record) => auth()->user()->can('update', $record))
-        ->action(fn (Post $record) => redirect()->route('posts.edit', $record)),
-    
+    Actions\Eloquent\EditAction::make()
+        ->form([
+            Forms\Schema\TextInput::make('title')
+                ->label('Title')
+                ->required()
+                ->maxLength(255),
+            Forms\Schema\Textarea::make('content')
+                ->label('Content')
+                ->rows(8)
+                ->required(),
+            Forms\Schema\Select::make('status')
+                ->label('Status')
+                ->options(PostStatus::class)
+                ->required(),
+        ])
+        ->visible(fn (Post $record) => auth()->user()->can('update', $record)),
+
     Actions\Action::make('duplicate')
         ->label('Duplicate')
         ->color('secondary')
         ->action(fn (Post $record) => $record->replicate()->save()),
-    
+
     Actions\Action::make('schedule')
         ->label('Schedule')
         ->color('warning')
@@ -493,15 +504,12 @@ use Hewcode\Hewcode\Forms;
                 'published_at' => $data['publish_at'],
             ]);
         }),
-    
-    Actions\Action::make('delete')
-        ->label('Delete')
-        ->color('danger')
-        ->visible(fn (Post $record) => auth()->user()->can('delete', $record))
-        ->requiresConfirmation()
-        ->confirmationText('Delete this post?')
-        ->confirmationDescription('This action cannot be undone.')
-        ->action(fn (Post $record) => $record->delete()),
+
+    Actions\Eloquent\DeleteAction::make()
+        ->visible(fn (Post $record) => auth()->user()->can('delete', $record)),
+
+    Actions\Eloquent\RestoreAction::make()
+        ->visible(fn (Post $record) => $record->trashed()),
 ])
 ```
 
@@ -524,49 +532,40 @@ use Hewcode\Hewcode\Toasts\Toast;
 use Illuminate\Support\Collection;
 
 ->bulkActions([
+    Actions\Eloquent\BulkDeleteAction::make(),
+
+    Actions\Eloquent\BulkDeleteAction::make()
+        ->forceDelete(),
+
+    Actions\Eloquent\BulkRestoreAction::make(),
+
     Actions\BulkAction::make('publish')
         ->label('Publish Selected')
         ->color('primary')
         ->action(function (Collection $records) {
             $count = $records->count();
-            
+
             $records->each->update([
                 'status' => PostStatus::PUBLISHED,
                 'published_at' => now(),
             ]);
-            
+
             Toast::make()
                 ->title("Published $count Posts")
                 ->success()
                 ->send();
         }),
-    
-    Actions\BulkAction::make('delete')
-        ->label('Delete Selected')
-        ->color('danger')
-        ->requiresConfirmation()
-        ->confirmationText('Delete selected posts?')
-        ->confirmationDescription('This action cannot be undone.')
-        ->action(function (Collection $records) {
-            $count = $records->count();
-            $records->each->delete();
-            
-            Toast::make()
-                ->title("Deleted $count Posts")
-                ->success()
-                ->send();
-        }),
-    
+
     Actions\BulkAction::make('export')
         ->label('Export Selected')
         ->color('secondary')
         ->action(function (Collection $records) {
             $filename = 'posts-export-' . now()->format('Y-m-d') . '.csv';
-            
+
             return response()->streamDownload(function () use ($records) {
                 $file = fopen('php://output', 'w');
                 fputcsv($file, ['ID', 'Title', 'Status', 'Created']);
-                
+
                 foreach ($records as $record) {
                     fputcsv($file, [
                         $record->id,
@@ -575,11 +574,11 @@ use Illuminate\Support\Collection;
                         $record->created_at->format('Y-m-d'),
                     ]);
                 }
-                
+
                 fclose($file);
             }, $filename);
         }),
-    
+
     Actions\BulkAction::make('change_status')
         ->label('Change Status')
         ->color('warning')
@@ -592,9 +591,9 @@ use Illuminate\Support\Collection;
         ->action(function (Collection $records, array $data) {
             $count = $records->count();
             $status = PostStatus::from($data['status']);
-            
+
             $records->each->update(['status' => $status]);
-            
+
             Toast::make()
                 ->title("Updated $count Posts")
                 ->message("Status changed to {$status->getLabel()}")
@@ -846,25 +845,35 @@ class PostController extends Controller
             ])
             // Add row actions
             ->actions([
-                Actions\Action::make('edit')
-                    ->label('Edit')
-                    ->color('primary')
-                    ->action(fn ($record) => redirect()->route('posts.edit', $record)),
-                Actions\Action::make('delete')
-                    ->label('Delete')
-                    ->color('danger')
-                    ->action(fn ($record) => $record->delete()),
+                Actions\Eloquent\EditAction::make()
+                    ->form([
+                        Forms\Schema\TextInput::make('title')
+                            ->label('Title')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Schema\Textarea::make('content')
+                            ->label('Content')
+                            ->rows(8)
+                            ->required(),
+                        Forms\Schema\Select::make('status')
+                            ->label('Status')
+                            ->options(PostStatus::class)
+                            ->required(),
+                    ]),
+                Actions\Eloquent\DeleteAction::make(),
+                Actions\Eloquent\RestoreAction::make()
+                    ->visible(fn ($record) => $record->trashed()),
             ])
             // Add bulk actions
             ->bulkActions([
-                Actions\BulkAction::make('delete')
-                    ->label('Delete Selected')
-                    ->color('danger')
-                    ->action(fn (Collection $records) => $records->each->delete()),
+                Actions\Eloquent\BulkDeleteAction::make(),
+                Actions\Eloquent\BulkDeleteAction::make()
+                    ->forceDelete(),
+                Actions\Eloquent\BulkRestoreAction::make(),
                 Actions\BulkAction::make('publish')
                     ->label('Publish Selected')
                     ->color('primary')
-                    ->action(fn (Collection $records) => 
+                    ->action(fn (Collection $records) =>
                         $records->each->update(['status' => PostStatus::PUBLISHED])
                     ),
             ])

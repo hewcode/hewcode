@@ -34,6 +34,13 @@ return [
         'this_action_cannot_be_undone' => 'This action cannot be undone.',
     ],
 
+    'actions' => [
+        'create' => 'Create',
+        'edit' => 'Edit',
+        'delete' => 'Delete',
+        'restore' => 'Restore',
+    ],
+
     'toasts' => [
         'success' => [
             'title' => 'Operation Successful',

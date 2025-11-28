@@ -112,6 +112,10 @@ class Form extends Container implements ResolvesRecord, HasRecord, WithVisibilit
             $parameters['record'] = $this->record;
         }
 
+        if ($this->model !== null) {
+            $parameters['model'] = $this->model;
+        }
+
         return $parameters;
     }
 

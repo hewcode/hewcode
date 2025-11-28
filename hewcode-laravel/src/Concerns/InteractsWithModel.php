@@ -61,7 +61,7 @@ trait InteractsWithModel
         return $this;
     }
 
-    public function model(object|string $model): static
+    public function model(object|string|null $model): static
     {
         if (is_string($model) && class_exists($model)) {
             $model = new $model;

@@ -10,13 +10,32 @@ class Manager
         //
     ) {}
 
+    public function shareWithResponse(string $key, string|null $identifier, array $data): void
+    {
+        $current = session()->get("hewcode.$key", []);
+
+        if ($identifier === null) {
+            $current[] = $data;
+        } else {
+            $current[$identifier] = $data;
+        }
+
+        session()->put("hewcode.$key", $current);
+    }
+
+    public function getSharedData(string $key): array
+    {
+        $data = session()->get("hewcode.$key", []);
+        session()->forget("hewcode.$key");
+
+        return $data;
+    }
+
     public function sharedData(): array
     {
-        $toasts = session()->get('hewcode.toasts', []);
-        session()->forget('hewcode.toasts');
-
         return [
-            'toasts' => $toasts,
+            'toasts' => $this->getSharedData('toasts'),
+            'actions' => $this->getSharedData('actions'),
         ];
     }
 

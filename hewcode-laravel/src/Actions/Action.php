@@ -4,12 +4,14 @@ namespace Hewcode\Hewcode\Actions;
 
 use Hewcode\Hewcode\Concerns\HasForm;
 use Hewcode\Hewcode\Concerns\HasLabel;
+use Hewcode\Hewcode\Concerns\HasModel;
 use Hewcode\Hewcode\Concerns\InteractsWithRecord;
 use Hewcode\Hewcode\Concerns\HasVisibility;
 use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\WithVisibility;
 use Closure;
+use Hewcode\Hewcode\Hewcode;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,6 +21,7 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
     use HasVisibility;
     use HasLabel;
     use HasForm;
+    use HasModel;
 
     public string $color = 'primary';
     public ?Closure $action = null;
@@ -27,6 +30,17 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
     public array|Closure $args = [];
     public Closure|string|null $modalHeading = null;
     public Closure|string|null $modalDescription = null;
+    public bool $shouldClose = false;
+
+    public function __construct()
+    {
+        $this->setUp();
+    }
+
+    public function setUp(): void
+    {
+        //
+    }
 
     public static function make(string $name): static
     {
@@ -71,6 +85,17 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
     public function modalDescription(Closure|string|null $modalDescription): static
     {
         $this->modalDescription = $modalDescription;
+
+        return $this;
+    }
+
+    public function close(): static
+    {
+        $this->shouldClose = true;
+
+        Hewcode::shareWithResponse('actions', $this->getName(), [
+            'shouldClose' => true,
+        ]);
 
         return $this;
     }
@@ -121,6 +146,10 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
             $parameters['record'] = $this->record;
         }
 
+        if ($this->model !== null) {
+            $parameters['model'] = $this->model;
+        }
+
         return $parameters;
     }
 
@@ -132,6 +161,10 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
             $context['recordId'] = $this->record instanceof Model
                 ? (string) $this->record->getKey()
                 : null;
+        }
+
+        if ($this->model) {
+            $context['model'] = $this->model->getMorphClass();
         }
 
         return [
