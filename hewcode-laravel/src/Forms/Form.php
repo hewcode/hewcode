@@ -104,7 +104,9 @@ class Form extends Container implements ResolvesRecord, HasRecord, WithVisibilit
 
     protected function getEvaluationParameters(): array
     {
-        $parameters = [];
+        $parameters = [
+            'form' => $this,
+        ];
 
         if ($this->record !== null) {
             $parameters['record'] = $this->record;

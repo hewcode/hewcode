@@ -44,16 +44,16 @@ class Toast
 
     public function error(): static
     {
-        $this->title ??= __('hewcode::toasts.error.title');
-        $this->message ??= __('hewcode::toasts.error.message');
+        $this->title ??= __('hewcode::hewcode.toasts.error.title');
+        $this->message ??= __('hewcode::hewcode.toasts.error.message');
 
         return $this->type('error');
     }
 
     public function success(): static
     {
-        $this->title ??= __('hewcode::toasts.success.title');
-        $this->message ??= __('hewcode::toasts.success.message');
+        $this->title ??= __('hewcode::hewcode.toasts.success.title');
+        $this->message ??= __('hewcode::hewcode.toasts.success.message');
 
         return $this->type('success');
     }

@@ -28,7 +28,7 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
           },
           onSuccess: async (response) => {
             const data = await response.json();
-            setForm(data.form || null);
+            setForm(data.data?.form || null);
             setLoading(false);
 
             if (onSuccess) {

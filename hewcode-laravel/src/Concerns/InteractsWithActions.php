@@ -5,6 +5,7 @@ namespace Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
+use Hewcode\Hewcode\Hewcode;
 use Illuminate\Contracts\Support\Responsable;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
@@ -81,6 +82,6 @@ trait InteractsWithActions
             return $response;
         }
 
-        return back();
+        return Hewcode::response(data: $response ?? []);
     }
 }

@@ -98,9 +98,9 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
     public function execute(array $args = []): mixed
     {
         if (! empty($this->getFormSchema())) {
-            return response()->json([
+            return [
                 'form' => $this->getForm()->toData(),
-            ]);
+            ];
         }
 
         if ($this->action) {
@@ -113,7 +113,9 @@ class Action extends Component implements HasRecord, WithVisibility, MountsCompo
 
     protected function getEvaluationParameters(): array
     {
-        $parameters = [];
+        $parameters = [
+            'action' => $this,
+        ];
 
         if ($this->record !== null) {
             $parameters['record'] = $this->record;

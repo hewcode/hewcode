@@ -30,6 +30,12 @@ class HewcodeServiceProvider extends PackageServiceProvider
         $this->app->singleton(Config::class, function ($app) {
             return new Config();
         });
+
+        $this->app->singleton(Manager::class, function ($app) {
+            return new Manager;
+        });
+
+        $this->app->alias(Manager::class, 'hewcode');
     }
 
     public function packageBooted()

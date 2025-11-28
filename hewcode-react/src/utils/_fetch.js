@@ -6,13 +6,13 @@ import fireToasts from '../utils/fire-toasts.js';
  */
 export default async function _fetch(url, options = {}, hewcode, vanilla = false, toast, setHewcode) {
   if (vanilla) {
-    return fetchJson(url, options, hewcode);
+    return fetchJson(url, options, hewcode, toast);
   }
 
   return fetchWithInertia(url, options, hewcode, toast, setHewcode);
 }
 
-function fetchJson(url, options, hewcode) {
+function fetchJson(url, options, hewcode, toast) {
   const defaultHeaders = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -29,12 +29,24 @@ function fetchJson(url, options, hewcode) {
   };
 
   return fetch(url, fetchOptions)
-    .then((response) => {
+    .then(async (response) => {
       // if this is a result of dd() from Laravel, show the value evaluated in a full screen debugger div
       if (hewcode.developerMode && response.headers.get('Content-Type')?.includes('text/html')) {
         response.text().then((html) => {
           showDebugScreen(html);
         });
+      }
+
+      // Try to parse JSON and fire toasts if available
+      if (response.headers.get('Content-Type')?.includes('application/json')) {
+        try {
+          const data = await response.clone().json();
+          if (data.toasts && Array.isArray(data.toasts)) {
+            fireToasts(data.toasts, toast);
+          }
+        } catch (e) {
+          // Silently fail if JSON parsing fails
+        }
       }
 
       if (response.ok && options.onSuccess) {
