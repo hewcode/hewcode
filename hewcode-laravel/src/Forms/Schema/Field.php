@@ -3,26 +3,19 @@
 namespace Hewcode\Hewcode\Forms\Schema;
 
 use Closure;
-use Hewcode\Hewcode\Concerns\HasDefault;
-use Hewcode\Hewcode\Concerns\HasLabel;
-use Hewcode\Hewcode\Concerns\HasModel;
-use Hewcode\Hewcode\Concerns\HasPlaceholder;
-use Hewcode\Hewcode\Concerns\HasVisibility;
-use Hewcode\Hewcode\Concerns\InteractsWithRecord;
-use Hewcode\Hewcode\Contracts\HasRecord;
-use Hewcode\Hewcode\Contracts\WithVisibility;
-use Hewcode\Hewcode\Forms\Schema\Concerns\HasValidationRules;
+use Hewcode\Hewcode\Concerns;
+use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Support\Component;
 
-abstract class Field extends Component implements WithVisibility, HasRecord
+abstract class Field extends Component implements Contracts\HasVisibility, Contracts\HasRecord
 {
-    use HasLabel;
-    use HasPlaceholder;
-    use HasDefault;
-    use HasModel;
-    use HasVisibility;
-    use HasValidationRules;
-    use InteractsWithRecord;
+    use Concerns\HasLabel;
+    use Concerns\HasPlaceholder;
+    use Concerns\HasDefault;
+    use Concerns\HasModel;
+    use Concerns\HasVisibility;
+    use Concerns\HasValidationRules;
+    use Concerns\InteractsWithRecord;
 
     protected bool $dehydrated = true;
     protected ?Closure $formatStateUsing = null;

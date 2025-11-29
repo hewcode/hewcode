@@ -3,19 +3,15 @@
 namespace Hewcode\Hewcode\Lists\Schema;
 
 use Closure;
-use Hewcode\Hewcode\Concerns\HasLabel;
-use Hewcode\Hewcode\Concerns\HasVisibility;
-use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Concerns;
+use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
-use function Hewcode\Hewcode\generateFieldLabel;
-use function Hewcode\Hewcode\resolveLocaleLabel;
 
-abstract class Column extends Component implements WithVisibility
+abstract class Column extends Component implements Contracts\HasVisibility
 {
-    use HasVisibility;
-    use HasLabel;
+    use Concerns\HasVisibility;
+    use Concerns\HasLabel;
 
     protected bool $sortable = false;
     protected bool $searchable = false;

@@ -2,26 +2,20 @@
 
 namespace Hewcode\Hewcode\Actions;
 
-use Hewcode\Hewcode\Concerns\HasForm;
-use Hewcode\Hewcode\Concerns\HasLabel;
-use Hewcode\Hewcode\Concerns\HasModel;
-use Hewcode\Hewcode\Concerns\InteractsWithRecord;
-use Hewcode\Hewcode\Concerns\HasVisibility;
-use Hewcode\Hewcode\Contracts\HasRecord;
-use Hewcode\Hewcode\Contracts\MountsComponents;
-use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Concerns;
+use Hewcode\Hewcode\Contracts;
 use Closure;
 use Hewcode\Hewcode\Hewcode;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Model;
 
-class Action extends Component implements HasRecord, WithVisibility, MountsComponents
+class Action extends Component implements Contracts\HasRecord, Contracts\HasVisibility, Contracts\MountsComponents
 {
-    use InteractsWithRecord;
-    use HasVisibility;
-    use HasLabel;
-    use HasForm;
-    use HasModel;
+    use Concerns\InteractsWithRecord;
+    use Concerns\HasVisibility;
+    use Concerns\HasLabel;
+    use Concerns\HasForm;
+    use Concerns\HasModel;
 
     public string $color = 'primary';
     public ?Closure $action = null;

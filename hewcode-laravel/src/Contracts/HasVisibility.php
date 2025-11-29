@@ -4,7 +4,7 @@ namespace Hewcode\Hewcode\Contracts;
 
 use Closure;
 
-interface WithVisibility
+interface HasVisibility
 {
     public function visible(bool|Closure $visible): static;
 

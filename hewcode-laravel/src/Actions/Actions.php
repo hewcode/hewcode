@@ -2,19 +2,15 @@
 
 namespace Hewcode\Hewcode\Actions;
 
-use Hewcode\Hewcode\Concerns\InteractsWithActions;
-use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\RequiresVisibility;
-use Hewcode\Hewcode\Contracts\MountsActions;
-use Hewcode\Hewcode\Contracts\ResolvesRecord;
-use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Concerns;
+use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Support\Container;
 
-class Actions extends Container implements MountsActions, ResolvesRecord, WithVisibility
+class Actions extends Container implements Contracts\MountsActions, Contracts\ResolvesRecord, Contracts\HasVisibility
 {
-    use InteractsWithModel;
-    use InteractsWithActions;
-    use RequiresVisibility;
+    use Concerns\InteractsWithModel;
+    use Concerns\InteractsWithActions;
+    use Concerns\RequiresVisibility;
 
     public function __construct(
         /** @var Action[] $actions */

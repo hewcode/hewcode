@@ -1,6 +1,6 @@
 <?php
 
-namespace Hewcode\Hewcode\Forms\Schema\Concerns;
+namespace Hewcode\Hewcode\Concerns;
 
 use Closure;
 use Illuminate\Validation\Rule;

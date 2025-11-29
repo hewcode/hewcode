@@ -3,13 +3,8 @@
 namespace Hewcode\Hewcode\Lists;
 
 use BadMethodCallException;
-use Hewcode\Hewcode\Concerns\InteractsWithActions;
-use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\RequiresVisibility;
-use Hewcode\Hewcode\Contracts\MountsActions;
-use Hewcode\Hewcode\Contracts\MountsComponents;
-use Hewcode\Hewcode\Contracts\ResolvesRecord;
-use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Concerns;
+use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Forms\Form;
 use Hewcode\Hewcode\Lists\Drivers\EloquentDriver;
 use Hewcode\Hewcode\Lists\Drivers\IterableDriver;
@@ -30,11 +25,11 @@ use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Support\Expose;
 use ReflectionException;
 
-class Listing extends Container implements MountsActions, MountsComponents, ResolvesRecord, WithVisibility
+class Listing extends Container implements Contracts\MountsActions, Contracts\MountsComponents, Contracts\ResolvesRecord, Contracts\HasVisibility
 {
-    use InteractsWithModel;
-    use InteractsWithActions;
-    use RequiresVisibility;
+    use Concerns\InteractsWithModel;
+    use Concerns\InteractsWithActions;
+    use Concerns\RequiresVisibility;
 
     protected ListingDriver $driver;
     /** @var array<Column> */

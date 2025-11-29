@@ -5,7 +5,7 @@ namespace Hewcode\Hewcode\Http\Controllers;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecord;
-use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Contracts\HasVisibility;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -81,7 +81,7 @@ class HewcodeController extends Controller
             ->name($componentName)
             ->route($routeName);
 
-        if (! $component instanceof WithVisibility || ! $component->isVisible()) {
+        if (! $component instanceof HasVisibility || ! $component->isVisible()) {
             abort(403, app()->environment('local') ? 'Access denied' : '');
         }
 

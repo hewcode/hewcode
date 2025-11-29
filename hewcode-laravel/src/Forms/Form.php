@@ -4,15 +4,8 @@ namespace Hewcode\Hewcode\Forms;
 
 use Closure;
 use Hewcode\Hewcode\Actions\Action;
-use Hewcode\Hewcode\Concerns\InteractsWithActions;
-use Hewcode\Hewcode\Concerns\InteractsWithModel;
-use Hewcode\Hewcode\Concerns\InteractsWithRecord;
-use Hewcode\Hewcode\Concerns\RequiresVisibility;
-use Hewcode\Hewcode\Contracts\HasRecord;
-use Hewcode\Hewcode\Contracts\MountsActions;
-use Hewcode\Hewcode\Contracts\MountsComponents;
-use Hewcode\Hewcode\Contracts\ResolvesRecord;
-use Hewcode\Hewcode\Contracts\WithVisibility;
+use Hewcode\Hewcode\Concerns;
+use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Forms\Schema\Field;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
@@ -22,12 +15,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use RuntimeException;
 
-class Form extends Container implements ResolvesRecord, HasRecord, WithVisibility, MountsActions, MountsComponents
+class Form extends Container implements Contracts\ResolvesRecord, Contracts\HasRecord, Contracts\HasVisibility, Contracts\MountsActions, Contracts\MountsComponents
 {
-    use InteractsWithModel;
-    use InteractsWithRecord;
-    use InteractsWithActions;
-    use RequiresVisibility;
+    use Concerns\InteractsWithModel;
+    use Concerns\InteractsWithRecord;
+    use Concerns\InteractsWithActions;
+    use Concerns\RequiresVisibility;
 
     /** @var array<Field> */
     protected array $fields = [];
