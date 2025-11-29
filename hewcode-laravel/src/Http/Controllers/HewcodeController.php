@@ -201,10 +201,11 @@ class HewcodeController extends Controller
 
     protected function applyRouteMiddleware(Request $request, RoutingRoute $route): void
     {
-        $shouldSkipMiddleware = app()->bound('middleware.disable') &&
-                                app()->make('middleware.disable') === true;
+        $appliedMiddleware = app()->shouldSkipMiddleware() ? [] : Route::gatherRouteMiddleware($request->route());
 
-        $middleware = $shouldSkipMiddleware ? [] : Route::gatherRouteMiddleware($route);
+        $routeMiddleware = app()->shouldSkipMiddleware() ? [] : Route::gatherRouteMiddleware($route);
+
+        $middleware = array_diff($routeMiddleware, $appliedMiddleware);
 
         if (empty($middleware)) {
             return;

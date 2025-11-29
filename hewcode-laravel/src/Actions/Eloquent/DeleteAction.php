@@ -37,7 +37,7 @@ class DeleteAction extends Action
 
     protected function getDefaultAction(): Closure
     {
-        return function (array $data, Model $record) {
+        return function (Model $record) {
             return DB::transaction(function () use ($record) {
                 Toast::make()
                     ->success()

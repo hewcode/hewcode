@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import ActionModal from '../../components/actions/action-modal.jsx';
 import useModalManager from '../../hooks/use-modal-manager.jsx';
@@ -86,6 +87,8 @@ export default function Action({
             if (onSuccess) {
               onSuccess(response);
             }
+
+            router.get(window.location.href, {}, { preserveScroll: true });
           },
           onError: (serverErrors) => {
             setLoading(false);
