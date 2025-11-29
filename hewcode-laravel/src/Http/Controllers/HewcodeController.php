@@ -9,7 +9,9 @@ use Hewcode\Hewcode\Contracts\WithVisibility;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Routing\Controller;
+use Illuminate\Routing\Route as RoutingRoute;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use function Hewcode\Hewcode\exposed;
@@ -60,7 +62,9 @@ class HewcodeController extends Controller
 
         $route = Route::getRoutes()->getByName($routeName);
 
-        // @todo: can we apply this route's middleware here to make sure the user has access?
+        if ($route) {
+            $this->applyRouteMiddleware($request, $route);
+        }
 
         $controller = $route?->getController();
         // $method = Str::parseCallback($route->action['uses'])[1];
@@ -193,5 +197,22 @@ class HewcodeController extends Controller
         }
 
         return $response;
+    }
+
+    protected function applyRouteMiddleware(Request $request, RoutingRoute $route): void
+    {
+        $shouldSkipMiddleware = app()->bound('middleware.disable') &&
+                                app()->make('middleware.disable') === true;
+
+        $middleware = $shouldSkipMiddleware ? [] : Route::gatherRouteMiddleware($route);
+
+        if (empty($middleware)) {
+            return;
+        }
+
+        app(Pipeline::class)
+            ->send($request)
+            ->through($middleware)
+            ->then(fn ($request) => new \Illuminate\Http\Response());
     }
 }
