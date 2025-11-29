@@ -341,7 +341,7 @@ class Listing extends Container implements MountsActions, MountsComponents, Reso
 
     private function getSessionKey(): string
     {
-        return $this->sessionKey ?? 'chisel_listing_' . static::class;
+        return $this->sessionKey ?? 'hewcode_listing_' . static::class;
     }
 
     private function getColumnVisibilityObject(): array

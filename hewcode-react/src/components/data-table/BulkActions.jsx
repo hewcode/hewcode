@@ -4,7 +4,7 @@ import { Button } from '../ui/button.jsx';
 
 const BulkActions = ({ selectedCount, bulkActions, selectedRecords, onClearSelection }) => {
   const executeAction = (action) => {
-    // Execute the bulk action via the centralized _chisel/action route
+    // Execute the bulk action via the centralized _hewcode/action route
     router.post(
       '/_hewcode',
       {
