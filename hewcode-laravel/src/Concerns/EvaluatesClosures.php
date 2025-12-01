@@ -41,7 +41,7 @@ trait EvaluatesClosures
 
         $parameters['component'] = $this;
 
-        if ($this instanceof HasRecord) {
+        if ($this instanceof HasRecord && ! array_key_exists('record', $parameters)) {
             $parameters['record'] = $this->getRecord();
         }
 

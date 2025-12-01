@@ -36,8 +36,15 @@ class Container extends Component
         ]);
     }
 
+    public function prepare(): void
+    {
+        //
+    }
+
     public function toData(): array
     {
+        $this->prepare();
+
         return array_merge(parent::toData(), [
             'seal' => $this->getSealProps(),
         ]);

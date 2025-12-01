@@ -2,10 +2,12 @@
 
 namespace Hewcode\Hewcode\Http\Controllers;
 
+use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
-use Hewcode\Hewcode\Contracts\ResolvesRecord;
+use Hewcode\Hewcode\Contracts\ResolvesRecords;
 use Hewcode\Hewcode\Contracts\HasVisibility;
+use Hewcode\Hewcode\Support\Container;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -67,27 +69,35 @@ class HewcodeController extends Controller
         }
 
         $controller = $route?->getController();
-        // $method = Str::parseCallback($route->action['uses'])[1];
-
-        //dd($controller, $routeName, $componentName);
 
         if (! method_exists($controller, $componentName)) {
             abort(404, app()->environment('local') ? "Component [$componentName] not found on controller ".get_class($controller) : '');
         }
 
+        /** @var Container $component */
         $component = $controller->{$componentName}();
+
+        if (! $component instanceof Container) {
+            abort(500, app()->environment('local') ? "Component [$componentName] on controller ".get_class($controller)." must return an instance of ".Container::class : '');
+        }
 
         $component
             ->name($componentName)
             ->route($routeName);
 
+        $component->prepare();
+
         if (! $component instanceof HasVisibility || ! $component->isVisible()) {
             abort(403, app()->environment('local') ? 'Access denied' : '');
         }
 
-        if ($component instanceof ResolvesRecord) {
+        if ($component instanceof ResolvesRecords) {
             if ($recordId) {
-                $component->resolveRecord($recordId);
+                $record = $component->resolveRecord($recordId);
+
+                if ($component instanceof HasRecord) {
+                    $component->record($record);
+                }
             } elseif ($recordIds) {
                 $actionArgs['records'] = $component->resolveRecords($recordIds);
             }

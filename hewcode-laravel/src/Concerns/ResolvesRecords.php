@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
-trait InteractsWithModel
+trait ResolvesRecords
 {
-    protected mixed $record = null;
-    protected ?object $model = null;
+    use HasModel;
+
     protected ?Closure $resolveRecordUsing = null;
 
     protected function resolve(int|string|array $ids): mixed
@@ -42,11 +42,9 @@ trait InteractsWithModel
         }
     }
 
-    public function resolveRecord(int|string $id): static
+    public function resolveRecord(int|string $id): mixed
     {
-        $this->record = $this->resolve($id);
-
-        return $this;
+        return $this->resolve($id);
     }
 
     public function resolveRecords(array $ids): Collection
@@ -57,17 +55,6 @@ trait InteractsWithModel
     public function resolveRecordUsing(Closure $callback): static
     {
         $this->resolveRecordUsing = $callback;
-
-        return $this;
-    }
-
-    public function model(object|string|null $model): static
-    {
-        if (is_string($model) && class_exists($model)) {
-            $model = new $model;
-        }
-
-        $this->model = $model;
 
         return $this;
     }

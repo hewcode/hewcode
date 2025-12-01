@@ -15,10 +15,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use RuntimeException;
 
-class Form extends Container implements Contracts\ResolvesRecord, Contracts\HasRecord, Contracts\HasVisibility, Contracts\MountsActions, Contracts\MountsComponents
+class Form extends Container implements Contracts\ResolvesRecords, Contracts\HasRecord, Contracts\HasVisibility, Contracts\MountsActions, Contracts\MountsComponents
 {
-    use Concerns\InteractsWithModel;
-    use Concerns\InteractsWithRecord;
+    use Concerns\ResolvesRecords;
+    use Concerns\HasRecord;
     use Concerns\InteractsWithActions;
     use Concerns\RequiresVisibility;
 

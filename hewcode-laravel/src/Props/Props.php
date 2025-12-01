@@ -2,8 +2,9 @@
 
 namespace Hewcode\Hewcode\Props;
 
+use Hewcode\Hewcode\Contracts\HasOwnerRecord;
 use Hewcode\Hewcode\Contracts\HasRecord;
-use Hewcode\Hewcode\Contracts\ResolvesRecord;
+use Hewcode\Hewcode\Contracts\ResolvesRecords;
 use Hewcode\Hewcode\Support\Container;
 use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
@@ -146,12 +147,16 @@ class Props implements Arrayable
 
             $component->name($componentName);
 
-            if ($component instanceof ResolvesRecord && $this->record) {
+            if ($component instanceof ResolvesRecords && $this->record) {
                 $component->model($this->record);
             }
 
             if ($component instanceof HasRecord && $this->record) {
                 $component->record($this->record);
+            }
+
+            if ($component instanceof HasOwnerRecord && $this->record) {
+                $component->ownerRecord($this->record);
             }
 
             // Convert to data format

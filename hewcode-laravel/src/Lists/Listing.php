@@ -25,13 +25,20 @@ use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Support\Expose;
 use ReflectionException;
 
-class Listing extends Container implements Contracts\MountsActions, Contracts\MountsComponents, Contracts\ResolvesRecord, Contracts\HasVisibility
+class Listing extends Container implements Contracts\MountsActions, Contracts\MountsComponents, Contracts\ResolvesRecords, Contracts\HasVisibility, Contracts\HasOwnerRecord, Contracts\HasRecord
 {
-    use Concerns\InteractsWithModel;
+    use Concerns\ResolvesRecords;
     use Concerns\InteractsWithActions;
     use Concerns\RequiresVisibility;
+    use Concerns\HasOwnerRecord;
+    use Concerns\HasRecord;
+
+    // @todo: create a HasOwnerRecord contract+concern, use here, and then we can do:
+    // Listing::make()->ownerRecord($record)->relationship('comments', fn ($query) => ...)
+    // then we can create an AttachAction and DetachAction that can be mounted on Listings
 
     protected ListingDriver $driver;
+    protected Closure|null $buildDriverUsing = null;
     /** @var array<Column> */
     public array $columns = [];
     /** @var array<Column>|null */
@@ -110,36 +117,59 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         return new self();
     }
 
-    public function query(Builder $query): self
+    public function buildDriverUsing(Closure $callback): self
     {
-        $this->driver = new EloquentDriver($query);
-
-        // Set model context on existing columns
-        $this->setModelContextOnColumns($query->getModel());
+        $this->buildDriverUsing = $callback;
 
         return $this;
     }
 
-    public function data(iterable $data): self
+    public function query(Builder|Closure $query): self
     {
-        $this->driver = new IterableDriver($data);
+        $this->buildDriverUsing(function () use ($query) {
+            /** @var Builder $query */
+            $query = $this->evaluate($query);
+
+            $this->driver = new EloquentDriver($query);
+
+            if (! $this->model) {
+                $this->model($query->getModel());
+            }
+        });
 
         return $this;
+    }
+
+    public function data(iterable|Closure $data): self
+    {
+        $this->buildDriverUsing(function () use ($data) {
+            $data = $this->evaluate($data);
+
+            $this->driver = new IterableDriver($data);
+        });
+
+        return $this;
+    }
+
+    public function getDriver(): ListingDriver
+    {
+        if (isset($this->driver)) {
+            return $this->driver;
+        }
+
+        if ($this->buildDriverUsing instanceof Closure) {
+            ($this->buildDriverUsing)();
+
+            return $this->driver;
+        }
+
+        throw new BadMethodCallException('You must call either query() or data() on a Listing.');
     }
 
     /** @param Column[] $columns */
     public function columns(array $columns): self
     {
         $this->columns = $columns;
-
-        // If we already have a driver with a model, set the context on new columns
-        if (isset($this->driver) && $this->driver instanceof EloquentDriver) {
-            $model = $this->getModel();
-
-            $this->model($model);
-
-            $this->setModelContextOnColumns($model);
-        }
 
         return $this;
     }
@@ -315,8 +345,16 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     {
         $parameters = [];
 
-        if (method_exists($this, 'getModel') && $this->getModel() !== null) {
-            $parameters['model'] = $this->getModel();
+        if ($model = $this->getModel()) {
+            $parameters['model'] = $model;
+        }
+
+        if ($ownerRecord = $this->getOwnerRecord()) {
+            $parameters['ownerRecord'] = $ownerRecord;
+        }
+
+        if ($relationshipName = $this->getRelationshipName()) {
+            $parameters['relationshipName'] = $relationshipName;
         }
 
         return $parameters;
@@ -326,7 +364,11 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     {
         if ($this->cachedColumns === null) {
             $this->cachedColumns = collect($this->columns)
-                ->filter(fn (Column $column) => $column->isVisible())
+                ->filter(fn (Column $column) => $column
+                    ->shareEvaluationParameters($this->getEvaluationParameters())
+                    ->model($this->getModel())
+                    ->isVisible()
+                )
                 ->values()
                 ->all();
         }
@@ -417,17 +459,25 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     private function getFilters(): array
     {
         return collect($this->filters)
-            ->map(fn (Filter $filter) => $filter->model($this->getModel()))
-            ->filter(fn (Filter $filter) => $filter->isVisible())
+            ->filter(fn (Filter $filter) => $filter
+                ->shareEvaluationParameters($this->getEvaluationParameters())
+                ->model($this->getModel())
+                ->isVisible()
+            )
             ->values()
             ->all();
     }
 
+    public function prepare(): void
+    {
+        parent::prepare();
+
+        $this->prepareData();
+    }
+
     private function prepareData(): void
     {
-        if (!isset($this->driver)) {
-            throw new BadMethodCallException('You must call either query() or data() before calling toData()');
-        }
+        $this->getDriver();
 
         $visibleColumns = collect($this->getCachedColumns());
 
@@ -483,7 +533,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
     public function toData(): array
     {
-        $this->prepareData();
+        $this->prepare();
 
         $result = $this->driver->paginate($this->perPage);
 
@@ -552,7 +602,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             }, $this->columns),
             'sortable' => array_values($sortableFields),
             'deferFiltering' => $this->deferFiltering,
-            'filtersForm' => $this->filtersForm()->toData(),
+            'filtersForm' => ! empty($this->getFilters()) ? $this->filtersForm()->toData() : null,
             'tabs' => array_map(function (Tab $tab) {
                 return $tab->toData();
             }, $this->tabs),
@@ -575,13 +625,6 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             }, array_filter($this->bulkActions, fn (BulkAction $bulkAction) => $bulkAction->isVisible())),
             'reorderable' => $this->reorderableColumn,
         ]);
-    }
-
-    protected function setModelContextOnColumns(Model $model): void
-    {
-        foreach ($this->columns as $column) {
-            $column->model($model);
-        }
     }
 
     protected function getModel(): ?Model

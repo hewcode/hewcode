@@ -6,7 +6,9 @@ use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Hewcode;
+use Hewcode\Hewcode\Support\Component;
 use Illuminate\Contracts\Support\Responsable;
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,13 +16,7 @@ trait InteractsWithActions
 {
     public function mountAction(string $name, array $args): mixed
     {
-        $actions = collect($this->getMountableActions())
-            ->filter(fn (Action $action) => $action
-                ->parent($this)
-                ->record($this->record)
-                ->model($this->model)
-                ->isVisible()
-            );
+        $actions = $this->filterMountableActions($this->getMountableActions(), $this);
 
         // Check regular actions first
         /** @var Action|null $action */
@@ -47,7 +43,7 @@ trait InteractsWithActions
                     }
 
                     if ($lastComponent instanceof MountsActions) {
-                        $lastComponent = collect($lastComponent->getMountableActions())
+                        $lastComponent = $this->filterMountableActions($lastComponent->getMountableActions(), $lastComponent)
                             ->first(fn (Action $action) => $action->name === $part);
                     }
                 }
@@ -62,11 +58,6 @@ trait InteractsWithActions
 
         if (! $action instanceof Action) {
             throw new InvalidArgumentException("Action [$name] not found.");
-        }
-
-        // For regular actions, set the record if available
-        if ($this->record) {
-            $action->record($this->record);
         }
 
         if (! $action->isVisible()) {
@@ -84,5 +75,20 @@ trait InteractsWithActions
         }
 
         return Hewcode::response(data: $response ?? []);
+    }
+
+    private function filterMountableActions(iterable $actions, Component $parent): Collection
+    {
+        return collect($actions)
+            ->filter(function (Action $action) use ($parent) {
+                if ($this instanceof \Hewcode\Hewcode\Contracts\HasRecord) {
+                    $action->record($this->getRecord());
+                }
+
+                return $action
+                    ->parent($parent)
+                    ->model($this->getModel())
+                    ->isVisible();
+            });
     }
 }

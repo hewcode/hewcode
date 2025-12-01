@@ -63,6 +63,10 @@ const DataTable = ({
   theadClassName = '',
   reorderable = null,
 }) => {
+  if (!seal) {
+    return <div className="w-full p-4 text-center font-mono font-bold text-red-600">Error: DataTable component did not receive proper props.</div>;
+  }
+
   const [sortConfig, setSortConfig] = useState({
     sort: currentValues.sort,
     direction: currentValues.direction,

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Action extends Component implements Contracts\HasRecord, Contracts\HasVisibility, Contracts\MountsComponents
 {
-    use Concerns\InteractsWithRecord;
+    use Concerns\HasRecord;
     use Concerns\HasVisibility;
     use Concerns\HasLabel;
     use Concerns\HasForm;

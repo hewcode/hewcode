@@ -134,6 +134,8 @@ Now users can click column headers to sort and use the search box to filter.
 <a name="working-with-relationships"></a>
 ### Working with Relationships
 
+#### Displaying Related Data in Columns
+
 Display related data with dot notation:
 
 ```php
@@ -156,6 +158,83 @@ public function posts(): Lists\Listing
 
 **Important:** Always eager load relationships with `->with()` to avoid N+1 query problems.
 
+#### Listing Records from a Relationship
+
+For displaying a model's related records (e.g., a user's posts), use the `->relationship()` method. This requires providing the owner record either through Props or explicitly:
+
+**Option 1: Using Props with record() (Recommended)**
+
+```php
+// Controller
+public function edit(User $user): Response
+{
+    return Inertia::render('users/edit', Props\Props::for($this)
+        ->record($user)  // Sets the owner record for relationship listings
+        ->components(['form', 'posts'])
+    );
+}
+
+#[Lists\Expose]
+public function posts(): Lists\Listing
+{
+    return Lists\Listing::make()
+        ->visible(auth()->check())
+        ->relationship('posts')  // Uses the record from Props
+        ->columns([
+            Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
+            Lists\Schema\TextColumn::make('status')->badge(),
+            Lists\Schema\TextColumn::make('published_at')->date(),
+        ])
+        ->defaultSort('created_at', 'desc');
+}
+```
+
+**Option 2: Explicit owner record**
+
+```php
+#[Lists\Expose]
+public function posts(): Lists\Listing
+{
+    $user = User::find(request()->route('user'));
+    
+    return Lists\Listing::make()
+        ->visible(auth()->check())
+        ->ownerRecord($user)     // Explicitly set the owner
+        ->relationship('posts')  // Uses the explicitly set owner
+        ->columns([
+            Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
+            Lists\Schema\TextColumn::make('status')->badge(),
+            Lists\Schema\TextColumn::make('published_at')->date(),
+        ])
+        ->defaultSort('created_at', 'desc');
+}
+```
+
+**Custom relationship queries:**
+
+You can modify the relationship query by passing a closure as the second parameter:
+
+```php
+#[Lists\Expose]
+public function posts(): Lists\Listing
+{
+    return Lists\Listing::make()
+        ->visible(auth()->check())
+        ->relationship('posts', fn (Builder $query) => 
+            $query->where('status', PostStatus::PUBLISHED)
+                  ->with('category')
+                  ->orderBy('featured', 'desc')
+        )
+        ->columns([
+            Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
+            Lists\Schema\TextColumn::make('category.name')->badge(),
+            Lists\Schema\TextColumn::make('published_at')->date(),
+        ]);
+}
+```
+
+This allows you to filter, eager load additional relationships, or apply custom sorting to the relationship query while still maintaining the automatic scoping to the owner record.
+
 <a name="how-props-works"></a>
 ## How Props Works
 
@@ -175,6 +254,58 @@ Each method must have the appropriate attribute:
 public function posts(): Lists\Listing
 {
     return Lists\Listing::make()...;
+}
+```
+
+### Multiple Components on One Page
+
+You can expose multiple components on a single page, perfect for showing related data:
+
+```php
+// Controller
+public function edit(User $user): Response
+{
+    return Inertia::render('users/edit', Props\Props::for($this)
+        ->record($user)  // Provides the user record to relationship listings
+        ->components(['form', 'posts'])  // Expose both form and posts listing
+    );
+}
+
+#[Forms\Expose]
+public function form(): Forms\Form
+{
+    return Forms\Form::make()
+        ->model(User::class)
+        ->schema([
+            Forms\Schema\TextInput::make('name')->required(),
+            Forms\Schema\TextInput::make('email')->required(),
+        ]);
+}
+
+#[Lists\Expose]
+public function posts(): Lists\Listing
+{
+    return Lists\Listing::make()
+        ->relationship('posts')  // Uses the record from Props
+        ->columns([
+            Lists\Schema\TextColumn::make('title')->sortable(),
+            Lists\Schema\TextColumn::make('status')->badge(),
+        ]);
+}
+```
+
+On the frontend, both components are available as props:
+
+```tsx
+export default function Edit() {
+    const { form, posts } = usePage().props;
+
+    return (
+        <div>
+            <Form {...form} />
+            <DataTable {...posts} />
+        </div>
+    );
 }
 ```
 

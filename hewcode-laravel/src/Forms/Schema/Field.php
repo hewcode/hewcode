@@ -15,7 +15,7 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
     use Concerns\HasModel;
     use Concerns\HasVisibility;
     use Concerns\HasValidationRules;
-    use Concerns\InteractsWithRecord;
+    use Concerns\HasRecord;
 
     protected bool $dehydrated = true;
     protected ?Closure $formatStateUsing = null;

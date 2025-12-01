@@ -2,7 +2,7 @@
 
 namespace Hewcode\Hewcode\Concerns;
 
-trait InteractsWithRecord
+trait HasRecord
 {
     protected mixed $record = null;
 
