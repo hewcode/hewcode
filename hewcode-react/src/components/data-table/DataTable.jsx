@@ -62,10 +62,19 @@ const DataTable = ({
   tdClassName = '',
   theadClassName = '',
   reorderable = null,
+  requestScope = null,
 }) => {
   if (!seal) {
     return <div className="w-full p-4 text-center font-mono font-bold text-red-600">Error: DataTable component did not receive proper props.</div>;
   }
+
+  // Helper function to get scoped parameter name
+  const getScopedParam = (paramName) => {
+    if (requestScope && ['filter', 'search', 'sort', 'direction', 'columns', 'activeTab', 'clear'].includes(paramName)) {
+      return `${requestScope}_${paramName}`;
+    }
+    return paramName;
+  };
 
   const [sortConfig, setSortConfig] = useState({
     sort: currentValues.sort,
@@ -128,8 +137,8 @@ const DataTable = ({
     if (onSort) {
       onSort?.(columnKey, direction);
     } else {
-      let [url1, params] = setUrlQuery('sort', columnKey);
-      const [url, params2] = setUrlQuery('direction', direction, url1);
+      let [url1, params] = setUrlQuery(getScopedParam('sort'), columnKey);
+      const [url, params2] = setUrlQuery(getScopedParam('direction'), direction, url1);
 
       router.get(
         url,
@@ -178,7 +187,7 @@ const DataTable = ({
       .map(([key]) => key);
 
     // Save to URL for persistence
-    const [url, params] = setUrlQuery('columns', visibleColumns);
+    const [url, params] = setUrlQuery(getScopedParam('columns'), visibleColumns);
     router.get(url, params, {
       replace: true,
       preserveState: true,
@@ -196,11 +205,11 @@ const DataTable = ({
       .map(([key]) => key);
 
     // Save to URL for persistence
-    const [url, params] = setUrlQuery('columns', visibleColumns);
+    const [url, params] = setUrlQuery(getScopedParam('columns'), visibleColumns);
 
     // Add clear parameter when resetting columns
     if (isReset) {
-      params.clear = 'columns';
+      params[getScopedParam('clear')] = 'columns';
     }
 
     router.get(url, params, {
@@ -352,11 +361,11 @@ const DataTable = ({
   onFilter ||= (state) => {
     setFilterState(state);
 
-    const [url, params] = setUrlQuery('filter', state);
+    const [url, params] = setUrlQuery(getScopedParam('filter'), state);
 
     // Add clear parameter when clearing filters
     if (state === null) {
-      params.clear = 'filters';
+      params[getScopedParam('clear')] = 'filters';
     }
 
     router.get(url, params, {
@@ -367,11 +376,11 @@ const DataTable = ({
   };
 
   onTab ||= (tab) => {
-    const [url, params] = setUrlQuery('activeTab', tab);
+    const [url, params] = setUrlQuery(getScopedParam('activeTab'), tab);
 
     // Add clear parameter when clearing tabs
     if (tab === null) {
-      params.clear = 'activeTab';
+      params[getScopedParam('clear')] = 'activeTab';
     }
 
     router.get(url, params, {
@@ -493,6 +502,7 @@ const DataTable = ({
           hasBulkActions={hasBulkActions}
           isBulkSelecting={isBulkSelecting}
           onToggleBulkSelection={handleToggleBulkSelection}
+          getScopedParam={getScopedParam}
         />
       )) ||
         null}

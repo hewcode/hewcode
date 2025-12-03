@@ -72,6 +72,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     protected bool $persistSearchInSession = false;
     protected bool $persistTabInSession = false;
     protected ?string $sessionKey = null;
+    protected ?string $requestScope = null;
 
     public array $filtersState = [];
 
@@ -227,6 +228,18 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         return $this;
     }
 
+    public function scope(?string $scope): self
+    {
+        $this->requestScope = $scope;
+
+        return $this;
+    }
+
+    public function getRequestScope(): ?string
+    {
+        return $this->requestScope;
+    }
+
     public function bgColor(Closure $callback): self
     {
         $this->bgColorUsing = $callback;
@@ -378,7 +391,13 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
     private function getSessionKey(): string
     {
-        return $this->sessionKey ?? 'hewcode_listing_' . static::class;
+        $base = $this->sessionKey ?? 'hewcode_listing_' . static::class;
+
+        if ($this->requestScope) {
+            return $base . '_' . $this->requestScope;
+        }
+
+        return $base;
     }
 
     private function getColumnVisibilityObject(): array
@@ -418,9 +437,19 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         session()->put("{$sessionKey}.{$key}", $value);
     }
 
+    private function getRequestKey(string $key): string
+    {
+        if ($this->requestScope && in_array($key, ['filter', 'search', 'sort', 'direction', 'columns', 'activeTab', 'clear'])) {
+            return $this->requestScope . '_' . $key;
+        }
+
+        return $key;
+    }
+
     private function getRequestOrSession(string $key, mixed $default = null): mixed
     {
-        $requestValue = request()->input($key);
+        $requestKey = $this->getRequestKey($key);
+        $requestValue = request()->input($requestKey);
 
         // If we have a request value, store it in session (if session persistence is enabled)
         $shouldPersistInSession = match ($key) {
@@ -433,8 +462,8 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         };
 
         // Handle explicit clear request
-        if (request()->has('clear') && $shouldPersistInSession) {
-            $clearType = request()->input('clear');
+        if (request()->has($this->getRequestKey('clear')) && $shouldPersistInSession) {
+            $clearType = request()->input($this->getRequestKey('clear'));
 
             // Clear specific types or all if clear=true (backward compatibility)
             if ($clearType === true || $clearType === 'filters' && $key === 'filter' ||
@@ -502,7 +531,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             $this->filtersState[$filter->name] = $filter->getState();
         }
 
-        if (request('clear') === 'filters') {
+        if (request($this->getRequestKey('clear')) === 'filters') {
             $this->filtersState = [];
         }
 
@@ -613,6 +642,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 'persistColumnsInUrl' => $this->persistColumnsInUrl,
                 'persistSearchInUrl' => $this->persistSearchInUrl,
             ],
+            'requestScope' => $this->requestScope,
             'currentValues' => ([
                 'search' => $this->getRequestOrSession('search'),
                 'sort' => $this->getRequestOrSession('sort', $this->defaultSort[0] ?? null),

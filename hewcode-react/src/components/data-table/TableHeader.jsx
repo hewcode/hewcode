@@ -10,8 +10,8 @@ import ColumnsPopover from './ColumnsPopover.jsx';
 import FiltersPopover from './FiltersPopover.jsx';
 import TabsActions from './TabsActions.jsx';
 
-const performSearch = throttle(650, (e, urlPersistence) => {
-  const [url, params] = setUrlQuery('search', e.target.value);
+const performSearch = throttle(650, (e, urlPersistence, getScopedParam) => {
+  const [url, params] = setUrlQuery(getScopedParam('search'), e.target.value);
 
   router.get(url, params, {
     replace: true,
@@ -57,6 +57,7 @@ const TableHeader = ({
   hasBulkActions = false,
   isBulkSelecting = false,
   onToggleBulkSelection = null,
+  getScopedParam = (param) => param,
 }) => {
   const [search, setSearch] = useState(currentValues.search || '');
   const { __ } = useTranslator();
@@ -80,7 +81,7 @@ const TableHeader = ({
                 if (onSearch) {
                   onSearch(e.target.value);
                 } else {
-                  performSearch(e, urlPersistence);
+                  performSearch(e, urlPersistence, getScopedParam);
                 }
               }}
             />

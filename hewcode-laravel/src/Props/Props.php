@@ -9,6 +9,7 @@ use Hewcode\Hewcode\Support\Container;
 use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
 use ReflectionException;
+use Hewcode\Hewcode\Lists\Listing;
 use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Forms\Expose as FormsExpose;
@@ -79,7 +80,9 @@ class Props implements Arrayable
         }
 
         $discovered = [];
+        $listingComponents = [];
 
+        // First pass: identify all components and collect listings
         foreach ($this->componentNames as $componentName) {
             // Try to find a method with this name
             if (! $reflection->hasMethod($componentName)) {
@@ -132,6 +135,19 @@ class Props implements Arrayable
                 );
             }
 
+            // Track if this is a listing component
+            if (!empty($listingAttributes)) {
+                $listingComponents[] = $componentName;
+            }
+        }
+
+        // Determine if we should auto-scope listings (when there are multiple)
+        $shouldAutoScope = count($listingComponents) > 1;
+
+        // Second pass: create and configure components
+        foreach ($this->componentNames as $componentName) {
+            $method = $reflection->getMethod($componentName);
+
             // Call the method to get the component
             $component = $method->invoke($this->controller);
 
@@ -146,6 +162,11 @@ class Props implements Arrayable
             }
 
             $component->name($componentName);
+
+            // Auto-scope listings if there are multiple and the listing doesn't already have a scope
+            if ($shouldAutoScope && $component instanceof Listing && ! $component->getRequestScope()) {
+                $component->scope($componentName);
+            }
 
             if ($component instanceof ResolvesRecords && $this->record) {
                 $component->model($this->record);
