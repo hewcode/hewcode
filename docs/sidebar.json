@@ -25,6 +25,10 @@
           "path": "text-column.md"
         },
         {
+          "title": "Fragments",
+          "path": "fragments.md"
+        },
+        {
           "title": "Authorization",
           "path": "authorization.md"
         }

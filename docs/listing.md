@@ -874,6 +874,7 @@ Here's a comprehensive example showing most features working together:
 use Hewcode\Hewcode\Props;
 use Hewcode\Hewcode\Lists;
 use Hewcode\Hewcode\Actions;
+use Hewcode\Hewcode\Fragments\Badge;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -898,7 +899,7 @@ class PostController extends Controller
                 Lists\Schema\TextColumn::make('title')
                     ->sortable()
                     ->searchable()
-                    ->after(fn ($record) => $record->slug),  // Show slug below
+                    ->after(fn ($record) => Badge::make($record->slug)),  // Show slug below
                 Lists\Schema\TextColumn::make('status')
                     ->sortable()
                     ->badge(true, 'secondary')

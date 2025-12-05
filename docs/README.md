@@ -209,6 +209,7 @@ Listings can save user preferences in URLs (shareable) or sessions (private). Th
 | Building data tables | [Listing](listing.md) |
 | Building forms | [Forms](forms.md) |
 | Formatting columns | [TextColumn](text-column.md) |
+| Rich content components | [Fragments](fragments.md) |
 | Configuration | [Config](config.md) |
 | Securing endpoints | [Authorization](authorization.md) |
 | Translation support | [Automatic Locale Labels](automatic-locale-labels.md) |

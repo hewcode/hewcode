@@ -38,7 +38,7 @@ The `TextColumn` class is the primary column type for displaying text data in li
 | Show relationships | Dot notation | `TextColumn::make('user.name')` |
 | Wrap long text | `->wrap()` | `->wrap()` |
 | Let users hide it | `->togglable()` | `->togglable()` |
-| Additional content | `->after()` or `->before()` | `->after(fn ($r) => $r->slug)` |
+| Additional content | `->after()` or `->before()` | `->after(fn ($r) => Badge::make('New'))` |
 | Conditional hiding | `->omit()` | `->omit(fn ($r) => !$r->is_public)` |
 
 <a name="when-to-use-textcolumn"></a>
@@ -387,15 +387,41 @@ TextColumn::make('status')
 <a name="before-and-after-content"></a>
 ## Before and After Content
 
-Add content before or after the main column value:
+Add rich content before or after the main column value using Fragments. The `before()` and `after()` methods now return `Fragment` objects, allowing for badges, styled text, and custom components.
+
+### Basic Usage
 
 ```php
+use Hewcode\Hewcode\Fragments\Badge;
+
 TextColumn::make('title')
     ->after(fn ($record) => $record->slug)
 
-TextColumn::make('price')
-    ->before(fn ($record) => '$')
-    ->after(fn ($record) => ' USD')
+TextColumn::make('name')
+    ->before(fn (User $record) => Badge::make('Admin'))
+```
+
+### Status Badges
+
+```php
+TextColumn::make('title')
+    ->after(fn (Post $record) => 
+        Badge::make(
+            label: $record->status->getLabel(),
+            color: match ($record->status) {
+                PostStatus::PUBLISHED => 'success',
+                PostStatus::DRAFT => 'warning',
+                PostStatus::ARCHIVED => 'secondary',
+            },
+            icon: match ($record->status) {
+                PostStatus::PUBLISHED => 'lucide-circle-check',
+                PostStatus::DRAFT => 'lucide-pencil',
+                PostStatus::ARCHIVED => 'lucide-archive',
+                default => null,
+            },
+            variant: 'secondary',
+        )
+    )
 ```
 
 <a name="visibility-control"></a>
@@ -784,14 +810,20 @@ TextColumn::make('user.name')
 
 **Problem:** Used `->after()` but the content doesn't appear.
 
-**Solution:** Check that the callback returns a string value (not an object or array):
+**Solution:** The `after()` and `before()` methods now expect `Fragment` objects. Strings are automatically converted, but complex objects need explicit handling:
 
 ```php
-// ❌ Returns an object
+// ❌ Returns an object, won't display properly
 ->after(fn ($record) => $record->user)
 
-// ✅ Returns a string
+// ✅ Returns a string, automatically converted to Text fragment
 ->after(fn ($record) => $record->user->email)
+
+// ✅ Explicit Fragment usage
+->after(fn ($record) => Text::make($record->user->email))
+
+// ✅ Badge fragment for rich styling
+->after(fn ($record) => Badge::make($record->status->getLabel(), color: 'primary'))
 ```
 
 <a name="method-chaining"></a>

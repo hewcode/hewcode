@@ -585,7 +585,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                     $icon = $columnData[$column->getName() . '_icon'] ?? null;
 
                     // Register icon SVG (deduplicated)
-                    if ($icon && ! isset($iconRegistry[$icon['name']])) {
+                    if ($icon && isset($icon['name']) && ! isset($iconRegistry[$icon['name']])) {
                         $iconRegistry[$icon['name']] = svg($icon['name'])->toHtml();
                     }
 

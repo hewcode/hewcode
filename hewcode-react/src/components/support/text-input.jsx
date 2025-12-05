@@ -19,8 +19,9 @@ const TextInput = ({
   disabled = false,
   className,
   inputClassName,
-  type = 'text',
   revealable = false,
+  seal,
+  inputType = 'text',
   ...props
 }) => {
   const [isRevealed, setIsRevealed] = useState(false);
@@ -30,7 +31,7 @@ const TextInput = ({
   const SuffixIcon = suffixIcon;
   const PrefixIcon = prefixIcon;
 
-  const inputType = revealable && type === 'password' ? (isRevealed ? 'text' : 'password') : type;
+  inputType = revealable && inputType === 'password' ? (isRevealed ? 'text' : 'password') : inputType;
 
   const toggleReveal = () => {
     setIsRevealed(!isRevealed);

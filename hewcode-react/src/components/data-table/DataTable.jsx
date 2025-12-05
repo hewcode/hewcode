@@ -4,11 +4,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getContrastColor, getTailwindBadgeClasses, getTailwindBgClass, isHexColor } from '../../lib/colors.js';
+import { getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import Action from '../actions/Action.jsx';
-import Badge from '../support/badge.jsx';
-import { Badge as ShadcnBadge } from '../ui/badge.jsx';
 import { Checkbox } from '../ui/checkbox.jsx';
 import { TableHeader as ShadcnTableHeader, Table, TableBody, TableCell, TableRow } from '../ui/table.jsx';
 import BulkActions from './BulkActions.jsx';
@@ -16,6 +14,7 @@ import Pagination from './Pagination.jsx';
 import TableColumnHeader from './TableColumnHeader.jsx';
 import TableHeader from './TableHeader.jsx';
 import TableRowActions from './TableRowActions.jsx';
+import CellContent from './cell.jsx';
 
 const DataTable = ({
   records = [],
@@ -257,106 +256,6 @@ const DataTable = ({
     }
   };
 
-  const renderCellContent = (item, column) => {
-    if (column.render) {
-      return column.render(item[column.key], item);
-    }
-
-    if (column.type === 'status') {
-      return <Badge status={item[column.key]?.label} color={item[column.key]?.color} />;
-    }
-
-    const beforeContent = item[column.key + '_before'];
-    const afterContent = item[column.key + '_after'];
-    const badgeColor = item[column.key + '_color'];
-    const iconData = item[column.key + '_icon'];
-
-    // Create icon element if icon data exists
-    const iconElement = iconData ? (
-      <svg
-        width={iconData.size}
-        height={iconData.size}
-        className="inline-block !size-auto flex-shrink-0"
-        style={{ width: iconData.size, height: iconData.size }}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <use href={`#${iconData.name}`} />
-      </svg>
-    ) : null;
-
-    let mainContent;
-    if (column.badge) {
-      const badgeProps = {
-        variant: column.badgeVariant || 'default',
-      };
-
-      // Apply custom color styling
-      if (badgeColor) {
-        const tailwindBadgeClasses = getTailwindBadgeClasses(badgeColor);
-
-        if (tailwindBadgeClasses) {
-          // Use Tailwind classes for named colors
-          badgeProps.className = `border-transparent ${tailwindBadgeClasses}`;
-        } else if (isHexColor(badgeColor)) {
-          // Use inline styles for hex colors
-          badgeProps.style = {
-            backgroundColor: badgeColor,
-            color: getContrastColor(badgeColor),
-            borderColor: badgeColor,
-          };
-          badgeProps.className = 'border-transparent';
-        }
-      }
-
-      // Include icon inside badge if present and position is 'before'
-      mainContent = (
-        <ShadcnBadge {...badgeProps}>
-          {iconData?.position === 'before' && iconElement}
-          {item[column.key]}
-          {iconData?.position === 'after' && iconElement}
-        </ShadcnBadge>
-      );
-    } else {
-      mainContent = item[column.key];
-
-      // Handle icon rendering for non-badge cells
-      if (iconElement) {
-        if (iconData.position === 'before') {
-          mainContent = (
-            <span className="inline-flex items-center gap-2">
-              {iconElement}
-              {mainContent}
-            </span>
-          );
-        } else if (iconData.position === 'after') {
-          mainContent = (
-            <span className="inline-flex items-center gap-2">
-              {mainContent}
-              {iconElement}
-            </span>
-          );
-        }
-      }
-    }
-
-    // If there's before or after content, wrap in a div
-    if (beforeContent || afterContent) {
-      return (
-        <div className="space-y-1">
-          {beforeContent && <div className="text-muted-foreground text-xs">{beforeContent}</div>}
-          <div>{mainContent}</div>
-          {afterContent && <div className="text-muted-foreground text-xs">{afterContent}</div>}
-        </div>
-      );
-    }
-
-    return mainContent;
-  };
-
   /* Apply filters */
   onFilter ||= (state) => {
     setFilterState(state);
@@ -570,7 +469,7 @@ const DataTable = ({
                           key={column.key}
                           className={`${tdClassName} ${column.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}
                         >
-                          {renderCellContent(record, column)}
+                          <CellContent record={record} column={column} />
                         </TableCell>
                       ))}
                     <TableRowActions

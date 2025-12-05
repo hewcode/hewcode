@@ -5,6 +5,7 @@ namespace Hewcode\Hewcode\Lists\Schema;
 use Closure;
 use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
+use Hewcode\Hewcode\Fragments;
 use Hewcode\Hewcode\Support\Component;
 use Illuminate\Database\Eloquent\Model;
 
@@ -201,19 +202,35 @@ abstract class Column extends Component implements Contracts\HasVisibility
         return $this->badgeVariant;
     }
 
-    public function getColor($record): ?string
+    public function getColor(object $record): ?string
     {
         return $this->colorUsing ? $this->evaluate($this->colorUsing, ['record' => $record]) : null;
     }
 
-    public function getBeforeContent($record): ?string
+    public function getBeforeContent(object $record): ?Fragments\Fragment
     {
-        return $this->beforeUsing ? $this->evaluate($this->beforeUsing, ['record' => $record]) : null;
+        $value = $this->beforeUsing
+            ? $this->evaluate($this->beforeUsing, ['record' => $record])
+            : null;
+
+        if ($value instanceof Fragments\Fragment) {
+            return $value;
+        }
+
+        return Fragments\Text::make($value);
     }
 
-    public function getAfterContent($record): ?string
+    public function getAfterContent(object $record): ?Fragments\Fragment
     {
-        return $this->afterUsing ? $this->evaluate($this->afterUsing, ['record' => $record]) : null;
+        $value = $this->afterUsing
+            ? $this->evaluate($this->afterUsing, ['record' => $record])
+            : null;
+
+        if ($value instanceof Fragments\Fragment) {
+            return $value;
+        }
+
+        return Fragments\Text::make($value);
     }
 
     public function isTogglable(): bool
@@ -226,7 +243,7 @@ abstract class Column extends Component implements Contracts\HasVisibility
         return $this->isToggledHiddenByDefault;
     }
 
-    public function getValue($record)
+    public function getValue($record): mixed
     {
         if ($this->omitUsing && $this->evaluate($this->omitUsing, ['record' => $record])) {
             return null;
@@ -236,9 +253,15 @@ abstract class Column extends Component implements Contracts\HasVisibility
             ? $this->evaluate($this->getStateUsing, ['record' => $record])
             : $this->getDefaultValue($record);
 
-        return $this->formatStateUsing
+        $value = $this->formatStateUsing
             ? $this->evaluate($this->formatStateUsing, ['value' => $value, 'record' => $record])
             : $value;
+
+        if ($value instanceof Fragments\Fragment) {
+            return $value;
+        }
+
+        return $value;
     }
 
     protected function getEvaluationParameters(): array
@@ -257,11 +280,13 @@ abstract class Column extends Component implements Contracts\HasVisibility
         return data_get($record, $this->name);
     }
 
-    public function toRecordData(Model $record): array
+    public function toRecordData(object $record): array
     {
-        $data = [];
+        $data = [
+            'id' => method_exists($record, 'getKey') ? $record->getKey() : null,
+        ];
 
-        $data[$this->getName()] = $this->getValue($record);
+        $data[$this->getName()] = $this->toFragment($record);
 
         if ($before = $this->getBeforeContent($record)) {
             $data[$this->getName() . '_before'] = $before;
@@ -282,6 +307,22 @@ abstract class Column extends Component implements Contracts\HasVisibility
         return $data;
     }
 
+    private function toFragment(object $record): Fragments\Fragment
+    {
+        $value = $this->getValue($record);
+
+        if ($this->shouldShowBadge() && ! ($value instanceof Fragments\Fragment)) {
+            return (new Fragments\Badge(
+                $value,
+                $this->getColor($record),
+                $this->getIcon($record),
+                $this->badgeVariant,
+            ));
+        }
+
+        return Fragments\Text::make($value);
+    }
+
     public function toData(): array
     {
         return array_merge(parent::toData(), [
@@ -289,7 +330,6 @@ abstract class Column extends Component implements Contracts\HasVisibility
             'label' => $this->getLabel(),
             'wrap' => $this->shouldWrap(),
             'badge' => $this->shouldShowBadge(),
-            'badgeVariant' => $this->getBadgeVariant(),
             'togglable' => $this->isTogglable(),
             'isToggledHiddenByDefault' => $this->isToggledHiddenByDefault(),
             'hidden' => ! $this->isVisible(),
