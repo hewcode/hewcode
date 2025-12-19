@@ -51,5 +51,14 @@ class HewcodeServiceProvider extends PackageServiceProvider
         });
 
         Inertia::share(new InertiaProps);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                Console\Commands\MakeResourceCommand::class,
+                Console\Commands\MakeListingCommand::class,
+                Console\Commands\MakeFormCommand::class,
+                Console\Commands\MakePageCommand::class,
+            ]);
+        }
     }
 }

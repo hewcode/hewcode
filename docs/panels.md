@@ -18,6 +18,29 @@ public function register(): void
 }
 ```
 
+## Creating Resources
+
+The fastest way to create resources is using the `hew:resource` Artisan command:
+
+### Basic Usage
+
+```bash
+# Create a simple resource
+php artisan hew:resource ProductResource
+
+# Specify the model explicitly
+php artisan hew:resource ProductResource --model=Product
+
+# Assign to specific panels
+php artisan hew:resource ProductResource --panels=admin,app
+```
+
+### Auto-Generate from Database
+
+Use the `--generate` option to automatically create form fields and listing columns based on your model's table structure.
+
+The `--generate` option intelligently maps database columns to appropriate form fields and listing columns.
+
 ## Multiple Panels
 
 Resources and controllers can be assigned to one or more panels using the `panels()` method:
@@ -182,6 +205,67 @@ class EditUserController extends Resources\EditController
         ];
     }
 }
+```
+
+### Quick Creation Commands
+
+Generate the separate components quickly with Artisan commands:
+
+```bash
+# Create listing definition
+php artisan hew:listing UserListing --model=User --generate
+
+# Create form definition  
+php artisan hew:form UserForm --model=User --generate
+
+# Create custom page controller
+php artisan hew:page CustomPageController --icon=lucide-settings --panels=admin
+```
+
+## Artisan Commands
+
+Hewcode provides Laravel-style make commands for rapid panel development:
+
+### `hew:resource` - Complete Resources
+```bash
+# Create a simple resource with inline form/listing methods
+php artisan hew:resource ProductResource --generate
+
+# Specify model and panels
+php artisan hew:resource ProductResource --model=Product --panels=admin,app --generate
+```
+
+### `hew:listing` - Listing Definitions  
+```bash
+# Create standalone listing definition
+php artisan hew:listing ProductListing --model=Product --generate
+
+# Associate with form definition
+php artisan hew:listing ProductListing --model=Product --form=ProductForm --generate
+```
+
+### `hew:form` - Form Definitions
+```bash
+# Create standalone form definition  
+php artisan hew:form ProductForm --model=Product --generate
+
+# Basic form without generation
+php artisan hew:form ProductForm --model=Product
+```
+
+### `hew:page` - Page Controllers
+```bash
+# Basic page controller
+php artisan hew:page DashboardController
+
+# With custom icon and panels
+php artisan hew:page SettingsController --icon=lucide-settings --panels=admin,app
+
+# Available in all panels
+php artisan hew:page GlobalController --panels=all
+
+# No navigation menu entry
+php artisan hew:page ApiController --no-nav --view=api/status
 ```
 
 ## Navigation
