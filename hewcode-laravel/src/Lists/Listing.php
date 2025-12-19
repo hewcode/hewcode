@@ -6,6 +6,7 @@ use BadMethodCallException;
 use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Forms\Form;
+use Hewcode\Hewcode\Forms\FormDefinition;
 use Hewcode\Hewcode\Lists\Drivers\EloquentDriver;
 use Hewcode\Hewcode\Lists\Drivers\IterableDriver;
 use Hewcode\Hewcode\Lists\Drivers\ListingDriver;
@@ -20,10 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
-use Hewcode\Hewcode\Lists\Expose as ListingExpose;
-use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Support\Expose;
-use ReflectionException;
 
 class Listing extends Container implements Contracts\MountsActions, Contracts\MountsComponents, Contracts\ResolvesRecords, Contracts\HasVisibility, Contracts\HasOwnerRecord, Contracts\HasRecord
 {
@@ -33,12 +31,9 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     use Concerns\HasOwnerRecord;
     use Concerns\HasRecord;
 
-    // @todo: create a HasOwnerRecord contract+concern, use here, and then we can do:
-    // Listing::make()->ownerRecord($record)->relationship('comments', fn ($query) => ...)
-    // then we can create an AttachAction and DetachAction that can be mounted on Listings
-
     protected ListingDriver $driver;
     protected Closure|null $buildDriverUsing = null;
+    protected ?FormDefinition $formDefinition = null;
     /** @var array<Column> */
     public array $columns = [];
     /** @var array<Column>|null */
@@ -58,6 +53,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     protected ?Closure $bgColorUsing = null;
     protected ?string $reorderableColumn = null;
     protected bool $deferFiltering = false;
+    protected ?Closure $touchActionsUsing = null;
 
     // URL persistence settings
     protected bool $persistFiltersInUrl = false;
@@ -78,44 +74,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
     public static function make(): self
     {
-        // Validate that this method is called from a method with the #[Listing] attribute
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-
-        // Find the calling method (skip the current make() call)
-        $caller = null;
-        for ($i = 1; $i < count($backtrace); $i++) {
-            if (isset($backtrace[$i]['class']) && isset($backtrace[$i]['function'])) {
-                $caller = $backtrace[$i];
-                break;
-            }
-        }
-
-        if (!$caller) {
-            throw new BadMethodCallException('Lists\Listing::make() must be called from a method with the #[Listing] attribute');
-        }
-
-        try {
-            $reflectionClass = new ReflectionClass($caller['class']);
-            $reflectionMethod = $reflectionClass->getMethod($caller['function']);
-
-            $listingAttributes = $reflectionMethod->getAttributes(ListingExpose::class);
-            $actionsAttributes = $reflectionMethod->getAttributes(ActionsExpose::class);
-
-            if (empty($listingAttributes) && empty($actionsAttributes)) {
-                throw new BadMethodCallException(
-                    sprintf(
-                        'Lists\Listing::make() can only be called from methods with the #[Listing] or #[Actions] attribute. ' .
-                        'Method %s::%s() is missing the required attribute.',
-                        $caller['class'],
-                        $caller['function']
-                    )
-                );
-            }
-        } catch (ReflectionException) {
-            throw new BadMethodCallException('Unable to validate calling method for Lists\Listing::make()');
-        }
-
-        return new self();
+        return new static();
     }
 
     public function buildDriverUsing(Closure $callback): self
@@ -165,6 +124,13 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         }
 
         throw new BadMethodCallException('You must call either query() or data() on a Listing.');
+    }
+
+    public function usingForm(FormDefinition $formDefinition): self
+    {
+        $this->formDefinition = $formDefinition;
+
+        return $this;
     }
 
     /** @param Column[] $columns */
@@ -349,6 +315,13 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     public function deferFiltering(bool $defer = true): self
     {
         $this->deferFiltering = $defer;
+
+        return $this;
+    }
+
+    public function touchActionsUsing(Closure $callback): self
+    {
+        $this->touchActionsUsing = $callback;
 
         return $this;
     }
@@ -600,12 +573,14 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 // Add row actions if specified
                 if (! empty($this->actions)) {
                     $visibleActions = array_filter($this->actions, function (Action $action) use ($record) {
-                        return $action->record($record)->isVisible();
+                        return $this->prepareAction($action)
+                            ->record($record)
+                            ->isVisible();
                     });
 
                     if (!empty($visibleActions)) {
                         $data['_row_actions'] = array_reduce($visibleActions, function ($carry, Action $action) use ($record) {
-                            $carry[$action->name] = $action->parent($this)->toData();
+                            $carry[$action->name] = $action->toData();
 
                             return $carry;
                         }, []);
@@ -651,10 +626,24 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 'columns' => $this->getColumnVisibilityObject(),
             ]),
             'bulkActions' => array_map(function (BulkAction $bulkAction) {
-                return $bulkAction->parent($this)->toData();
-            }, array_filter($this->bulkActions, fn (BulkAction $bulkAction) => $bulkAction->isVisible())),
+                return $bulkAction->toData();
+            }, array_filter($this->bulkActions, function (BulkAction $bulkAction) {
+                return $this->prepareAction($bulkAction)->isVisible();
+            })),
             'reorderable' => $this->reorderableColumn,
         ]);
+    }
+
+    protected function prepareAction(Action $action): Action
+    {
+        if ($this->touchActionsUsing) {
+            $action = ($this->touchActionsUsing)($action, $this);
+        }
+
+        return $action
+            ->parent($this)
+            ->shareEvaluationParameters($this->getEvaluationParameters())
+            ->model($this->getModel());
     }
 
     protected function getModel(): ?Model
@@ -678,6 +667,11 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         }
 
         return null;
+    }
+
+    public function getFormDefinition(): ?FormDefinition
+    {
+        return $this->formDefinition;
     }
 
     public function getMountableActions(): array

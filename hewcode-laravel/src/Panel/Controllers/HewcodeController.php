@@ -1,12 +1,12 @@
 <?php
 
-namespace Hewcode\Hewcode\Http\Controllers;
+namespace Hewcode\Hewcode\Panel\Controllers;
 
 use Hewcode\Hewcode\Contracts\HasRecord;
+use Hewcode\Hewcode\Contracts\HasVisibility;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecords;
-use Hewcode\Hewcode\Contracts\HasVisibility;
 use Hewcode\Hewcode\Support\Container;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -70,12 +70,17 @@ class HewcodeController extends Controller
 
         $controller = $route?->getController();
 
-        if (! method_exists($controller, $componentName)) {
+        if (! ($controller instanceof ServeResourceController) && ! method_exists($controller, $componentName)) {
             abort(404, app()->environment('local') ? "Component [$componentName] not found on controller ".get_class($controller) : '');
         }
 
-        /** @var Container $component */
-        $component = $controller->{$componentName}();
+        if ($controller instanceof ServeResourceController) {
+            /** @var Container $component */
+            $component = $controller->getComponent($componentName, $routeName);
+        } else {
+            /** @var Container $component */
+            $component = $controller->{$componentName}();
+        }
 
         if (! $component instanceof Container) {
             abort(500, app()->environment('local') ? "Component [$componentName] on controller ".get_class($controller)." must return an instance of ".Container::class : '');

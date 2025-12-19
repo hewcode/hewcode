@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Concerns;
 
 use Hewcode\Hewcode\Forms\Form;
+use Hewcode\Hewcode\Forms\FormDefinition;
 
 trait HasForm
 {
@@ -10,13 +11,23 @@ trait HasForm
 
     public function getForm(): Form
     {
-        return Form::make()
+        $form = $this->getFormDefinition()?->create() ?? Form::make();
+
+        if (! empty($schema = $this->getFormSchema())) {
+            $form->schema($schema);
+        }
+
+        return $form
             ->parent($this)
             ->record($record = $this->getRecord())
             ->model($record ?? $this->getModel())
             ->visible($this->isVisible())
-            ->schema($this->getFormSchema())
             ->shareEvaluationParameters($this->getEvaluationParameters())
             ->submitUsing($this->action);
+    }
+
+    protected function getFormDefinition(): ?FormDefinition
+    {
+        return null;
     }
 }

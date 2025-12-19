@@ -4,9 +4,12 @@ namespace Hewcode\Hewcode\Actions\Eloquent;
 
 use Hewcode\Hewcode\Actions\Action;
 use Closure;
+use Hewcode\Hewcode\Forms\FormDefinition;
+use Hewcode\Hewcode\Lists\Listing;
 use Hewcode\Hewcode\Toasts\Toast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class EditAction extends Action
 {
@@ -26,7 +29,7 @@ class EditAction extends Action
 
     protected function getDefaultAction(): Closure
     {
-        return function (array $data, Model $record, Action $action) {
+        return function (Model $record, Action $action, array $data = []) {
             return DB::transaction(function () use ($data, $record, $action) {
                 Toast::make()
                     ->success()
@@ -39,5 +42,21 @@ class EditAction extends Action
                 return $record;
             });
         };
+    }
+
+    public function getMountsModal(): bool
+    {
+        return true;
+    }
+
+    protected function getFormDefinition(): ?FormDefinition
+    {
+        $parent = $this->getParent();
+
+        if ($parent instanceof Listing && ($form = $parent->getFormDefinition())) {
+            return $form;
+        }
+
+        return parent::getFormDefinition();
     }
 }

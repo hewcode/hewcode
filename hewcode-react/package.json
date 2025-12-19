@@ -5,6 +5,29 @@
   "main": "src/index.js",
   "module": "src/index.js",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./layouts": "./src/layouts",
+    "./layouts/*": "./src/layouts/*",
+    "./components": "./src/components",
+    "./components/*": "./src/components/*",
+    "./hooks": "./src/hooks",
+    "./hooks/*": "./src/hooks/*",
+    "./contexts": "./src/contexts",
+    "./contexts/*": "./src/contexts/*",
+    "./utils": "./src/utils",
+    "./utils/*": "./src/utils/*",
+    "./lib": "./src/lib",
+    "./lib/*": "./src/lib/*",
+    "./pages": "./src/pages",
+    "./pages/*": "./src/pages/*"
+  },
+  "files": ["src"],
   "scripts": {
     "build": "vite build",
     "dev": "vite",

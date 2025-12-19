@@ -23,7 +23,7 @@ const Pagination = ({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerP
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between p-6">
+    <div className="flex items-center justify-between">
       <div className="flex items-center space-x-2">
         <Button
           asLink={true}

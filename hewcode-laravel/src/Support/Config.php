@@ -9,6 +9,7 @@ class Config
     public function __construct()
     {
         $this->config = [
+            'default_panel' => 'app',
             'date_format' => 'M j, Y',
             'datetime_format' => 'M j, Y g:i A',
         ];
@@ -51,7 +52,7 @@ class Config
     public static function dateFormat(?string $format = null): string|self
     {
         $instance = app(self::class);
-        
+
         if ($format === null) {
             return $instance->getDateFormat();
         }
@@ -62,12 +63,22 @@ class Config
     public static function datetimeFormat(?string $format = null): string|self
     {
         $instance = app(self::class);
-        
+
         if ($format === null) {
             return $instance->getDatetimeFormat();
         }
 
         return $instance->setDatetimeFormat($format);
+    }
+
+    public function setDefaultPanel(string $panel): self
+    {
+        return $this->set('default_panel', $panel);
+    }
+
+    public function getDefaultPanel(): string
+    {
+        return $this->get('default_panel');
     }
 
     public static function instance(): self

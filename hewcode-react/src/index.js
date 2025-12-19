@@ -1,4 +1,5 @@
-export { default as Action } from './components/actions/Action.jsx';
-export { default as Actions } from './components/actions/Actions.jsx';
-export { default as DataTable } from './components/data-table/DataTable.jsx';
-export { default as Form } from './components/form/Form.jsx';
+// Hewcode React Components
+// Individual components should be imported from their subpaths:
+// import DataTable from '@hewcode/react/components/data-table'
+// import Form from '@hewcode/react/components/form'
+// import Actions from '@hewcode/react/components/actions'

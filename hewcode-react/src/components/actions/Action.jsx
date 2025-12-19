@@ -31,6 +31,7 @@ export default function Action({
   onSuccess,
   onError,
   onFinish,
+  url,
 }) {
   const [loading, setLoading] = useState(false);
   const modal = useModalManager();
@@ -127,7 +128,13 @@ export default function Action({
   }
 
   return (
-    <Button variant={colorMap[color] || 'default'} onClick={handleClick} disabled={loading}>
+    <Button
+      variant={colorMap[color] || 'default'}
+      onClick={!url ? handleClick : undefined}
+      disabled={loading}
+      asLink={!!url}
+      href={url ? url : undefined}
+    >
       {loading ? __('hewcode.common.loading') : label || name}
     </Button>
   );

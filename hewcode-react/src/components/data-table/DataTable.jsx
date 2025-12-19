@@ -415,223 +415,112 @@ const DataTable = ({
         />
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <Table>
-          <ShadcnTableHeader className={theadClassName}>
-            <TableRow>
-              {isReorderingActive && <TableColumnHeader label="" className={`${thClassName} w-8`} />}
-              {isBulkSelecting && (
-                <TableColumnHeader
-                  label={
-                    <Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label="Select all" />
-                  }
-                  className={thClassName}
-                />
-              )}
-              {visibleColumns
-                .filter((col) => !col.hidden)
-                .map((column) => (
+      <div className="bg-box border-box-border rounded-md border shadow-sm">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <Table>
+            <ShadcnTableHeader className={theadClassName}>
+              <TableRow>
+                {isReorderingActive && <TableColumnHeader label="" className={`${thClassName} w-8`} />}
+                {isBulkSelecting && (
                   <TableColumnHeader
-                    key={column.key}
-                    label={column.label}
-                    sortable={sortable.includes(column.key)}
-                    sortDirection={sortConfig.sort === column.key ? sortConfig.direction : null}
-                    onSort={() => handleSort(column.key)}
-                    colSpan={rowActions && column.key === visibleColumns[visibleColumns.length - 1].key ? 2 : 1}
+                    label={
+                      <Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label="Select all" />
+                    }
                     className={thClassName}
                   />
-                ))}
-            </TableRow>
-          </ShadcnTableHeader>
-          <SortableContext items={displayRecords.map((r) => r.id)} strategy={verticalListSortingStrategy} disabled={!isReorderingActive}>
-            <TableBody>
-              {displayRecords.map((record, index) => {
-                const renderRowContent = (attributes = {}, listeners = {}) => (
-                  <>
-                    {isReorderingActive && (
-                      <TableCell className={`${tdClassName} cursor-grab active:cursor-grabbing`} {...attributes} {...listeners}>
-                        <GripVertical className="text-muted-foreground h-4 w-4" />
-                      </TableCell>
-                    )}
-                    {isBulkSelecting && (
-                      <TableCell className={tdClassName}>
-                        <Checkbox
-                          checked={selectedRecords.has(record.id)}
-                          onCheckedChange={(checked) => handleSelectRecord(record.id, checked)}
-                          aria-label={`Select record ${record.id}`}
-                        />
-                      </TableCell>
-                    )}
-                    {visibleColumns
-                      .filter((col) => !col.hidden)
-                      .map((column) => (
-                        <TableCell
-                          key={column.key}
-                          className={`${tdClassName} ${column.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}
-                        >
-                          <CellContent record={record} column={column} />
-                        </TableCell>
-                      ))}
-                    <TableRowActions
-                      actions={
-                        record._row_actions
-                          ? Object.values(record._row_actions).map((action) => <Action key={action.name} seal={seal} {...action} />)
-                          : null
-                      }
+                )}
+                {visibleColumns
+                  .filter((col) => !col.hidden)
+                  .map((column) => (
+                    <TableColumnHeader
+                      key={column.key}
+                      label={column.label}
+                      sortable={sortable.includes(column.key)}
+                      sortDirection={sortConfig.sort === column.key ? sortConfig.direction : null}
+                      onSort={() => handleSort(column.key)}
+                      colSpan={rowActions && column.key === visibleColumns[visibleColumns.length - 1].key ? 2 : 1}
+                      className={thClassName}
                     />
-                  </>
-                );
-
-                if (isReorderingActive) {
-                  return (
-                    <SortableRow key={record.id || index} record={record} index={index}>
-                      {(attributes, listeners) => renderRowContent(attributes, listeners)}
-                    </SortableRow>
+                  ))}
+              </TableRow>
+            </ShadcnTableHeader>
+            <SortableContext items={displayRecords.map((r) => r.id)} strategy={verticalListSortingStrategy} disabled={!isReorderingActive}>
+              <TableBody>
+                {displayRecords.map((record, index) => {
+                  const renderRowContent = (attributes = {}, listeners = {}) => (
+                    <>
+                      {isReorderingActive && (
+                        <TableCell className={`${tdClassName} cursor-grab active:cursor-grabbing`} {...attributes} {...listeners}>
+                          <GripVertical className="text-muted-foreground h-4 w-4" />
+                        </TableCell>
+                      )}
+                      {isBulkSelecting && (
+                        <TableCell className={tdClassName}>
+                          <Checkbox
+                            checked={selectedRecords.has(record.id)}
+                            onCheckedChange={(checked) => handleSelectRecord(record.id, checked)}
+                            aria-label={`Select record ${record.id}`}
+                          />
+                        </TableCell>
+                      )}
+                      {visibleColumns
+                        .filter((col) => !col.hidden)
+                        .map((column) => (
+                          <TableCell
+                            key={column.key}
+                            className={`${tdClassName} ${column.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}
+                          >
+                            <CellContent record={record} column={column} />
+                          </TableCell>
+                        ))}
+                      <TableRowActions
+                        actions={
+                          record._row_actions
+                            ? Object.values(record._row_actions).map((action) => <Action key={action.name} seal={seal} {...action} />)
+                            : null
+                        }
+                      />
+                    </>
                   );
-                }
 
-                const rowBgColor = record._row_bg_color;
-                const tailwindBgClass = getTailwindBgClass(rowBgColor);
-                const rowStyle = tailwindBgClass ? undefined : rowBgColor && isHexColor(rowBgColor) ? { backgroundColor: rowBgColor } : undefined;
-                const rowClassName = tailwindBgClass || '';
+                  if (isReorderingActive) {
+                    return (
+                      <SortableRow key={record.id || index} record={record} index={index}>
+                        {(attributes, listeners) => renderRowContent(attributes, listeners)}
+                      </SortableRow>
+                    );
+                  }
 
-                return (
-                  <TableRow key={record.id || index} style={rowStyle} className={rowClassName}>
-                    {renderRowContent()}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </SortableContext>
-        </Table>
-      </DndContext>
+                  const rowBgColor = record._row_bg_color;
+                  const tailwindBgClass = getTailwindBgClass(rowBgColor);
+                  const rowStyle = tailwindBgClass ? undefined : rowBgColor && isHexColor(rowBgColor) ? { backgroundColor: rowBgColor } : undefined;
+                  const rowClassName = tailwindBgClass || '';
 
-      <Pagination
-        showPagination={showPagination}
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        totalItems={pagination.totalItems}
-        itemsPerPage={pagination.itemsPerPage}
-      />
+                  return (
+                    <TableRow key={record.id || index} style={rowStyle} className={rowClassName}>
+                      {renderRowContent()}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </SortableContext>
+          </Table>
+        </DndContext>
+      </div>
+
+      {pagination.totalPages > 1 && (
+        <div className="bg-box border-box-border mt-2 rounded-md border p-4 shadow-sm">
+          <Pagination
+            showPagination={showPagination}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            itemsPerPage={pagination.itemsPerPage}
+          />
+        </div>
+      )}
     </div>
   );
 };
-
-/* Example usage:
-const ExampleUsage = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const sampleData = [
-    {
-      id: 1,
-      reference: '2025-0011',
-      customer: 'Everleigh Avalos',
-      status: 'Signed',
-      scheduledFor: '05-06-2025',
-      createdAt: '05-06-2025 15:02',
-    },
-    {
-      id: 2,
-      reference: '2025-0011',
-      customer: 'Enzo Stanley',
-      status: 'Draft',
-      scheduledFor: '05-06-2025',
-      createdAt: '05-06-2025 15:02',
-    },
-    {
-      id: 3,
-      reference: '2025-0011',
-      customer: 'Blaze Navarro',
-      status: 'Open',
-      scheduledFor: '05-06-2025',
-      createdAt: '05-06-2025 15:02',
-    },
-    {
-      id: 4,
-      reference: '2025-0011',
-      customer: 'Romina Stevenson',
-      status: 'Scheduled',
-      scheduledFor: '05-06-2025',
-      createdAt: '05-06-2025 15:02',
-    },
-    {
-      id: 5,
-      reference: '2025-0011',
-      customer: 'Khalil Webster',
-      status: 'Ordered',
-      scheduledFor: '05-06-2025',
-      createdAt: '05-06-2025 15:02',
-    },
-  ];
-
-  const columns = [
-    { key: 'reference', label: 'Reference' },
-    { key: 'customer', label: 'Customer' },
-    { key: 'status', label: 'Status', type: 'status' },
-    { key: 'scheduledFor', label: 'Scheduled for' },
-    { key: 'createdAt', label: 'Created at' },
-  ];
-
-  const headerActions = [
-    {
-      label: 'Create Quote',
-      variant: 'primary',
-      onClick: () => alert('Create Quote clicked'),
-    },
-  ];
-
-  const rowActions = [
-    {
-      icon: Eye,
-      label: 'View',
-      onClick: () => alert('View clicked'),
-    },
-    {
-      icon: Edit2,
-      label: 'Edit',
-      onClick: () => alert('Edit clicked'),
-    },
-    {
-      icon: Trash2,
-      label: 'Delete',
-      onClick: () => alert('Delete clicked'),
-    },
-  ];
-
-  const sortableColumns = {
-    reference: true,
-    customer: true,
-    status: true,
-    scheduledFor: true,
-    createdAt: true,
-  };
-
-  return (
-    <div className='p-6 bg-gray-100 min-h-screen'>
-      <DataTable
-        records={sampleData}
-        columns={columns}
-        showSearch={true}
-        showFilter={true}
-        showActions={true}
-        showPagination={true}
-        searchPlaceholder='Search...'
-        headerActions={headerActions}
-        rowActions={rowActions}
-        sortable={sortableColumns}
-        onSearch={query => console.log('Search:', query)}
-        onFilter={() => console.log('Filter clicked')}
-        onSort={(column, direction) => console.log('Sort:', column, direction)}
-        pagination={{
-          currentPage: currentPage,
-          totalPages: 6,
-          totalItems: 56,
-          itemsPerPage: 20,
-        }}
-      />
-    </div>
-  );
-};
- */
 
 export default DataTable;

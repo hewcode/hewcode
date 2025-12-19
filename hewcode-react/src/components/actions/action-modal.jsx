@@ -23,7 +23,13 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
             context,
             call: {
               name: 'mountAction',
-              params: { name: path, args },
+              params: {
+                name: path,
+                args: {
+                  ...args,
+                  mountingModal: true,
+                },
+              },
             },
           },
           onSuccess: async (response) => {

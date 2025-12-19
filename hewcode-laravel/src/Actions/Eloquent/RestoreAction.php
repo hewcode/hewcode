@@ -16,6 +16,7 @@ class RestoreAction extends Action
 
         $this->color('warning');
         $this->label(__('hewcode::hewcode.actions.restore'));
+        $this->hidden(fn (Model $record) => ! method_exists($record, 'restore') || !$record->trashed());
         $this->action($this->getDefaultAction());
     }
 

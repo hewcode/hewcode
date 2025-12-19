@@ -14,10 +14,10 @@
       ]
     },
     {
-      "title": "Listing",
+      "title": "Core Features",
       "items": [
         {
-          "title": "Overview",
+          "title": "Listing",
           "path": "listing.md"
         },
         {
@@ -25,8 +25,12 @@
           "path": "text-column.md"
         },
         {
-          "title": "Fragments",
-          "path": "fragments.md"
+          "title": "Forms",
+          "path": "forms.md"
+        },
+        {
+          "title": "Actions",
+          "path": "actions.md"
         },
         {
           "title": "Authorization",
@@ -35,20 +39,15 @@
       ]
     },
     {
-      "title": "Actions",
+      "title": "Panels",
       "items": [
         {
           "title": "Overview",
-          "path": "actions.md"
-        }
-      ]
-    },
-    {
-      "title": "Forms",
-      "items": [
+          "path": "panels.md"
+        },
         {
-          "title": "Overview",
-          "path": "forms.md"
+          "title": "Layout Components",
+          "path": "layouts.md"
         }
       ]
     },
@@ -75,6 +74,10 @@
         {
           "title": "Automatic Locale Labels",
           "path": "automatic-locale-labels.md"
+        },
+        {
+          "title": "Props",
+          "path": "props.md"
         }
       ]
     }

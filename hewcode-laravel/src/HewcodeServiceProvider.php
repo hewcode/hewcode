@@ -2,8 +2,10 @@
 
 namespace Hewcode\Hewcode;
 
-use Hewcode\Hewcode\Http\Controllers\HewcodeController;
 use Hewcode\Hewcode\Http\InertiaProps;
+use Hewcode\Hewcode\Panel\Controllers\HewcodeController;
+use Hewcode\Hewcode\Panel\Navigation\Navigation;
+use Hewcode\Hewcode\Panel\Routing;
 use Hewcode\Hewcode\Support\Config;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,11 +29,11 @@ class HewcodeServiceProvider extends PackageServiceProvider
 
     public function packageRegistered()
     {
-        $this->app->singleton(Config::class, function ($app) {
+        $this->app->singleton(Config::class, function () {
             return new Config();
         });
 
-        $this->app->singleton(Manager::class, function ($app) {
+        $this->app->singleton(Manager::class, function () {
             return new Manager;
         });
 
@@ -43,6 +45,10 @@ class HewcodeServiceProvider extends PackageServiceProvider
         Route::post('/_hewcode', HewcodeController::class)
             ->middleware('web')
             ->name('hewcode.mount');
+
+        Hewcode::panels()->each(function (Panel\Panel $panel) {
+            $panel->register();
+        });
 
         Inertia::share(new InertiaProps);
     }

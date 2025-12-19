@@ -35,9 +35,30 @@ class Props implements Arrayable
         $this->data = $data;
     }
 
+    public function data(array $data): static
+    {
+        $this->data = $data;
+
+        return $this;
+    }
+
+    public function appendData(array $data): static
+    {
+        $this->data = array_merge($this->data, $data);
+
+        return $this;
+    }
+
     public function components(array $names): static
     {
         $this->componentNames = $names;
+
+        return $this;
+    }
+
+    public function component(string $name): static
+    {
+        $this->componentNames[] = $name;
 
         return $this;
     }

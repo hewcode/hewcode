@@ -65,7 +65,7 @@ const TableHeader = ({
   searchPlaceholder ||= __('hewcode.common.search') + '...';
 
   return (
-    <div className="flex items-center justify-between p-6">
+    <div className="bg-box border-box-border mb-2 flex items-center justify-between rounded-md border p-4 shadow-sm">
       <div className="flex items-center space-x-2">
         {showSearch && (
           <div className="relative">

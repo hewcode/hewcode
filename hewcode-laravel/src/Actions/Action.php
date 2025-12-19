@@ -25,6 +25,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     public Closure|string|null $modalHeading = null;
     public Closure|string|null $modalDescription = null;
     public bool $shouldClose = false;
+    public Closure|string|null $url = null;
 
     public function __construct()
     {
@@ -83,6 +84,13 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
         return $this;
     }
 
+    public function url(Closure|string|null $url): static
+    {
+        $this->url = $url;
+
+        return $this;
+    }
+
     public function close(): static
     {
         $this->shouldClose = true;
@@ -114,9 +122,14 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
         return $this->evaluate($this->args);
     }
 
+    public function getUrl(): ?string
+    {
+        return $this->evaluate($this->url);
+    }
+
     public function execute(array $args = []): mixed
     {
-        if (! empty($this->getFormSchema())) {
+        if ($this->getMountsModal() && isset($args['mountingModal'])) {
             return [
                 'form' => $this->getForm()->toData(),
             ];
@@ -169,10 +182,16 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
             'requiresConfirmation' => $this->getRequiresConfirmation(),
             'context' => $context,
             'args' => $this->getArgs(),
-            'mountsModal' => ! empty($this->getFormSchema()),
+            'mountsModal' => $this->getMountsModal(),
             'modalHeading' => $this->getModalHeading() ?? $this->getLabel(),
             'modalDescription' => $this->getModalDescription(),
+            'url' => $this->getUrl(),
         ];
+    }
+
+    public function getMountsModal(): bool
+    {
+        return ! $this->getUrl() && ! empty($this->getFormSchema());
     }
 
     public function getComponent(string $type, string $name): ?Component
