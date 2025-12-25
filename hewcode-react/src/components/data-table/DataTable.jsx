@@ -15,6 +15,7 @@ import TableColumnHeader from './TableColumnHeader.jsx';
 import TableHeader from './TableHeader.jsx';
 import TableRowActions from './TableRowActions.jsx';
 import CellContent from './cell.jsx';
+import { Link } from '@inertiajs/react';
 
 const DataTable = ({
   records = [],
@@ -447,6 +448,18 @@ const DataTable = ({
             <SortableContext items={displayRecords.map((r) => r.id)} strategy={verticalListSortingStrategy} disabled={!isReorderingActive}>
               <TableBody>
                 {displayRecords.map((record, index) => {
+                  const hasRowUrl = !!record._row_url;
+                  const handleRowClick = (e) => {
+                    if (hasRowUrl && !isReorderingActive && !isBulkSelecting) {
+                      // Don't navigate if clicking on interactive elements
+                      const target = e.target;
+                      if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="button"]')) {
+                        return;
+                      }
+                      router.visit(record._row_url);
+                    }
+                  };
+
                   const renderRowContent = (attributes = {}, listeners = {}) => (
                     <>
                       {isReorderingActive && (
@@ -494,10 +507,10 @@ const DataTable = ({
                   const rowBgColor = record._row_bg_color;
                   const tailwindBgClass = getTailwindBgClass(rowBgColor);
                   const rowStyle = tailwindBgClass ? undefined : rowBgColor && isHexColor(rowBgColor) ? { backgroundColor: rowBgColor } : undefined;
-                  const rowClassName = tailwindBgClass || '';
+                  const rowClassName = `${tailwindBgClass || ''} ${hasRowUrl ? 'cursor-pointer hover:bg-muted/50' : ''}`;
 
                   return (
-                    <TableRow key={record.id || index} style={rowStyle} className={rowClassName}>
+                    <TableRow key={record.id || index} style={rowStyle} className={rowClassName} onClick={handleRowClick}>
                       {renderRowContent()}
                     </TableRow>
                   );

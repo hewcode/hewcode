@@ -501,6 +501,14 @@ Add visual indicators with conditional row styling:
 
 Colors use your theme's color system: `primary`, `secondary`, `success`, `danger`, `warning`, `info`.
 
+### Clickable Rows
+
+Make entire table rows clickable to navigate to a detail or edit page:
+
+```php
+->recordUrl(fn (Post $record) => route('posts.edit', $record))
+```
+
 ### Drag-and-Drop Reordering
 
 Enable users to reorder records visually:

@@ -54,6 +54,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     protected ?string $reorderableColumn = null;
     protected bool $deferFiltering = false;
     protected ?Closure $touchActionsUsing = null;
+    protected ?Closure $recordUrlUsing = null;
 
     // URL persistence settings
     protected bool $persistFiltersInUrl = false;
@@ -326,6 +327,13 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         return $this;
     }
 
+    public function recordUrl(Closure $callback): self
+    {
+        $this->recordUrlUsing = $callback;
+
+        return $this;
+    }
+
     /** @return array<Column> */
     protected function getEvaluationParameters(): array
     {
@@ -568,6 +576,11 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 // Add row background color if specified
                 if ($this->bgColorUsing) {
                     $data['_row_bg_color'] = $this->evaluate($this->bgColorUsing, ['record' => $record]);
+                }
+
+                // Add row URL if specified
+                if ($this->recordUrlUsing) {
+                    $data['_row_url'] = $this->evaluate($this->recordUrlUsing, ['record' => $record]);
                 }
 
                 // Add row actions if specified
