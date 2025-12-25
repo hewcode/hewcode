@@ -76,6 +76,57 @@ use Hewcode\Hewcode\Forms;
 })
 ```
 
+## Form Definition
+
+You can define a Form definition class that allows you to reuse the same form in multiple places.
+
+Create a form definition using the command:
+
+```bash
+php artisan hew:form UserForm --model=User --generate
+```
+
+You can pass:
+* `--model=User` to specify the model explicitly.
+* `--generate` to auto-generate form fields based on your model's table structure.
+
+This will create a class that extends `Hewcode\Hewcode\Forms\FormDefinition`:
+
+```php
+use App\Models\User;
+use Hewcode\Hewcode\Forms;
+
+class UserForm extends Forms\FormDefinition
+{
+    protected string $model = User::class;
+
+    public function default(Forms\Form $form): Forms\Form
+    {
+        return $form
+            ->visible()
+            ->schema([
+                Forms\Schema\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Schema\TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255),
+            ]);
+    }
+}
+```
+
+You can then use this Form definition in your controller:
+
+```php
+#[Forms\Expose]
+public function form(): Forms\Form
+{
+    return UserForm::make();
+}
+```
+
 ## Essentials
 
 ### Visibility

@@ -100,99 +100,19 @@ class ProductResource extends Panel\Resource
 }
 ```
 
+:::info
+Resources include `form()` and `listing()` methods for inline configuration. For reusable definitions across multiple resources, see [Listing Definition](listings.md#listing-definition) and [Form Definition](forms.md#form-definition).
+:::
+
 ## Advanced Usage
 
-Optionally, if you need more flexibility, or want to reuse lists and forms across your codebase, you can create separate listing and form definition classes in addition to custom page controllers.
-
-### Listing Definitions
-
-Using the following command, you can create a standalone listing definition:
-
-```bash
-php artisan hew:listing UserListing --model=User --form=UserForm --generate
-```
-
-You can pass:
-* `--model=User` to specify the model explicitly.
-* `--form=UserForm` to associate a form definition with the listing.
-* `--generate` to auto-generate listing columns based on your model's table structure.
-
-This will create the following listing definition:
-
-```php
-class UserListing extends Lists\ListingDefinition  
-{
-    protected string $model = User::class;
-    protected ?string $form = UserForm::class;
-    
-    public function default(Lists\Listing $listing): Lists\Listing
-    {
-        return $listing
-            ->visible(auth()->check())
-            ->columns([
-                Lists\Schema\TextColumn::make('name')
-                    ->sortable()
-                    ->searchable(),
-                Lists\Schema\TextColumn::make('email')
-                    ->searchable(),
-                Lists\Schema\TextColumn::make('posts_count')
-                    ->sortable(),
-            ])
-            ->actions([
-                Actions\Eloquent\EditAction::make(),
-            ]);
-    }
-}
-```
-
-You can then use this listing definition whenever you need to apply the same configuration on a form, or create a new form:
-
-```php
-// Create a form from the listing definition:
-return app(UserListing::class)->create();
-
-// Mutate an existing form:
-return app(UserListing::class)->default($form);
-```
-
-### Form Definitions
-
-The same goes for form definitions. Create a form definition:
-
-```bash
-php artisan hew:form UserForm --model=User --generate
-```
-
-This will create the following form definition:
-
-```php
-class UserForm extends Forms\FormDefinition
-{
-    protected string $model = User::class;
-    
-    public function default(Forms\Form $form): Forms\Form
-    {
-        return $form
-            ->visible(auth()->check())
-            ->schema([
-                Forms\Schema\TextInput::make('name')->required(),
-                Forms\Schema\TextInput::make('email')->email()->required(),
-            ]);
-    }
-}
-```
-
-Then you can use this form definition in your controllers or resources:
-
-```php
-// Create a form from the form definition:
-return app(UserForm::class)->create();
-
-// Mutate an existing form:
-return app(UserForm::class)->default($form);
-```
+Optionally, if you need more flexibility, you can create custom page controllers that use your listing and form definitions.
 
 ### Resource Page Controllers
+
+:::info
+The examples below reference `UserListing` and `UserForm` definition classes. Learn how to create these at [Listing Definition](listings.md#listing-definition) and [Form Definition](forms.md#form-definition).
+:::
 
 You can create custom resource page controllers that extend the base resource controllers to use your listing and form definitions.
 
@@ -287,14 +207,14 @@ php artisan hew:page CustomFormController --form
 class CustomFormController extends Panel\Controllers\Resources\FormController
 {
     public static string $form = UserForm::class;
-    
+
     protected function props(Props\Props $props): Props\Props
     {
         return $props->appendData([
             // Additional data for this page
         ]);
     }
-    
+
     protected function getHeaderActions(): array
     {
         return [

@@ -52,6 +52,71 @@ export default function Index() {
 
 That's it. 
 
+## Listing Definition
+
+You can define a Listing definition class that allows you to reuse the same listing in multiple places.
+
+Create a listing definition using the command:
+
+```bash
+php artisan hew:listing UserListing --model=User --form=UserForm --generate
+```
+
+You can pass:
+* `--model=User` to specify the model explicitly.
+* `--form=UserForm` to associate a form definition with the listing.
+* `--generate` to auto-generate listing columns based on your model's table structure.
+
+This will create a class that extends `Hewcode\Hewcode\Lists\ListingDefinition`:
+
+```php
+use App\Models\User;
+use Hewcode\Hewcode\Actions;
+use Hewcode\Hewcode\Lists;
+
+class UserListing extends Lists\ListingDefinition
+{
+    protected string $model = User::class;
+
+    protected ?string $form = UserForm::class;
+
+    public function default(Lists\Listing $listing): Lists\Listing
+    {
+        return $listing
+            ->visible()
+            ->columns([
+                Lists\Schema\TextColumn::make('id'),
+                Lists\Schema\TextColumn::make('name')
+                    ->sortable()
+                    ->searchable(),
+                Lists\Schema\TextColumn::make('email')
+                    ->searchable()
+                    ->wrap(),
+                Lists\Schema\TextColumn::make('posts_count')
+                    ->label('Posts')
+                    ->sortable(),
+            ])
+            ->actions([
+                Actions\Eloquent\EditAction::make(),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->perPage(25);
+    }
+}
+```
+
+The `$form` is optional and refers to a Form definition class that will be used for editing records. See the [Forms documentation](forms.md#form-definitions) for more details.
+
+You can then use this Listing definition in your controller:
+
+```php
+#[Lists\Expose]
+public function users(): Lists\Listing
+{
+    return UserListing::make('users');
+}
+```
+
 ## Essentials
 
 ### Pagination
