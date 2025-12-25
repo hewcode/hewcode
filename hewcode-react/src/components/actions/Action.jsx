@@ -32,6 +32,7 @@ export default function Action({
   onError,
   onFinish,
   url,
+  openInNewTab = false,
 }) {
   const [loading, setLoading] = useState(false);
   const modal = useModalManager();
@@ -134,6 +135,8 @@ export default function Action({
       disabled={loading}
       asLink={!!url}
       href={url ? url : undefined}
+      target={url && openInNewTab ? '_blank' : undefined}
+      rel={url && openInNewTab ? 'noopener noreferrer' : undefined}
     >
       {loading ? __('hewcode.common.loading') : label || name}
     </Button>

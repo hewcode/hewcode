@@ -26,6 +26,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     public Closure|string|null $modalDescription = null;
     public bool $shouldClose = false;
     public Closure|string|null $url = null;
+    public bool $openInNewTab = false;
 
     public function __construct()
     {
@@ -87,6 +88,13 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     public function url(Closure|string|null $url): static
     {
         $this->url = $url;
+
+        return $this;
+    }
+
+    public function openInNewTab(bool $openInNewTab = true): static
+    {
+        $this->openInNewTab = $openInNewTab;
 
         return $this;
     }
@@ -186,6 +194,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
             'modalHeading' => $this->getModalHeading() ?? $this->getLabel(),
             'modalDescription' => $this->getModalDescription(),
             'url' => $this->getUrl(),
+            'openInNewTab' => $this->openInNewTab,
         ];
     }
 
