@@ -29,6 +29,26 @@ class TextColumn extends Column
     }
 
     /**
+     * Limit the column value to a specified number of characters.
+     */
+    public function limit(int $length = 50, string $end = '...'): static
+    {
+        return $this->formatStateUsing(function ($value) use ($length, $end) {
+            if ($value === null) {
+                return null;
+            }
+
+            $value = (string) $value;
+
+            if (mb_strlen($value) <= $length) {
+                return $value;
+            }
+
+            return mb_substr($value, 0, $length) . $end;
+        });
+    }
+
+    /**
      * Create a closure for formatting date/datetime values.
      * This can be reused by third-party developers in different contexts.
      *
