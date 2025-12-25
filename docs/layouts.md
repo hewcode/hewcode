@@ -7,7 +7,7 @@ Hewcode provides essential React layout components for building consistent appli
 The main application layout for your app with sidebar, header, and content area:
 
 ```tsx
-import { AppLayout } from '@hewcode/react';
+import AppLayout from '@hewcode/react/layouts/app-layout';
 
 export default function Dashboard() {
     const breadcrumbs = [{ title: 'Dashboard', href: '/app' }];
@@ -28,7 +28,7 @@ export default function Dashboard() {
 For simpler pages without full app chrome:
 
 ```tsx
-import { PageLayout } from '@hewcode/react';
+import PageLayout from '@hewcode/react/layouts/pages/page-layout';
 
 export default function SettingsPage() {
     return (
@@ -46,7 +46,7 @@ export default function SettingsPage() {
 For authentication pages like login and registration:
 
 ```tsx
-import { AuthLayout } from '@hewcode/react';
+import AuthLayout from '@hewcode/react/layouts/auth-layout';
 
 export default function Login() {
     return (

@@ -12,15 +12,11 @@ class {{ class }} extends Panel\Resource
 {
     protected string $model = {{ model }}::class;
 
-    public function panels(): array
-    {
-        return {{ panels }};
-    }
-
-    public function pages(): array
+{{ panelsMethod }}    public function pages(): array
     {
         return [
             Panel\Controllers\Resources\IndexController::page(),
+            // Remove these page controllers for modal forms instead.
             Panel\Controllers\Resources\CreateController::page(),
             Panel\Controllers\Resources\EditController::page(),
         ];
@@ -33,7 +29,6 @@ class {{ class }} extends Panel\Resource
             ->schema([
                 Forms\Schema\TextInput::make('name')
                     ->required(),
-                // Add more form fields here
             ]);
     }
 

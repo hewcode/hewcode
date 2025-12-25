@@ -1,85 +1,64 @@
 {
-  "sections": [
-    {
-      "title": "Getting Started",
-      "items": [
+    "sections": [
         {
-          "title": "Introduction",
-          "path": "README.md"
+            "title": "Getting Started",
+            "items": [
+                {
+                    "title": "Installation",
+                    "path": "installation.md"
+                },
+                {
+                    "title": "Configuration",
+                    "path": "config.md"
+                },
+                {
+                    "title": "Auto Localization",
+                    "path": "auto-localization.md"
+                }
+            ]
         },
         {
-          "title": "Installation",
-          "path": "installation.md"
+            "title": "Core Features",
+            "items": [
+                {
+                    "title": "Lists",
+                    "path": "listings.md"
+                },
+                {
+                    "title": "Forms",
+                    "path": "forms.md"
+                },
+                {
+                    "title": "Actions",
+                    "path": "actions.md"
+                }
+            ]
+        },
+        {
+            "title": "Panels",
+            "items": [
+                {
+                    "title": "Overview",
+                    "path": "panels.md"
+                },
+                {
+                    "title": "Layout Components",
+                    "path": "layouts.md"
+                }
+            ]
+        },
+        {
+            "title": "Frontend",
+            "items": [
+                {
+                    "title": "Modals",
+                    "path": "modals.md"
+                },
+                {
+                    "title": "Toasts",
+                    "path": "toasts.md"
+                }
+            ]
         }
-      ]
-    },
-    {
-      "title": "Core Features",
-      "items": [
-        {
-          "title": "Listing",
-          "path": "listing.md"
-        },
-        {
-          "title": "Text Column",
-          "path": "text-column.md"
-        },
-        {
-          "title": "Forms",
-          "path": "forms.md"
-        },
-        {
-          "title": "Actions",
-          "path": "actions.md"
-        },
-        {
-          "title": "Authorization",
-          "path": "authorization.md"
-        }
-      ]
-    },
-    {
-      "title": "Panels",
-      "items": [
-        {
-          "title": "Overview",
-          "path": "panels.md"
-        },
-        {
-          "title": "Layout Components",
-          "path": "layouts.md"
-        }
-      ]
-    },
-    {
-      "title": "Frontend",
-      "items": [
-        {
-          "title": "Modals",
-          "path": "modals.md"
-        },
-        {
-          "title": "Toasts",
-          "path": "toasts.md"
-        }
-      ]
-    },
-    {
-      "title": "Configuration",
-      "items": [
-        {
-          "title": "Config",
-          "path": "config.md"
-        },
-        {
-          "title": "Automatic Locale Labels",
-          "path": "automatic-locale-labels.md"
-        },
-        {
-          "title": "Props",
-          "path": "props.md"
-        }
-      ]
-    }
-  ]
+    ]
 }

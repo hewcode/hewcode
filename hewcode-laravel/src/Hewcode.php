@@ -2,14 +2,14 @@
 
 namespace Hewcode\Hewcode;
 
-use Hewcode\Hewcode\Panel\Navigation\Navigation;
+use Hewcode\Hewcode\Support\Config;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Facade;
 
 /**
  * @method static string|self dateFormat(?string $format = null)
  * @method static string|self datetimeFormat(?string $format = null)
- * @method static mixed config(string $key, mixed $default = null)
+ * @method static Config config()
  * @method static array sharedData()
  * @method static array getSharedData(string $key)
  * @method static \Illuminate\Http\JsonResponse response(int $status = 200, mixed $data = null)

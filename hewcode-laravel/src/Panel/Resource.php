@@ -3,7 +3,6 @@
 namespace Hewcode\Hewcode\Panel;
 
 use Hewcode\Hewcode\Actions\Action;
-use Hewcode\Hewcode\Actions\Eloquent\EditAction;
 use Hewcode\Hewcode\Definition;
 use Hewcode\Hewcode\Forms;
 use Hewcode\Hewcode\Hewcode;
@@ -43,7 +42,7 @@ abstract class Resource extends Definition
         return $this
             ->listing($listing)
             ->touchActionsUsing(function (Action $action) {
-                foreach ($this->getPages() as $pageController) {
+                foreach ($this->getPageControllers() as $pageController) {
                     if ($action->getName() === 'edit' && $pageController instanceof EditController) {
                         $action->url(fn () => $pageController->getUrl(['id' => $action->getRecord()?->getKey()]));
                     } elseif ($action->getName() === 'create' && $pageController instanceof EditController) {
@@ -93,14 +92,13 @@ abstract class Resource extends Definition
 
     public function panels(): array
     {
-        return [Hewcode::config('default_panel')];
+        return [Hewcode::config()->getDefaultPanel()];
     }
 
-    public function getPages(): array
+    public function getPageControllers(): array
     {
-        return array_map(
-            fn (ResourceController $pageController) => $pageController->definition($this),
-            $this->pages()
-        );
+        return array_map(function (Page $page) {
+            return $page->resolve($this);
+        }, $this->pages());
     }
 }

@@ -51,7 +51,7 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
         return $this;
     }
 
-    public function setStateUsing(Closure $callback): static
+    public function dehydrateStateUsing(Closure $callback): static
     {
         $this->dehydrateStateUsing = $callback;
 

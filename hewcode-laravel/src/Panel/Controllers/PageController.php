@@ -45,7 +45,7 @@ abstract class PageController
 
     protected function getComponents(): array
     {
-        return [];
+        return ['headerActions'];
     }
 
     protected function getView(): string
@@ -83,7 +83,7 @@ abstract class PageController
     #[Actions\Expose]
     public function headerActions(): Actions\Actions
     {
-        return Actions\Actions::make($this->getHeaderActions());
+        return Actions\Actions::make($this->getHeaderActions())->visible();
     }
 
     protected function getHeaderActions(): array
@@ -123,6 +123,6 @@ abstract class PageController
 
     public function panels(): array|true
     {
-        return [Hewcode::config('default_panel')];
+        return [Hewcode::config()->getDefaultPanel()];
     }
 }

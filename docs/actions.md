@@ -1,50 +1,8 @@
 # Actions
 
-- [When To Use Actions](#when-to-use-actions)
-- [How Actions Work](#how-actions-work)
-- [Your First Action](#your-first-action)
-- [Action Configuration](#action-configuration)
-    - [Visual Styling](#visual-styling)
-    - [Confirmation Dialogs](#confirmation-dialogs)
-    - [Forms in Actions](#forms-in-actions)
-    - [Authorization](#authorization)
-- [Common Patterns](#common-patterns)
-- [Integration with Toasts](#integration-with-toasts)
-- [Complete Example](#complete-example)
+An even faster way to add actions into your Hewcode-powered Laravel application.
 
-<a name="when-to-use-actions"></a>
-## When To Use Actions
-
-Standalone Actions provide page-level operation buttons that trigger backend operations. Use Hewcode Actions when you need to:
-
-- Add global operation buttons to your pages (create, export, refresh, import)
-- Create reusable action definitions with consistent styling and behavior
-- Integrate user operations with forms, confirmations, and toast notifications
-
-Actions handle the complete flow from button click to backend execution, including authorization, confirmation dialogs, form collection, and result feedback.
-
-For actions that operate on table rows or selected records, see the [Listing documentation](listing.md#row-actions).
-
-<a name="how-actions-work"></a>
-## How Actions Work
-
-When a user clicks an action button, here's the flow:
-
-```
-Button Click → Form (optional) → Confirmation (optional) → Backend Execution → Toast Feedback
-```
-
-The Action class:
-1. Handles the button rendering with appropriate styling and labels
-2. Optionally shows a form to collect additional data from the user
-3. Optionally requires user confirmation before proceeding
-4. Executes your custom action callback with the collected data
-5. Can display toast notifications to provide feedback
-
-You define what happens in the action callback, and the Action class manages the UI flow.
-
-<a name="your-first-action"></a>
-## Your First Action
+## Getting Started
 
 Create a basic action that appears as a button on your page:
 
@@ -72,10 +30,14 @@ class PostController extends Controller
 }
 ```
 
+:::danger
+Remember to always make sure the visibility of actions is properly set using authorization checks to prevent unauthorized access. Assume that controller middleware and controller method checks are not sufficient.
+:::
+
 On the frontend, render the actions:
 
 ```tsx
-import { Actions } from '@hewcode/react';
+import Actions from '@hewcode/react/components/actions/Actions';
 import { usePage } from '@inertiajs/react';
 
 export default function Index() {
@@ -92,13 +54,11 @@ export default function Index() {
 
 This creates a primary-colored "New Post" button that redirects to the create page when clicked.
 
-<a name="action-configuration"></a>
-## Action Configuration
+## Essentials
 
 Actions provide several configuration options to control their appearance and behavior.
 
-<a name="visual-styling"></a>
-### Visual Styling
+### Visuals
 
 Control the visual appearance of action buttons:
 
@@ -111,15 +71,18 @@ Actions\Action::make('publish')
     ->variant('outline')                       // solid (default), outline, ghost
 ```
 
-**Color meanings:**
-- `primary` - Main actions (create, save, confirm)
-- `secondary` - Secondary actions (cancel, view)
-- `danger` - Destructive actions (delete, remove)
-- `warning` - Caution actions (archive, disable)
-- `success` - Positive actions (approve, publish)
+### Links
 
-<a name="confirmation-dialogs"></a>
-### Confirmation Dialogs
+You can create actions that function as simple links:
+
+```php
+Actions\Action::make('view_website')
+    ->label('View Website')
+    ->color('secondary')
+    ->url('https://example.com'),
+```
+
+### Require Confirmation
 
 Add confirmation dialogs for destructive or important actions:
 
@@ -128,15 +91,11 @@ Actions\Action::make('delete')
     ->label('Delete')
     ->color('danger')
     ->requiresConfirmation()
-    ->confirmationText('Delete Post?')
-    ->confirmationDescription('This action cannot be undone. The post will be permanently removed.')
-    ->confirmationIcon('lucide-trash-2')
+    ->modalHeading('Delete Post?')
+    ->modalDescription('This action cannot be undone. The post will be permanently removed.')
     ->action(fn (Post $record) => $record->delete());
 ```
 
-The confirmation dialog will appear when the user clicks the action button, requiring explicit confirmation before executing.
-
-<a name="forms-in-actions"></a>
 ### Forms in Actions
 
 Collect additional data from users before executing actions:
@@ -198,7 +157,6 @@ Both `modalHeading()` and `modalDescription()` support static strings or closure
 ->modalDescription(fn (Post $record) => "This will be published on {$record->schedule_date}.")
 ```
 
-<a name="authorization"></a>
 ### Authorization
 
 Control who can see and use actions:
@@ -210,85 +168,17 @@ Actions\Action::make('delete')
     ->visible(fn (Post $record) => auth()->user()->can('delete', $record))
     ->action(fn (Post $record) => $record->delete());
 
-// For standalone actions
 Actions\Actions::make([
     Actions\Action::make('create')
         ->label('New Post')
         ->action(fn () => redirect()->route('posts.create')),
-])->visible(auth()->user()?->can('create-posts') ?? false);
+])
+    ->visible(auth()->user()?->can('create-posts') ?? false);
 ```
 
 Use `->visible()` with closures for dynamic authorization or boolean values for static checks.
 
-<a name="common-patterns"></a>
-## Common Patterns
-
-These patterns cover typical action use cases.
-
-### Create Operations
-
-```php
-// Create action
-Actions\Action::make('create')
-    ->label('New Post')
-    ->color('primary')
-    ->action(fn () => redirect()->route('posts.create'));
-```
-
-### Import Operations
-
-```php
-Actions\Action::make('import')
-    ->label('Import Posts')
-    ->color('secondary')
-    ->form([
-        Forms\Schema\FileUpload::make('file')
-            ->label('CSV File')
-            ->acceptedFileTypes(['text/csv'])
-            ->required(),
-    ])
-    ->action(function (array $data) {
-        $this->importPosts($data['file']);
-        
-        Toast::make()
-            ->title('Import Started')
-            ->message('Posts are being imported in the background.')
-            ->success()
-            ->send();
-    });
-```
-
-### Data Export
-
-```php
-Actions\Action::make('export_all')
-    ->label('Export All Posts')
-    ->color('secondary')
-    ->action(function () {
-        $filename = 'posts-export-' . now()->format('Y-m-d') . '.csv';
-        
-        return response()->streamDownload(function () {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['ID', 'Title', 'Status', 'Created']);
-            
-            Post::chunk(1000, function ($posts) use ($file) {
-                foreach ($posts as $post) {
-                    fputcsv($file, [
-                        $post->id,
-                        $post->title,
-                        $post->status->value,
-                        $post->created_at->format('Y-m-d'),
-                    ]);
-                }
-            });
-            
-            fclose($file);
-        }, $filename);
-    });
-```
-
-<a name="integration-with-toasts"></a>
-## Integration with Toasts
+## Toasts
 
 Actions work seamlessly with [toast notifications](toasts.md) to provide user feedback:
 
@@ -318,7 +208,6 @@ Actions\Action::make('sync_data')
 
 Toast notifications appear automatically after action execution, providing clear feedback about success or failure.
 
-<a name="complete-example"></a>
 ## Complete Example
 
 Here's a comprehensive example showing standalone actions:
@@ -339,8 +228,6 @@ class PostController extends Controller
             Props\Props::for($this)->components(['posts', 'actions'])
         );
     }
-
-
 
     #[Actions\Expose]
     public function actions(): Actions\Actions

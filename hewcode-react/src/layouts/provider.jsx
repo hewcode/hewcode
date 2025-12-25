@@ -5,7 +5,7 @@ import { HewcodeProvider } from '../contexts/hewcode-context';
 import { LocaleProvider } from '../contexts/locale-context';
 import { ModalProvider } from '../contexts/modal-context';
 
-export default function HewcodeLayoutProvider({ children, ...props }) {
+export default function Provider({ children, ...props }) {
   const { hewcode } = props.initialPage.props;
 
   return (

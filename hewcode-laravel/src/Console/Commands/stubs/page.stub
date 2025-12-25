@@ -7,9 +7,9 @@ use Hewcode\Hewcode\Panel\Controllers\PageController;
 class {{ class }} extends PageController
 {
     protected string $view = '{{ view }}';
-    
+
     protected string $icon = '{{ icon }}';
-    
+
     {{ navigationProperty }}
 
     public function panels(): array
@@ -24,8 +24,8 @@ class {{ class }} extends PageController
 
     protected function getComponents(): array
     {
-        return [
+        return array_merge(parent::getComponents(), [
             // Add any exposed component methods here
-        ];
+        ]);
     }
 }

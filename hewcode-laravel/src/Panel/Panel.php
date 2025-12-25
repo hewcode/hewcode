@@ -19,7 +19,7 @@ class Panel
 
     public function __construct(?string $name)
     {
-        $this->name = $name ?? Hewcode::config('default_panel');
+        $this->name = $name ?? Hewcode::config()->getDefaultPanel();
         $this->navigation = app(Navigation::class, ['panel' => $this->name]);
     }
 
@@ -51,7 +51,7 @@ class Panel
                         $resource = app($class);
 
                         /** @var ResourceController $pageController */
-                        foreach ($resource->getPages() as $pageController) {
+                        foreach ($resource->getPageControllers() as $pageController) {
                             $this->registerPage($pageController, ServeResourceController::class);
                         }
                     } else {
@@ -72,7 +72,7 @@ class Panel
                 $resource = app($class);
 
                 /** @var ResourceController $controller */
-                foreach ($resource->getPages() as $controller) {
+                foreach ($resource->getPageControllers() as $controller) {
                     $controller->registerNavigation($this->navigation);
                 }
             } else {

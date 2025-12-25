@@ -4,135 +4,121 @@ Hewcode includes a complete panel system for building sophisticated application 
 
 ## Quick Start
 
-Register panels in your service provider. You can register multiple panels with custom names:
+Register the default panel in your service provider `AppServiceProvider`.
 
 ```php
 use Hewcode\Hewcode\Hewcode;
 
-// In AppServiceProvider
 public function register(): void
 {
-    Hewcode::panel(); // Registers the default 'app' panel
-    Hewcode::panel('admin'); // Registers custom 'admin' panel  
-    Hewcode::panel('dashboard'); // Registers custom 'dashboard' panel
+    Hewcode::panel(); // By default this is the 'app' panel
 }
 ```
 
-## Creating Resources
-
-The fastest way to create resources is using the `hew:resource` Artisan command:
-
-### Basic Usage
-
-```bash
-# Create a simple resource
-php artisan hew:resource ProductResource
-
-# Specify the model explicitly
-php artisan hew:resource ProductResource --model=Product
-
-# Assign to specific panels
-php artisan hew:resource ProductResource --panels=admin,app
-```
-
-### Auto-Generate from Database
-
-Use the `--generate` option to automatically create form fields and listing columns based on your model's table structure.
-
-The `--generate` option intelligently maps database columns to appropriate form fields and listing columns.
-
-## Multiple Panels
-
-Resources and controllers can be assigned to one or more panels using the `panels()` method:
+If you pass a name to the `panel()` method, it will register the panel with that name, and you can register multiple panels:
 
 ```php
-class PostsResource extends Resource
-{
-    // This resource will be available in both 'app' and 'admin' panels
-    public function panels(): array
-    {
-        return ['app', 'admin'];
-    }
-}
-
-class ListUsersController extends Resources\IndexController
-{
-    // This controller will be available in the 'admin' panel only
-    public function panels(): array
-    {
-        return ['admin'];
-    }
-}
-
-class GlobalController extends PageController
-{
-    // This controller will be available in ALL panels
-    public function panels(): bool
-    {
-        return true;
-    }
-}
+Hewcode::panel('admin'); // Registers custom 'admin' panel  
+Hewcode::panel('dashboard'); // Registers custom 'dashboard' panel
 ```
+
+**Accessing Panels:** Once registered, panels are accessible at `/{panel-name}`:
+- Default panel: `/app`
+- Admin panel: `/admin` 
+- Dashboard panel: `/dashboard`
 
 ## Resources
 
-Hewcode offers two patterns for organizing panel resources, depending on your complexity needs.
+You can create resources to quickly get started with managing records in your panels.
 
-### Approach 1: Simple Resource (Low Boilerplate)
+```bash
+php artisan hew:resource ProductResource
+```
 
-For straightforward cases, define everything in a single resource class:
+You can pass: 
+* `--model=Product` to specify the model explicitly.
+* `--panels=admin,app` to assign the resource to specific panels.
+* `--generate` to auto-generate form fields and listing columns based on your model's table structure.
+
+This will output the following resource class:
 
 ```php
-use Hewcode\Hewcode\Panel\Resource;
-use Hewcode\Hewcode\Panel\Controllers\Resources;
+<?php
 
-class PostsResource extends Resource
+namespace App\Hewcode\Resources;
+
+use App\Models\Product;
+use Hewcode\Hewcode\Actions;
+use Hewcode\Hewcode\Forms;
+use Hewcode\Hewcode\Lists;
+use Hewcode\Hewcode\Panel;
+
+class ProductResource extends Panel\Resource
 {
-    protected string $model = Post::class;
-    
+    protected string $model = Product::class;
+
     public function pages(): array
     {
         return [
-            Resources\IndexController::page(),
-            // Resources\CreateController::page(), 
-            // Resources\EditController::page(),
+            Panel\Controllers\Resources\IndexController::page(),
+            Panel\Controllers\Resources\CreateController::page(),
+            Panel\Controllers\Resources\EditController::page(),
         ];
     }
-    
+
     public function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->visible(auth()->check())
             ->schema([
-                Forms\Schema\TextInput::make('title')->required(),
-                Forms\Schema\Textarea::make('content')->required(),
-                Forms\Schema\Select::make('status')->options(PostStatus::class),
+                Forms\Schema\TextInput::make('name')
+                    ->required(),
             ]);
     }
-    
-    public function listing(Lists\Listing $listing): Lists\Listing  
+
+    public function listing(Lists\Listing $listing): Lists\Listing
     {
         return $listing
             ->visible(auth()->check())
-            ->query(Post::query()->with('user', 'category'))
+            ->query(Product::query())
             ->columns([
-                Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
-                Lists\Schema\TextColumn::make('status')->badge(),
-                Lists\Schema\TextColumn::make('user.name')->badge(variant: 'outline'),
+                Lists\Schema\TextColumn::make('id')
+                    ->sortable(),
+                Lists\Schema\TextColumn::make('name')
+                    ->sortable()
+                    ->searchable(),
+                Lists\Schema\TextColumn::make('created_at')
+                    ->datetime()
+                    ->sortable(),
             ])
             ->actions([
                 Actions\Eloquent\EditAction::make(),
                 Actions\Eloquent\DeleteAction::make(),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 }
 ```
 
-### Approach 2: Separate Components (More Flexible)
+## Advanced Usage
 
-For complex scenarios requiring customization, separate into individual classes:
+Optionally, if you need more flexibility, or want to reuse lists and forms across your codebase, you can create separate listing and form definition classes in addition to custom page controllers.
 
-**1. Create dedicated listing definition:**
+### Listing Definitions
+
+Using the following command, you can create a standalone listing definition:
+
+```bash
+php artisan hew:listing UserListing --model=User --form=UserForm --generate
+```
+
+You can pass:
+* `--model=User` to specify the model explicitly.
+* `--form=UserForm` to associate a form definition with the listing.
+* `--generate` to auto-generate listing columns based on your model's table structure.
+
+This will create the following listing definition:
+
 ```php
 class UserListing extends Lists\ListingDefinition  
 {
@@ -144,9 +130,13 @@ class UserListing extends Lists\ListingDefinition
         return $listing
             ->visible(auth()->check())
             ->columns([
-                Lists\Schema\TextColumn::make('name')->sortable()->searchable(),
-                Lists\Schema\TextColumn::make('email')->searchable(),
-                Lists\Schema\TextColumn::make('posts_count')->sortable(),
+                Lists\Schema\TextColumn::make('name')
+                    ->sortable()
+                    ->searchable(),
+                Lists\Schema\TextColumn::make('email')
+                    ->searchable(),
+                Lists\Schema\TextColumn::make('posts_count')
+                    ->sortable(),
             ])
             ->actions([
                 Actions\Eloquent\EditAction::make(),
@@ -155,8 +145,27 @@ class UserListing extends Lists\ListingDefinition
 }
 ```
 
-**2. Create dedicated form definition:**
-```php  
+You can then use this listing definition whenever you need to apply the same configuration on a form, or create a new form:
+
+```php
+// Create a form from the listing definition:
+return app(UserListing::class)->create();
+
+// Mutate an existing form:
+return app(UserListing::class)->default($form);
+```
+
+### Form Definitions
+
+The same goes for form definitions. Create a form definition:
+
+```bash
+php artisan hew:form UserForm --model=User --generate
+```
+
+This will create the following form definition:
+
+```php
 class UserForm extends Forms\FormDefinition
 {
     protected string $model = User::class;
@@ -173,7 +182,26 @@ class UserForm extends Forms\FormDefinition
 }
 ```
 
-**3. Create custom controllers extending base controllers:**
+Then you can use this form definition in your controllers or resources:
+
+```php
+// Create a form from the form definition:
+return app(UserForm::class)->create();
+
+// Mutate an existing form:
+return app(UserForm::class)->default($form);
+```
+
+### Resource Page Controllers
+
+You can create custom resource page controllers that extend the base resource controllers to use your listing and form definitions.
+
+For a listing page controller use the following command:
+
+```bash
+php artisan hew:resource-page ListUsersController --index
+```
+
 ```php
 class ListUsersController extends Resources\IndexController
 {
@@ -193,132 +221,164 @@ class ListUsersController extends Resources\IndexController
         ];
     }
 }
+```
 
+For an edit page controller use the following command:
+
+```bash
+php artisan hew:resource-page EditUserController --edit
+```
+
+```php
 class EditUserController extends Resources\EditController  
 {
     public static string $form = UserForm::class;
     
+    protected function props(Props\Props $props): Props\Props
+    {
+        return $props->appendData([
+            // Additional data for this page
+        ]);
+    }
+    
     protected function getHeaderActions(): array
     {
         return [
-            // Custom header actions
+            Actions\Eloquent\DeleteAction::make(),
         ];
     }
 }
 ```
 
-### Quick Creation Commands
-
-Generate the separate components quickly with Artisan commands:
+For a create page controller use the following command:
 
 ```bash
-# Create listing definition
-php artisan hew:listing UserListing --model=User --generate
-
-# Create form definition  
-php artisan hew:form UserForm --model=User --generate
-
-# Create custom page controller
-php artisan hew:page CustomPageController --icon=lucide-settings --panels=admin
+php artisan hew:resource-page CreateUserController --create
 ```
 
-## Artisan Commands
-
-Hewcode provides Laravel-style make commands for rapid panel development:
-
-### `hew:resource` - Complete Resources
-```bash
-# Create a simple resource with inline form/listing methods
-php artisan hew:resource ProductResource --generate
-
-# Specify model and panels
-php artisan hew:resource ProductResource --model=Product --panels=admin,app --generate
+```php
+class CreateUserController extends Resources\CreateController  
+{
+    public static string $form = UserForm::class;
+    
+    protected function props(Props\Props $props): Props\Props
+    {
+        return $props->appendData([
+            // Additional data for this page
+        ]);
+    }
+    
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\Eloquent\CancelAction::make(),
+        ];
+    }
+}
 ```
 
-### `hew:listing` - Listing Definitions  
-```bash
-# Create standalone listing definition
-php artisan hew:listing ProductListing --model=Product --generate
+Finally, you can also create a custom form controller:
 
-# Associate with form definition
-php artisan hew:listing ProductListing --model=Product --form=ProductForm --generate
+```bash
+php artisan hew:page CustomFormController --form
 ```
 
-### `hew:form` - Form Definitions
-```bash
-# Create standalone form definition  
-php artisan hew:form ProductForm --model=Product --generate
-
-# Basic form without generation
-php artisan hew:form ProductForm --model=Product
+```php
+class CustomFormController extends Panel\Controllers\Resources\FormController
+{
+    public static string $form = UserForm::class;
+    
+    protected function props(Props\Props $props): Props\Props
+    {
+        return $props->appendData([
+            // Additional data for this page
+        ]);
+    }
+    
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\Eloquent\SaveAction::make(),
+            Actions\Eloquent\CancelAction::make(),
+        ];
+    }
+}
 ```
 
-### `hew:page` - Page Controllers
+## Page Controllers
+
+You can create custom panel page controllers outside of resources to build custom pages.
+
 ```bash
-# Basic page controller
-php artisan hew:page DashboardController
+php artisan hew:page CustomPageController
+```
 
-# With custom icon and panels
-php artisan hew:page SettingsController --icon=lucide-settings --panels=admin,app
+```php
+use Hewcode\Hewcode\Panel;
 
-# Available in all panels
-php artisan hew:page GlobalController --panels=all
-
-# No navigation menu entry
-php artisan hew:page ApiController --no-nav --view=api/status
+class CustomPageController extends Panel\Controllers\PageController
+{
+    protected string $icon = 'lucide-dashboard';
+    protected ?int $navigationSort = 10;
+    protected bool $shouldRegisterNavigation = true;
+    
+    protected function getNavigationTitle(): string
+    {
+        return 'Dashboard';
+    }
+}
 ```
 
 ## Navigation
 
-Each panel has its own navigation that's scoped to that specific panel. Navigation items are automatically registered by resources and controllers, and you can also add manual items.
+Resources and resource controllers are automatically registered in the panel navigation. You can also manually add navigation items or groups.
 
-### Manual Navigation Items
+### Manual Navigation
 
 You can add navigation items to specific panels using the `navigation()` method:
 
 ```php
 use Hewcode\Hewcode\Hewcode;
-use Hewcode\Hewcode\Panel\Navigation\NavigationItem;
-use Hewcode\Hewcode\Panel\Navigation\NavigationGroup;
+use Hewcode\Hewcode\Panel\Navigation;
 
-// In AppServiceProvider boot() method
 public function boot(): void
 {
-    // Add navigation items to the 'admin' panel
-    Hewcode::panel('admin')->navigation(function ($navigation) {
-        $navigation->item(
-            NavigationItem::make('Dashboard')
-                ->url('/admin')
-                ->icon('lucide-home')
-                ->order(10)
-        );
-        
-        $navigation->item(
-            NavigationGroup::make('Content Management')
-                ->order(20)
-                ->items([
-                    NavigationItem::make('Posts')
-                        ->url('/admin/posts')
-                        ->icon('lucide-file-text'),
-                    NavigationItem::make('Categories')
-                        ->url('/admin/categories')
-                        ->icon('lucide-tag'),
-                ])
-        );
-    });
-    
-    // Different navigation for 'app' panel
-    Hewcode::panel('app')->navigation(function ($navigation) {
-        $navigation->item(
-            NavigationItem::make('My Dashboard')
-                ->url('/app')
-                ->icon('lucide-home')
-        );
-    });
+    Hewcode::panel('admin')
+        ->navigation(function (Navigation\Navigation $navigation) {
+            return $navigation
+                ->item(
+                    NavigationItem::make('Dashboard')
+                        ->url('/admin')
+                        ->icon('lucide-home')
+                        ->order(10)
+                )
+                ->item(
+                    NavigationGroup::make('Content Management')
+                        ->order(20)
+                        ->items([
+                            NavigationItem::make('Posts')
+                                ->url('/admin/posts')
+                                ->icon('lucide-file-text'),
+                            NavigationItem::make('Categories')
+                                ->url('/admin/categories')
+                                ->icon('lucide-tag'),
+                        ])
+                );
+       });
+
+    Hewcode::panel('app')
+        ->navigation(function (Navigation\Navigation $navigation) {
+            return $navigation
+                ->item(
+                    NavigationItem::make('My Dashboard')
+                        ->url('/app')
+                        ->icon('lucide-home')
+                );
+        });
 }
 ```
 
-### Automatic Navigation from Controllers
+### Automatic Navigation
 
 Controllers automatically register navigation items in the panels they're assigned to:
 
@@ -329,17 +389,6 @@ class CustomPageController extends PageController
     protected ?int $navigationSort = 100;
     protected bool $shouldRegisterNavigation = true; // Default is true
     
-    public function panels(): array
-    {
-        return ['admin']; // This nav item appears only in admin panel
-    }
-    
-    // OR for all panels:
-    public function panels(): bool
-    {
-        return true; // This nav item appears in ALL panels
-    }
-    
     protected function getNavigationTitle(): string
     {
         return 'Custom Page';
@@ -347,52 +396,22 @@ class CustomPageController extends PageController
 }
 ```
 
-### Navigation Item Options
+You can override the automatic navigation registration method `registerNavigation`. This is useful if you want to add more items or groups or conditionally register navigation.
 
 ```php
-NavigationItem::make('Item Name')
-    ->url('/custom/url')                    // Static URL
-    ->url(fn () => route('custom.route'))   // Dynamic URL
-    ->icon('lucide-icon-name')              // Lucide icon
-    ->order(50)                             // Sort order
-    ->badge('New')                          // Badge text
-    ->badge(fn () => Post::count())         // Dynamic badge
-```
-
-## Page Controllers
-
-Panel page controllers handle common CRUD operations. There are base controllers you can extend for customization, or use directly via the resource's `pages()` method.
-
-### Using Controllers in Resources
-
-For simple cases, use the built-in page controllers:
-
-```php
-public function pages(): array
+public function registerNavigation(Navigation\Navigation $navigation): void
 {
-    return [
-        Resources\IndexController::page(),   // Listing page
-        Resources\CreateController::page(),  // Create form page  
-        Resources\EditController::page(),    // Edit form page
-    ];
-}
-```
-
-### Custom Controller Classes
-
-For more control, extend the base controllers:
-
-```php
-class ListUsersController extends Resources\IndexController
-{
-    public static string $listing = UserListing::class;
-    
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\Eloquent\CreateAction::make(),
-        ];
+    if (! $this->getShouldRegisterNavigation()) {
+        return;
     }
+
+    $navigation->item(
+        Navigation\NavigationItem::make()
+            ->url(fn () => Hewcode::route($this->getRouteName()))
+            ->label($this->getNavigationTitle())
+            ->icon($this->getNavigationIcon())
+            ->order($this->navigationSort)
+    );
 }
 ```
 
@@ -434,7 +453,7 @@ If you create custom views, they should follow this pattern:
 ```tsx
 // Custom index page
 import { usePage } from '@inertiajs/react';
-import { DataTable } from '@hewcode/react';
+import DataTable from '@hewcode/react/components/data-table/DataTable';
 import PageLayout from '@/layouts/pages/page-layout';
 
 export default function CustomIndex() {
@@ -451,7 +470,7 @@ export default function CustomIndex() {
 ```tsx
 // Custom form page  
 import { usePage, router } from '@inertiajs/react';
-import { Form } from '@hewcode/react';
+import Form from '@hewcode/react/components/form/Form';
 import PageLayout from '@/layouts/pages/page-layout';
 
 export default function CustomForm() {
@@ -464,17 +483,3 @@ export default function CustomForm() {
     );
 }
 ```
-
-## Choosing the Right Approach
-
-**Use Simple Resource (Approach 1) when:**
-- Building straightforward CRUD interfaces
-- You don't need custom controller logic
-- You want minimal boilerplate
-- The listing and form logic is straightforward
-
-**Use Separate Components (Approach 2) when:**
-- You need custom controller behavior
-- Complex listing or form logic requires reuse
-- You want to customize header actions or props
-- Building complex interfaces with specialized requirements

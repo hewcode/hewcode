@@ -28,7 +28,7 @@ class IndexController extends ResourceController
 
     protected function getComponents(): array
     {
-        return ['listing'];
+        return array_merge(parent::getComponents(), ['listing']);
     }
 
     #[Lists\Expose]

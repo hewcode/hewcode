@@ -53,7 +53,7 @@ abstract class FormController extends ResourceController
 
     protected function getComponents(): array
     {
-        return ['form'];
+        return array_merge(parent::getComponents(), ['form']);
     }
 
     #[Forms\Expose]

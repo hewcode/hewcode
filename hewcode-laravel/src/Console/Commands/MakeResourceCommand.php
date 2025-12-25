@@ -126,11 +126,12 @@ class MakeResourceCommand extends GeneratorCommand
         if ($panels) {
             $panelsArray = array_map(fn($panel) => "'{$panel}'", explode(',', $panels));
             $panelsCode = '[' . implode(', ', $panelsArray) . ']';
+            $panelsMethod = "    public function panels(): array\n    {\n        return {$panelsCode};\n    }\n\n";
         } else {
-            $panelsCode = "['app']";
+            $panelsMethod = '';
         }
 
-        return str_replace(['{{ panels }}', '{{panels}}'], $panelsCode, $stub);
+        return str_replace(['{{ panelsMethod }}', '{{panelsMethod}}'], $panelsMethod, $stub);
     }
 
     /**

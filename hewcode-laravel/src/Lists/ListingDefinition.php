@@ -2,7 +2,6 @@
 
 namespace Hewcode\Hewcode\Lists;
 
-use Closure;
 use Hewcode\Hewcode\Definition;
 use Hewcode\Hewcode\Forms;
 use Illuminate\Database\Eloquent\Model;

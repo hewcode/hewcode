@@ -4,7 +4,7 @@ namespace Hewcode\Hewcode\Lists\Schema;
 
 use Carbon\Carbon;
 use DateTimeInterface;
-use Hewcode\Hewcode\Support\Config;
+use Hewcode\Hewcode\Hewcode;
 
 class TextColumn extends Column
 {
@@ -14,7 +14,7 @@ class TextColumn extends Column
     public function date(?string $format = null, bool $relative = false): static
     {
         return $this->formatStateUsing(
-            $this->formatDate($format ?? Config::dateFormat(), $relative)
+            $this->formatDate($format ?? Hewcode::config()->getDateFormat(), $relative)
         );
     }
 
@@ -24,7 +24,7 @@ class TextColumn extends Column
     public function datetime(?string $format = null, bool $relative = false): static
     {
         return $this->formatStateUsing(
-            $this->formatDate($format ?? Config::datetimeFormat(), $relative)
+            $this->formatDate($format ?? Hewcode::config()->getDatetimeFormat(), $relative)
         );
     }
 

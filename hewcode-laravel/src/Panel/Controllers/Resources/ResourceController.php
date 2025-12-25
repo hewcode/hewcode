@@ -6,6 +6,7 @@ use Hewcode\Hewcode\Actions;
 use Hewcode\Hewcode\Definition;
 use Hewcode\Hewcode\Hewcode;
 use Hewcode\Hewcode\Panel\Controllers\PageController;
+use Hewcode\Hewcode\Panel\Page;
 use Hewcode\Hewcode\Panel\Resource;
 use ReflectionClass;
 use RuntimeException;
@@ -20,9 +21,18 @@ abstract class ResourceController extends PageController
      */
     protected ?Definition $definition = null;
 
+    protected ?Page $page = null;
+
     public function definition(Definition $definition): static
     {
         $this->definition = $definition;
+
+        return $this;
+    }
+
+    public function withPage(Page $page): static
+    {
+        $this->page = $page;
 
         return $this;
     }
@@ -64,7 +74,7 @@ abstract class ResourceController extends PageController
 
     public function getTitle(): string
     {
-        return str($this->name())
+        return $this->page?->getTitle() ?? str($this->name())
             ->headline()
             ->plural();
     }
@@ -92,10 +102,16 @@ abstract class ResourceController extends PageController
         return '';
     }
 
+    #[Actions\Expose]
     public function headerActions(): Actions\Actions
     {
         return parent::headerActions()
             ->model($this->getDefinition()->getModelClass());
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return array_merge(parent::getHeaderActions(), $this->page?->getHeaderActions() ?? []);
     }
 
     public function panels(): array
@@ -107,7 +123,7 @@ abstract class ResourceController extends PageController
         return parent::panels();
     }
 
-    public static function page(): static
+    public static function page(): Page
     {
         $reflection = new ReflectionClass(static::class);
 
@@ -115,7 +131,7 @@ abstract class ResourceController extends PageController
             throw new RuntimeException('Cannot use abstract controller '. static::class .' as a resource page.');
         }
 
-        return app(static::class);
+        return new Page(static::class);
     }
 
     public function getUrl(array $parameters = [], bool $absolute = true, string $panel = null): string

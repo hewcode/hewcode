@@ -1,25 +1,21 @@
 # Installation
 
-- [Requirements](#requirements)
-- [Installing the Laravel Package](#installing-the-laravel-package)
-- [Installing the React Package](#installing-the-react-package)
-- [Configuration](#configuration)
-- [Next Steps](#next-steps)
+Hewcode allows you to quickly build lists, forms, and panels on the Laravel-Inertia-React stack with minimal code. Quickly create pages, use toasts, modals, and more with built-in shadcn/ui components.
 
-<a name="requirements"></a>
+This project was inspired by [Filament](https://filamentphp.com), and brings a similar developer experience to React-based applications. It was built on the official [Laravel-Inertia-React starter kit](https://github.com/laravel/react-starter-kit).
+
 ## Requirements
 
 Hewcode requires the following:
 
-- PHP 8.2 or higher
-- Laravel 12.x
-- Inertia.js
-- React 19.x or higher
+* PHP 8.2+
+* [Laravel 12](https://laravel.com/docs/12.x)
+* [Inertia.js 2](https://inertiajs.com/)
+* [React 19+](https://react.dev/)
 
-<a name="installing-the-laravel-package"></a>
-## Installing the Laravel Package
+## Installation
 
-Install the Hewcode Laravel package via Composer:
+Install the Laravel package via Composer:
 
 ```bash
 composer require hewcode/hewcode
@@ -27,24 +23,25 @@ composer require hewcode/hewcode
 
 The package will automatically register its service provider.
 
-<a name="installing-the-react-package"></a>
-## Installing the React Package
-
-Install the Hewcode React package:
+Next, Install the React package and set up the Inertia provider:
 
 ```bash
 npm install @hewcode/react
 ```
 
-### Setup Inertia Provider
-
-Update your Inertia app setup (typically in `resources/js/app.tsx`) to wrap your app with the `HewcodeProvider`:
-
+Update your Inertia app setup (typically in `resources/js/app.tsx`) to wrap your app with the `HewcodeProvider`, and configure the `resolve` so that it can find both your app's pages and Hewcode's built-in pages:
+ 
 ```tsx
-import HewcodeProvider from '@hewcode/react/Provider';
+import HewcodeProvider from '@hewcode/react/layouts/provider';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
 createInertiaApp({
     // ...
+    resolve: (name) =>
+        resolvePageComponent([`./pages/${name}.tsx`, `../../node_modules/@hewcode/react/src/pages/${name}.tsx`], {
+            ...import.meta.glob('./pages/**/*.tsx'),
+            ...import.meta.glob('../../node_modules/@hewcode/react/src/pages/hewcode/**/*.tsx'),
+        }),
     setup({el, App, props}) {
         const root = createRoot(el);
 
@@ -58,9 +55,7 @@ createInertiaApp({
 });
 ```
 
-### Import Hewcode Styles
-
-Add Hewcode's global styles to your application's CSS file (typically `resources/css/app.css`):
+Finally, add the global styles to your application's CSS file (typically `resources/css/app.css`):
 
 ```css
 @import '@hewcode/react/styles/globals.css';
@@ -68,21 +63,9 @@ Add Hewcode's global styles to your application's CSS file (typically `resources
 
 This import should be placed at the top of your CSS file, before any custom styles.
 
-<a name="configuration"></a>
-## Configuration
+## Locale
 
-Hewcode works out of the box with minimal configuration. However, you may want to publish the configuration file to customize behavior:
-
-```bash
-php artisan vendor:publish --tag=hewcode-config
-```
-
-This will create a `config/hewcode.php` file where you can customize various settings.
-
-### Translation Files (Optional)
-
-If you want to use automatic locale labels, set up your translation files:
-
+Hewcode automatically checks `__('app.models.{model}.columns.{column}')` for column labels. So you should prepare an `app.php` language file. Example:
 ```php
 // lang/en/app.php
 return [
@@ -97,12 +80,10 @@ return [
 ];
 ```
 
-See [Automatic Locale Labels](automatic-locale-labels.md) for more details.
+See [Automatic Locale Labels](auto-localization.md) for more details.
 
 ## Next Steps
 
-Now that Hewcode is installed, you're ready to build your first real listing:
-
-- **[Your First Listing](listing.md#your-first-listing)** - Build a complete data table in minutes
-- **[TextColumn Reference](text-column.md)** - Learn about column customization
-- **[Authorization](authorization.md)** - Secure your listings properly
+- **[Lists](listing.md)**: Build record listings with sorting, filtering, and pagination among other features.
+- **[Forms](forms.md)**: Create forms for creating and editing records with validation and custom fields.
+- **[Panels](panels.md)**: Quickly build dashboard panels.

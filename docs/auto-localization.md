@@ -1,8 +1,10 @@
 # Automatic Locale Labels
 
-TextColumn automatically resolves column labels from your application's translation files when no explicit label is provided. This feature enables consistent labeling, reduces repetition, and makes internationalization effortless.
+Hewcode automatically resolves column labels from your application's translation files when no explicit label is provided. This enables consistent labeling, reduces repetition, and makes internationalization effortless.
 
-## Why Use Automatic Labels?
+By default, the package looks for the `app.php` translation file in your locale directories.
+
+## Setup
 
 **Without automatic labels**, you repeat yourself constantly:
 
@@ -39,15 +41,6 @@ TextColumn::make('status'),
 - Easy internationalization—just add more language files
 - Less code repetition
 - Centralized label management
-
-## How It Works
-
-When a TextColumn is created without an explicit label, the system:
-
-1. **Detects the model context** from the Eloquent query
-2. **Determines the appropriate translation key** based on the column type
-3. **Attempts translation lookup** in your locale files
-4. **Falls back to default behavior** if no translation exists
 
 ## Translation Key Patterns
 

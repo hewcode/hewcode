@@ -11,12 +11,9 @@ use Illuminate\Support\Facades\Route;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
-use Throwable;
 
 class Manager
 {
-    protected ?array $discoveredControllers = null;
-
     protected array $discoveryPaths = [
         './app/Hewcode/Controllers',
         './app/Hewcode/Resources',
@@ -90,9 +87,9 @@ class Manager
         return $this->discoveryPaths;
     }
 
-    public function config(string $key, mixed $default = null): mixed
+    public function config(): Config
     {
-        return app(Config::class)->get($key, $default);
+        return app(Config::class);
     }
 
     public function isPanel(?string $name = null): bool
@@ -129,7 +126,7 @@ class Manager
 
     public function routeName(string $name, ?string $panel = null): string
     {
-        $panel ??= Hewcode::config('default_panel');
+        $panel ??= Hewcode::config()->getDefaultPanel();
 
         return 'hewcode.'.$panel.'.'.$name;
     }
@@ -265,10 +262,15 @@ class Manager
 
     public function panel(?string $name = null): Panel\Panel
     {
-        $name ??= Hewcode::config('default_panel');
+        $defaultPanel = Hewcode::config()->getDefaultPanel();
+        $name ??= $defaultPanel;
 
         if (! isset($this->panels[$name])) {
             $this->panels[$name] = new Panel\Panel($name);
+        }
+
+        if (count($this->panels) === 1 && $name !== $defaultPanel) {
+            Hewcode::config()->setDefaultPanel($name);
         }
 
         return $this->panels[$name];

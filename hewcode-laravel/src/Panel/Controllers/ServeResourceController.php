@@ -38,7 +38,7 @@ class ServeResourceController
         }
 
         /** @var ResourceController $page */
-        foreach ($resource->getPages() as $page) {
+        foreach ($resource->getPageControllers() as $page) {
             if ($routeName === Hewcode::routeName($page->getRouteName(), $panel)) {
                 return $page;
             }

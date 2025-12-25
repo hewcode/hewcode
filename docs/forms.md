@@ -1,64 +1,10 @@
 # Forms
 
-- [When To Use Forms](#when-to-use-forms)
-- [How It Works](#how-it-works)
-- [Your First Form](#your-first-form)
-- [Essential Configuration](#essential-configuration)
-    - [Schema Fields](#schema-fields)
-    - [Field Types](#field-types)
-    - [Validation](#validation)
-- [Common Patterns](#common-patterns)
-- [Advanced Features](#advanced-features)
-    - [Custom Submit Handlers](#custom-submit-handlers)
-    - [Custom Fill Logic](#custom-fill-logic)
-    - [Conditional Fields](#conditional-fields)
-    - [Relationships](#relationships)
-    - [Custom Footer Actions](#custom-footer-actions)
-    - [Field State Transformation](#field-state-transformation)
-- [Complete Real-World Example](#complete-real-world-example)
-- [Reference](#reference)
-    - [Available Field Types](#reference-available-field-types)
+## Getting Started
 
-<a name="when-to-use-forms"></a>
-## When To Use Forms
+Let's start with the absolute minimum. In your controller, create a method that returns a Form instance. Use the `#[Forms\Expose]` attribute to expose the form to the frontend, and then pass the name of the method to the `components()` method of the Props builder inside the Inertia render call.
 
-Hewcode's Form class provides a declarative API for building data entry forms that work seamlessly with Eloquent models. Forms handle validation, state management, and data persistence with minimal boilerplate, letting you focus on defining fields rather than writing submission logic.
-
-Use Hewcode Forms when you need to:
-
-- Create or edit Eloquent model records
-- Build structured data entry interfaces with validation
-- Handle complex field types like selects, date pickers, and textareas
-- Automatically populate forms from existing records
-- Work with model relationships in form fields
-- Validate user input with Laravel's validation system
-
-Forms integrate with Inertia.js and provide a React component that handles all client-side state and submission.
-
-<a name="how-it-works"></a>
-## How It Works
-
-When a user interacts with your form, here's the flow:
-
-```
-Browser Render → Form Component → User Input → Submit → Backend Validation → Database
-     ↓                                                         ↓
-Frontend Props ← Form Definition ← Controller    Success/Errors ← Validation
-```
-
-The Form class:
-1. Receives field schema configuration from your controller
-2. Automatically fills form state from an existing record (for editing)
-3. Sends field definitions and initial state to the frontend
-4. Validates submitted data using Laravel's validator
-5. Saves data to the database (or calls your custom handler)
-
-You configure the fields and validation rules, and Form handles the rest.
-
-<a name="your-first-form"></a>
-## Your First Form
-
-Let's start with the absolute minimum. In your controller, create a method that returns a Form:
+When you pass a model instance to the Props builder's `record()` method, the form will automatically load that record for editing. If no record is provided, the form will operate in "create" mode.
 
 ```php
 use Hewcode\Hewcode\Props;
@@ -90,10 +36,14 @@ class PostController extends Controller
 }
 ```
 
+:::danger
+Remember to always make sure the visibility of actions is properly set using authorization checks to prevent unauthorized access. Assume that controller middleware and controller method checks are not sufficient.
+:::
+
 On the frontend, just spread the props:
 
 ```tsx
-import { Form } from '@hewcode/react';
+import Form from '@hewcode/react/components/form/Form';
 import { router, usePage } from '@inertiajs/react';
 
 export default function Edit() {
@@ -108,40 +58,165 @@ export default function Edit() {
 }
 ```
 
-That's it. You now have a fully functional form that validates and saves your Post model.
+By default, since you passed a record and/or specified a model class, the form will update or create records automatically when submitted. If you are not operating on a model or wish to customize the submission logic, you an use the `submitUsing()` method to provide your own callback.
 
-**How it works:**
-- When editing, the form automatically fills with the record's current values
-- On submit, validation runs server-side using the field rules
-- If valid, the record updates automatically
-- If invalid, errors display on the appropriate fields
-
-<a name="essential-configuration"></a>
-## Essential Configuration
-
-These are the most commonly used configuration methods you'll need for typical forms.
-
-<a name="schema-fields"></a>
-### Schema Fields
-
-Define which fields to display using the `schema()` method:
+You can receive the submitted form data using a `$data` parameter, and the current record (if any) using a `$record` parameter.
 
 ```php
-->schema([
-    TextInput::make('title')->required(),
-    Textarea::make('content'),
-    Select::make('status')->options(PostStatus::class),
+use Hewcode\Hewcode\Forms;
+
+->submitUsing(function (array $data, ?Post $record) {
+    if ($record) {
+        // Update existing record
+        $record->update($data);
+    } else {
+        // Create new record
+        Post::create($data);
+    }
+})
+```
+
+## Essentials
+
+### Visibility
+
+Control whether the form is visible using the `visible()` method. You can pass a boolean or a closure that returns a boolean. This is a required step to ensure the form is only shown when appropriate.
+
+```php
+->visible(true)
+->visible(fn () => auth()->user()?->can('manage-posts') ?? false)
+```
+
+### Fill form state
+
+You can fill the form state with custom data using the `fillUsing()` method. This is automatically done when a record is provided, but you can override it to customize the data population logic.
+
+```php
+->fillUsing([
+    'name' => 'Default Name',
 ])
 ```
 
-Each field automatically generates labels from the field name, handles validation, and manages state.
+You can also provide a closure that receives the current record (if any) and returns an array of field values:
 
-<a name="field-types"></a>
-### Field Types
+```php
+->fillUsing(function (?Post $record) {
+    if (!$record) {
+        return [
+            'status' => PostStatus::DRAFT->value,
+            'author_id' => auth()->id(),
+        ];
+    }
+    
+    return [
+        'title' => $record->title,
+        'content' => $record->content,
+        'status' => $record->status->value,
+    ];
+})
+```
 
-Hewcode provides several field types out of the box:
+## Schema
 
-#### TextInput
+Define which fields to display using the `schema()` method.
+
+Labels are automatically generated from your locale files if no explicit label is provided. See [Automatic Locale Labels](auto-localization.md) for more details.
+
+```php
+use Hewcode\Hewcode\Forms;
+
+->schema([
+    Forms\Schema\TextInput::make('title')  // default label: __('app.posts.columns.title')
+        ->required(),
+    Forms\Schema\Textarea::make('content')
+        ->label('Content'),
+    Forms\Schema\Select::make('status')
+        ->options(PostStatus::class),
+])
+```
+
+### Visibility
+
+Control field visibility using the `visible()` method on individual fields. You can pass a boolean or a closure that receives the current record (if any) and returns a boolean.
+
+```php
+Forms\Schema\DateTimePicker::make('published_at')
+    ->label('Published At')
+    ->visible(fn (?Post $record) => $record?->status === PostStatus::PUBLISHED)
+```
+
+### Validation
+
+Add validation rules using Laravel's validation syntax:
+
+```php
+Forms\Schema\TextInput::make('email')
+    ->label('Email Address')
+    ->required()
+    ->email()
+    ->maxLength(255)
+```
+
+Common validation methods:
+- `required()` - Field must have a value
+- `email()` - Must be valid email format
+- `maxLength(int)` - Maximum character length
+- `minLength(int)` - Minimum character length
+- `numeric()` - Must be numeric
+- `unique(string $table, string $column = null)` - Must be unique in database
+
+### State formatting
+
+You can format field values for display using the `formatStateUsing()` method. This accepts a closure that receives the current state and returns the formatted value.
+
+```php
+Forms\Schema\TextInput::make('price')
+    ->label('Price')
+    ->formatStateUsing(fn ($state) => $state ? number_format($state / 100, 2) : null)
+```
+
+### Dehydration
+
+By default, all fields are "dehydrated", meaning their values are included in the final form data sent to the server. If you have a computed or display-only field that shouldn't be part of the submission, use the `dehydrated(false)` method.
+
+```php
+Forms\Schema\TextInput::make('full_name')
+    ->formatStateUsing(fn ($record) => $record->first_name . ' ' . $record->last_name)
+    ->dehydrated(false),
+Forms\Schema\TextInput::make('age')
+    ->label('Age')
+    ->dehydrated(fn () => false),
+```
+
+### Mutate dehydrated state
+
+You can transform field values before passing to the final state array using the `dehydrateStateUsing()` method. This accepts a closure that receives the current state and returns the transformed value.
+
+```php
+Forms\Schema\TextInput::make('price')
+    ->label('Price')
+    ->dehydrateStateUsing(fn ($state) => $state ? (int) ($state * 100) : null)
+```
+
+### Mutate saved state
+
+This is only relevant when a form is automatically operating (creating/editing) a model (either via the `model()` method or by passing a record). You can customize how a field's value is saved to the model using the `saveUsing()` method. This accepts a closure that receives the current state and the model instance, allowing you to implement custom save logic.
+
+```php
+Forms\Schema\Select::make('tags')
+    ->label('Tags')
+    ->options(Tag::pluck('name', 'id')->toArray())
+    ->multiple()
+    ->dehydrated(false)  // Don't try to save as a regular field
+    ->saveUsing(function ($state, $record) {
+        // Custom sync logic
+        $record->tags()->sync($state);
+    })
+```
+
+## Field Types
+
+### TextInput
 
 Single-line text input for short strings:
 
@@ -153,7 +228,7 @@ Forms\Schema\TextInput::make('title')
     ->maxLength(255)
 ```
 
-#### Textarea
+### Textarea
 
 Multi-line text input for longer content:
 
@@ -161,32 +236,75 @@ Multi-line text input for longer content:
 Forms\Schema\Textarea::make('content')
     ->label('Content')
     ->rows(8)
+    ->placeholder('Write your post content here...')
     ->required()
 ```
 
-#### Select
+### Select
 
-Dropdown selection from predefined options:
+Dropdown selection from predefined options. You can pass an array of options, a Closure that returns an array, or an Enum class.
 
 ```php
 Forms\Schema\Select::make('status')
     ->label('Status')
     ->options(PostStatus::class)  // Enum
-    ->required()
-```
-
-Or with a static array:
-
-```php
+    ->required(),
 Forms\Schema\Select::make('category')
     ->options([
         'tech' => 'Technology',
         'business' => 'Business',
         'lifestyle' => 'Lifestyle',
-    ])
+    ]),
+Forms\Schema\Select::make('tags')
+    ->options(fn () => Tag::pluck('name', 'id')->toArray())
 ```
 
-#### DateTimePicker
+If you want to allow multiple selections, use the `multiple()` method:
+
+```php
+Forms\Schema\Select::make('tags')
+    ->label('Tags')
+    ->options(fn () => Tag::pluck('name', 'id')->toArray())
+    ->multiple()
+```
+
+You can set a default selected value using the `default()` method:
+
+```php
+Forms\Schema\Select::make('status')
+    ->label('Status')
+    ->options(PostStatus::class)
+    ->default(PostStatus::DRAFT->value)
+```
+
+### Relationship Select
+
+The select field can also work with Eloquent relationships. Allowing you to select one or more related models easily. It also supports preloading options and searching.
+
+```php
+Forms\Schema\Select::make('category_id')
+    ->label('Category')
+    ->relationship('category', titleColumn: 'name')  // Relationship name and title column
+    ->searchable()
+    ->preload()  // Load first 25 options immediately
+    ->required()
+```
+
+You can customize the query used to fetch options:
+
+```php
+Forms\Schema\Select::make('author_id')
+    ->label('Author')
+    ->relationship(
+        relationshipName: 'author',
+        titleColumn: 'name',
+        modifyQueryUsing: fn ($query) => $query->where('active', true)
+    )
+    ->searchable()
+    ->preload()
+```
+
+### DateTimePicker
 
 Date and time selection:
 
@@ -210,233 +328,14 @@ Forms\Schema\DateTimePicker::make('meeting_time')
 Forms\Schema\DateTimePicker::make('published_at')
 ```
 
-Use custom calendar picker instead of native browser input:
+Use the custom calendar picker instead of native browser input:
 
 ```php
 Forms\Schema\DateTimePicker::make('published_at')
     ->native(false)  // Custom calendar/time picker with popover
 ```
 
-The custom picker provides a consistent UI across all browsers using a calendar popover and time inputs.
-
-<a name="validation"></a>
-### Validation
-
-Add validation rules using Laravel's validation syntax:
-
-```php
-Forms\Schema\TextInput::make('email')
-    ->label('Email Address')
-    ->required()
-    ->email()
-    ->maxLength(255)
-```
-
-Common validation methods:
-- `required()` - Field must have a value
-- `email()` - Must be valid email format
-- `maxLength(int)` - Maximum character length
-- `minLength(int)` - Minimum character length
-- `numeric()` - Must be numeric
-- `unique(string $table, string $column = null)` - Must be unique in database
-
-<a name="common-patterns"></a>
-## Common Patterns
-
-These patterns cover 80% of typical form use cases.
-
-### Enum Select Fields
-
-Display enums as dropdown options:
-
-```php
-Forms\Schema\Select::make('status')
-    ->label('Status')
-    ->options(PostStatus::class)
-    ->required()
-```
-
-The select automatically extracts enum values and labels (via `getLabel()` method or name property).
-
-### Optional Fields with Defaults
-
-Provide default values for optional fields:
-
-```php
-Forms\Schema\Select::make('status')
-    ->label('Status')
-    ->options(PostStatus::class)
-    ->default(PostStatus::DRAFT->value)
-```
-
-### Text Fields with Placeholders
-
-Guide users with helpful placeholder text:
-
-```php
-Forms\Schema\TextInput::make('slug')
-    ->label('URL Slug')
-    ->placeholder('my-post-slug')
-    ->maxLength(255)
-```
-
-### Long-form Content
-
-Use textarea with custom row height:
-
-```php
-Forms\Schema\Textarea::make('description')
-    ->label('Description')
-    ->rows(5)
-    ->placeholder('Enter a brief description...')
-```
-
-<a name="advanced-features"></a>
-## Advanced Features
-
-These features handle more complex use cases.
-
-<a name="custom-submit-handlers"></a>
-### Custom Submit Handlers
-
-Override the default save behavior with custom logic:
-
-```php
-#[Forms\Expose]
-public function form(): Forms\Form
-{
-    return Forms\Form::make()
-        ->model(Post::class)
-        ->visible()
-        ->schema([
-            Forms\Schema\TextInput::make('title')->required(),
-            Forms\Schema\Textarea::make('content')->required(),
-        ])
-        ->submitUsing(function (array $data, ?Post $record) {
-            if ($record) {
-                // Updating existing record
-                $record->update($data);
-                $record->generateSlug();
-            } else {
-                // Creating new record
-                $post = Post::create($data);
-                $post->author_id = auth()->id();
-                $post->save();
-            }
-        });
-}
-```
-
-The `submitUsing()` callback receives:
-- `$data` - Validated form data
-- `$record` - Current record (if editing) or null (if creating)
-
-<a name="custom-fill-logic"></a>
-### Custom Fill Logic
-
-Override how form fields are populated from records:
-
-```php
-->fillUsing(function (?Post $record) {
-    if (!$record) {
-        return [
-            'status' => PostStatus::DRAFT->value,
-            'author_id' => auth()->id(),
-        ];
-    }
-    
-    return [
-        'title' => $record->title,
-        'content' => $record->content,
-        'status' => $record->status->value,
-    ];
-})
-```
-
-This is useful when you need to transform data before displaying it in the form.
-
-<a name="conditional-fields"></a>
-### Conditional Fields
-
-Show or hide fields based on conditions:
-
-```php
-->schema([
-    Forms\Schema\TextInput::make('title')->required(),
-    Forms\Schema\DateTimePicker::make('published_at')
-        ->label('Published At')
-        ->visible(fn (?Post $record) => $record?->status === PostStatus::PUBLISHED),
-])
-```
-
-The field only appears when the condition returns true.
-
-<a name="relationships"></a>
-### Relationships
-
-Select related models with searchable dropdowns:
-
-```php
-Forms\Schema\Select::make('category_id')
-    ->label('Category')
-    ->relationship('category')  // Relationship name
-    ->searchable()
-    ->preload()  // Load first 25 options immediately
-    ->required()
-```
-
-**How it works:**
-- `relationship('category')` tells the field to work with the category relationship
-- `searchable()` enables real-time search as the user types
-- `preload()` loads the first 25 options on page load
-- The field automatically uses the related model's `name` column (customizable)
-
-**Custom title column:**
-
-```php
-Forms\Schema\Select::make('author_id')
-    ->label('Author')
-    ->relationship('author', titleColumn: 'full_name')
-    ->searchable()
-    ->preload()
-```
-
-**Multiple selection:**
-
-```php
-Forms\Schema\Select::make('tags')
-    ->label('Tags')
-    ->relationship('tags')
-    ->multiple()
-    ->searchable()
-    ->preload()
-```
-
-**Custom query modification:**
-
-Modify the relationship query for filtering or scoping:
-
-```php
-Forms\Schema\Select::make('author_id')
-    ->label('Author')
-    ->relationship(
-        relationshipName: 'author',
-        titleColumn: 'name',
-        modifyQueryUsing: fn ($query) => $query->where('active', true)
-    )
-    ->searchable()
-    ->preload()
-```
-
-**How relationship fields save:**
-
-When using `relationship()`, the field automatically handles saving:
-- **BelongsTo**: Uses `associate()` to set the foreign key
-- **BelongsToMany**: Uses `sync()` to update the pivot table
-- For multiple selections, combine with `multiple()` method
-
-<a name="custom-footer-actions"></a>
-### Custom Footer Actions
+## Footer Actions
 
 Add custom action buttons to the form footer alongside the default submit button:
 
@@ -481,84 +380,19 @@ public function form(): Forms\Form
 }
 ```
 
-**Conditional footer actions:**
+### Submit action
 
-Show or hide actions based on the current record:
-
-```php
-->footerActions([
-    Actions\Action::make('unpublish')
-        ->label('Unpublish')
-        ->color('warning')
-        ->visible(fn (?Post $record) => $record?->status === PostStatus::PUBLISHED)
-        ->action(fn (Post $record) => $record->update(['status' => PostStatus::DRAFT])),
-])
-```
-
-<a name="field-state-transformation"></a>
-### Field State Transformation
-
-Transform field data when loading from or saving to the database.
-
-**Format when loading (read transformation):**
+You can customize the main submit action using `->submitAction()` method:
 
 ```php
-Forms\Schema\TextInput::make('price')
-    ->formatStateUsing(fn ($state) => $state ? $state / 100 : null)  // Convert cents to dollars
+use Hewcode\Hewcode\Actions;
+
+->submitAction(fn (Actions\Action $action) => $action
+    ->label('Save Post')
+    ->color('primary')
+)
 ```
 
-**Transform when saving (write transformation):**
-
-```php
-Forms\Schema\TextInput::make('price')
-    ->setStateUsing(fn ($state) => $state ? $state * 100 : null)  // Convert dollars to cents
-```
-
-**Prevent saving to database:**
-
-Use `dehydrated(false)` for computed or display-only fields:
-
-```php
-Forms\Schema\TextInput::make('full_name')
-    ->formatStateUsing(fn ($record) => $record->first_name . ' ' . $record->last_name)
-    ->dehydrated(false)  // Don't save this to the database
-```
-
-**Custom save logic:**
-
-Handle complex save scenarios with `saveUsing()`:
-
-```php
-Forms\Schema\Select::make('tags')
-    ->label('Tags')
-    ->options(Tag::pluck('name', 'id')->toArray())
-    ->multiple()
-    ->dehydrated(false)  // Don't try to save as a regular field
-    ->saveUsing(function ($state, $record) {
-        // Custom sync logic
-        $record->tags()->sync($state);
-    })
-```
-
-**Common use cases:**
-
-```php
-// Hash password before saving
-Forms\Schema\TextInput::make('password')
-    ->setStateUsing(fn ($state) => bcrypt($state))
-
-// JSON encode array data
-Forms\Schema\Textarea::make('settings')
-    ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT))
-    ->setStateUsing(fn ($state) => json_decode($state, true))
-
-// Format currency for display
-Forms\Schema\TextInput::make('amount')
-    ->formatStateUsing(fn ($state) => number_format($state / 100, 2))
-    ->setStateUsing(fn ($state) => (int) ($state * 100))
-```
-
-<a name="complete-real-world-example"></a>
 ## Complete Real-World Example
 
 Here's a comprehensive example showing most features working together:
@@ -628,25 +462,13 @@ class PostController extends Controller
                 }
             });
     }
-
-    public function store(Request $request): RedirectResponse
-    {
-        // Form handles this automatically via the submit action
-        return redirect()->route('posts.index');
-    }
-
-    public function update(Request $request, Post $post): RedirectResponse
-    {
-        // Form handles this automatically via the submit action
-        return redirect()->route('posts.index');
-    }
 }
 ```
 
 **Frontend component:**
 
 ```tsx
-import { Form } from '@hewcode/react';
+import Form from '@hewcode/react/components/form/Form';
 import { Head, router, usePage } from '@inertiajs/react';
 import AppLayout from '../../layouts/app-layout';
 
@@ -683,74 +505,3 @@ export default function Edit() {
     );
 }
 ```
-
-<a name="reference"></a>
-## Reference
-
-<a name="reference-available-field-types"></a>
-### Available Field Types
-
-#### TextInput
-Single-line text input.
-
-**Methods:**
-- `make(string $name)` - Create field
-- `label(string $label)` - Set label
-- `placeholder(string $placeholder)` - Set placeholder
-- `default(mixed $value)` - Set default value
-- `required()` - Mark as required
-- `email()` - Validate as email
-- `maxLength(int $length)` - Set max length
-- `minLength(int $length)` - Set min length
-- `numeric()` - Validate as numeric
-
-#### Textarea
-Multi-line text input.
-
-**Methods:**
-- `make(string $name)` - Create field
-- `label(string $label)` - Set label
-- `placeholder(string $placeholder)` - Set placeholder
-- `rows(int $rows)` - Set number of rows
-- `default(mixed $value)` - Set default value
-- `required()` - Mark as required
-- `maxLength(int $length)` - Set max length
-
-#### Select
-Dropdown selection.
-
-**Methods:**
-- `make(string $name)` - Create field
-- `label(string $label)` - Set label
-- `options(array|string $options)` - Set options (array or enum class)
-- `relationship(string $name, string $titleColumn = 'name')` - Load from relationship
-- `searchable(bool $searchable = true)` - Enable search
-- `multiple(bool $multiple = true)` - Allow multiple selections
-- `preload(int $limit = 25)` - Preload options
-- `default(mixed $value)` - Set default value
-- `required()` - Mark as required
-
-#### DateTimePicker
-Date and time selection.
-
-**Methods:**
-- `make(string $name)` - Create field
-- `label(string $label)` - Set label
-- `time(bool $time = true)` - Enable/disable time picker
-- `date(bool $date = true)` - Enable/disable date picker
-- `native(bool $native = true)` - Use native browser input (true) or custom picker (false)
-- `default(mixed $value)` - Set default value
-- `required()` - Mark as required
-
-### Form Methods
-
-**Configuration:**
-- `make()` - Create new form instance
-- `model(string $class)` - Set Eloquent model class
-- `schema(array $fields)` - Define form fields
-- `visible(bool|Closure $condition = true)` - Set visibility condition
-
-**Customization:**
-- `submitUsing(Closure $callback)` - Custom submit handler
-- `fillUsing(Closure $callback)` - Custom fill logic
-- `submitAction(Closure $callback)` - Customize submit action button

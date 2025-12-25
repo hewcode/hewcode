@@ -1,71 +1,10 @@
-# Listing
+# Lists
 
-- [When To Use Listings](#when-to-use-listings)
-- [How It Works](#how-it-works)
-- [Your First Listing](#your-first-listing)
-    - [Adding Sorting and Search](#adding-sorting-and-search)
-    - [Working with Relationships](#working-with-relationships)
-- [Essential Configuration](#essential-configuration)
-    - [Columns](#columns)
-    - [Default Sorting](#default-sorting)
-    - [Pagination](#pagination)
-    - [Filters](#filters)
-    - [Deferred Filtering](#deferred-filtering)
-- [Common Patterns](#common-patterns)
-- [Advanced Features](#advanced-features)
-    - [Tabs](#tabs)
-    - [Row Background Colors](#row-background-colors)
-    - [Drag-and-Drop Reordering](#drag-and-drop-reordering)
-    - [Row Actions](#row-actions)
-    - [Bulk Actions](#bulk-actions)
-- [State Persistence](#state-persistence)
-- [Working with Iterable Data](#working-with-iterable-data)
-- [Troubleshooting](#troubleshooting)
-- [Complete Real-World Example](#complete-real-world-example)
-- [Reference](#reference)
-    - [Request Parameters](#reference-request-parameters)
-    - [Output Format](#reference-output-format)
+Quickly generate powerful, feature-rich data listings with sorting, searching, filtering, pagination, and more.
 
-<a name="when-to-use-listings"></a>
-## When To Use Listings
+## Getting Started
 
-When building admin panels or data-heavy applications, you need more than just a table—you need sorting, filtering, pagination, and search that works seamlessly with your Eloquent models. Hewcode's Listing class provides this complete solution with a fluent, declarative API that transforms complex data table requirements into elegant, maintainable code.
-
-Use Hewcode Listings when you need to:
-
-- Display tabular data from Eloquent models with user-driven sorting and filtering
-- Build admin interfaces that work with complex data relationships
-- Provide search functionality across multiple fields without writing custom queries  
-- Maintain user preferences for table state across sessions or in shareable URLs
-- Enable bulk operations on multiple selected records
-- Create filterable reports or data exports
-
-Listings handle the heavy lifting of query building, request parsing, and data transformation—letting you focus on business logic instead of boilerplate.
-
-<a name="how-it-works"></a>
-## How It Works
-
-When a user interacts with your listing (sorts, filters, searches), here's the flow:
-
-```
-Browser Request → Laravel Controller → Listing Class → Query Builder → Database
-     ↓                                        ↓
-Frontend Props ← Data Transformation ← Paginated Results
-```
-
-The Listing class:
-1. Receives the HTTP request parameters (sort, filters, search, page)
-2. Applies them to your Eloquent query builder automatically
-3. Executes the query with proper eager loading
-4. Transforms results into a frontend-ready format
-5. Returns pagination metadata, column definitions, and current state
-
-You configure what's possible (which columns are sortable, what filters exist), and Listing handles the execution.
-
-<a name="your-first-listing"></a>
-## Your First Listing
-
-Let's start with the absolute minimum. In your controller, create a method that returns a Listing:
+Let's start with the absolute minimum. In your controller, create a method that returns a Listing, then use the `Props` class to expose it to your Inertia component in the rendering method. The Listing method must have the `#[Lists\Expose]` attribute.
 
 ```php
 use Hewcode\Hewcode\Props;
@@ -75,7 +14,9 @@ class PostController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('posts/index', Props\Props::for($this)->components(['posts']));
+        return Inertia::render('posts/index', Props\Props::for($this)
+            ->components(['posts'])
+        );
     }
 
     #[Lists\Expose]
@@ -92,10 +33,14 @@ class PostController extends Controller
 }
 ```
 
+:::danger
+Remember to always make sure the visibility of actions is properly set using authorization checks to prevent unauthorized access. Assume that controller middleware and controller method checks are not sufficient.
+:::
+
 On the frontend, just spread the props:
 
 ```tsx
-import { DataTable } from '@hewcode/react';
+import DataTable from '@hewcode/react/components/data-table/DataTable';
 import { usePage } from '@inertiajs/react';
 
 export default function Index() {
@@ -105,64 +50,33 @@ export default function Index() {
 }
 ```
 
-That's it. You now have a paginated table with two columns showing your posts.
+That's it. 
 
-<a name="adding-sorting-and-search"></a>
-### Adding Sorting and Search
+## Essentials
 
-Add sorting and search capabilities with simple method calls:
+### Pagination
 
-```php
-#[Lists\Expose]
-public function posts(): Lists\Listing
-{
-    return Lists\Listing::make()
-        ->query(Post::query())
-        ->columns([
-            Lists\Schema\TextColumn::make('title')
-                ->sortable()      // Clickable column header
-                ->searchable(),   // Included in global search
-            Lists\Schema\TextColumn::make('status')
-                ->sortable(),
-        ])
-        ->defaultSort('created_at', 'desc');
-}
-```
-
-Now users can click column headers to sort and use the search box to filter.
-
-<a name="working-with-relationships"></a>
-### Working with Relationships
-
-#### Displaying Related Data in Columns
-
-Display related data with dot notation:
+Control how many items appear per page. Users can typically change this in the UI, but this sets the default.
 
 ```php
-#[Lists\Expose]
-public function posts(): Lists\Listing
-{
-    return Lists\Listing::make()
-        ->query(Post::query()->with('user', 'category'))  // Eager load!
-        ->columns([
-            Lists\Schema\TextColumn::make('title')->sortable()->searchable(),
-            Lists\Schema\TextColumn::make('user.name')
-                ->label('Author')
-                ->sortable()
-                ->searchable(),
-            Lists\Schema\TextColumn::make('category.name')
-                ->sortable(),
-        ]);
-}
+->perPage(20)  // Default: 15
 ```
 
-**Important:** Always eager load relationships with `->with()` to avoid N+1 query problems.
+### Default Sorting
+
+Set which column is sorted by default and in which direction.
+Users can still change the sort by clicking column headers, but this sets the initial state.
+
+```php
+->defaultSort('created_at', 'desc')  // Second param defaults to 'asc'
+```
+### Relationships
 
 #### Listing Records from a Relationship
 
-For displaying a model's related records (e.g., a user's posts), use the `->relationship()` method. This requires providing the owner record either through Props or explicitly:
+To display a model's related records (e.g., a user's posts), use the `->relationship()` method. This requires providing the owner record either through Props or explicitly:
 
-**Option 1: Using Props with record() (Recommended)**
+###### Using Props with record()
 
 ```php
 // Controller
@@ -189,7 +103,7 @@ public function posts(): Lists\Listing
 }
 ```
 
-**Option 2: Explicit owner record**
+###### Explicit owner record
 
 ```php
 #[Lists\Expose]
@@ -210,7 +124,7 @@ public function posts(): Lists\Listing
 }
 ```
 
-**Custom relationship queries:**
+###### Custom relationship queries
 
 You can modify the relationship query by passing a closure as the second parameter:
 
@@ -235,126 +149,230 @@ public function posts(): Lists\Listing
 
 This allows you to filter, eager load additional relationships, or apply custom sorting to the relationship query while still maintaining the automatic scoping to the owner record.
 
-<a name="how-props-works"></a>
-## How Props Works
+## Columns
 
-Props gives you explicit control over which component methods are exposed. You declare which methods to expose via `->components()`, and those methods must have the `#[Lists\Expose]` or `#[Actions\Expose]` attribute. Props calls each method and passes the results as props to your Inertia component.
+You can declare columns to display in the listing, the column name corresponds to the model attribute.
 
-The method name becomes the prop name:
-
-```php
-Props\Props::for($this)->components(['posts', 'actions'])
-// Frontend receives props.posts and props.actions
-```
-
-Each method must have the appropriate attribute:
-
-```php
-#[Lists\Expose]
-public function posts(): Lists\Listing
-{
-    return Lists\Listing::make()...;
-}
-```
-
-### Multiple Components on One Page
-
-You can expose multiple components on a single page, perfect for showing related data:
-
-```php
-// Controller
-public function edit(User $user): Response
-{
-    return Inertia::render('users/edit', Props\Props::for($this)
-        ->record($user)  // Provides the user record to relationship listings
-        ->components(['form', 'posts'])  // Expose both form and posts listing
-    );
-}
-
-#[Forms\Expose]
-public function form(): Forms\Form
-{
-    return Forms\Form::make()
-        ->model(User::class)
-        ->schema([
-            Forms\Schema\TextInput::make('name')->required(),
-            Forms\Schema\TextInput::make('email')->required(),
-        ]);
-}
-
-#[Lists\Expose]
-public function posts(): Lists\Listing
-{
-    return Lists\Listing::make()
-        ->relationship('posts')  // Uses the record from Props
-        ->columns([
-            Lists\Schema\TextColumn::make('title')->sortable(),
-            Lists\Schema\TextColumn::make('status')->badge(),
-        ]);
-}
-```
-
-On the frontend, both components are available as props:
-
-```tsx
-export default function Edit() {
-    const { form, posts } = usePage().props;
-
-    return (
-        <div>
-            <Form {...form} />
-            <DataTable {...posts} />
-        </div>
-    );
-}
-```
-
-<a name="essential-configuration"></a>
-## Essential Configuration
-
-These are the most commonly used configuration methods you'll need for typical listings.
-
-<a name="columns"></a>
-### Columns
-
-Define which data columns to display. See [TextColumn](text-column.md) for detailed column customization.
+Labels are automatically generated from your locale files if no explicit label is provided. See [Automatic Locale Labels](auto-localization.md) for more details.
 
 ```php
 ->columns([
     TextColumn::make('id'),
-    TextColumn::make('title')->sortable()->searchable(),
-    TextColumn::make('user.name')->label('Author')->sortable(),
+    TextColumn::make('title'), // default label: __('app.posts.columns.title')
+    TextColumn::make('user.name')
+        ->label('Author'),
 ])
 ```
 
-Each column can be independently configured for sorting, searching, formatting, and styling.
+### Visibility
 
-<a name="default-sorting"></a>
-### Default Sorting
-
-Set which column is sorted by default and in which direction:
+You can control whether a column is visible using `->visible()` or `->hidden()`:
 
 ```php
-->defaultSort('created_at', 'desc')  // Second param defaults to 'asc'
+TextColumn::make('internal_notes')
+    ->visible(false)  // Always hidden,
+TextColumn::make('admin_notes')
+    ->hidden(fn () => ! auth()->user()->isAdmin())
 ```
 
-Users can still change the sort by clicking column headers, but this sets the initial state.
+### Omission
 
-<a name="pagination"></a>
-### Pagination
-
-Control how many items appear per page:
+You can omit a cell value conditionally using `->omit()`:
 
 ```php
-->perPage(20)  // Default: 15
+TextColumn::make('email')
+    ->omit(fn (User $record) => ! auth()->user()->canViewEmails()),
+TextColumn::make('salary')
+    ->omit(fn (User $record) => $record->department !== 'HR')
 ```
 
-Users can typically change this in the UI, but this sets the default.
+:::info
+The `omit()` method differs from `visible()` in that:
+- `visible()` controls whether the entire column appears for all records
+- `omit()` controls whether the value is shown for individual records, returning `null` when the condition is met
+:::
 
-<a name="filters"></a>
-### Filters
+### Formatting
 
-Add filters to let users narrow down results. Filters appear in a UI panel separate from the table:
+You can format column values using `->formatStateUsing()`:
+
+```php
+TextColumn::make('price')
+    ->formatStateUsing(fn ($state) => '$' . number_format($state, 2))
+```
+
+### Datetime Columns
+
+Using the `->date()` or `->datetime()` methods will format the column value appropriately. This will use the default configured format which can be customized as described in the [Configuration](config.md) docs. You can also pass a custom format string.
+
+These methods also allow using relative display.
+
+```php
+TextColumn::make('published_at')
+    ->date(),
+TextColumn::make('created_at')
+    ->datetime(format: 'M j, Y g:i A'),
+TextColumn::make('updated_at')
+    ->datetime(relative: true),
+```
+
+### Sortable & Searchable
+
+You can make columns sortable and searchable:
+
+```php
+->columns([
+    Lists\Schema\TextColumn::make('title')
+        ->sortable()
+        ->searchable(),
+    Lists\Schema\TextColumn::make('status')
+        ->sortable(),
+]);
+```
+
+### Wrapping Text
+
+You can enable text wrapping for long content:
+
+```php
+TextColumn::make('content')
+    ->wrap(),  // Enable text wrapping
+```
+
+### Color
+
+### Badge Columns
+
+You can display column values as badges for better visual distinction. If using a custom color, the badge will use that color.
+
+```php
+TextColumn::make('status')
+    ->badge()  // Default variant
+
+TextColumn::make('user.name')
+    ->badge(true, 'outline')  // With specific variant
+
+TextColumn::make('category.name')
+    ->badge(true, 'secondary')
+```
+
+### Color
+
+You can customize the color of text or badges dynamically based on the record's data.
+
+```php
+TextColumn::make('category.name')
+    ->badge()
+    ->color(fn ($record) => $record->category->color)
+
+TextColumn::make('status')
+    ->color(fn ($record) => match ($record->status) {
+        PostStatus::DRAFT => 'warning',
+        PostStatus::PUBLISHED => 'success',
+        default => 'secondary',
+    })
+```
+
+### Icons
+
+You can add icons to columns, either static or dynamic based on the record's data. When using badges, the icon appears inside the badge.
+
+```php
+TextColumn::make('email')
+    ->icon('lucide-mail'),
+TextColumn::make('status')
+    ->badge()
+    ->icon(fn($record) => match($record->status) {
+        PostStatus::PUBLISHED => 'lucide-circle-check',
+        PostStatus::DRAFT => 'lucide-pencil',
+        PostStatus::ARCHIVED => 'lucide-archive',
+        default => null,
+    })
+```
+
+You can also customize the icon position and size:
+
+```php
+TextColumn::make('priority')
+    ->icon('lucide-flag', position: 'after', size: 20)
+```
+
+:::tip
+Browse available icons at [lucide.dev/icons](https://lucide.dev/icons/). All icons must use the `lucide-` prefix (e.g., `lucide-circle-check`, `lucide-pencil`).
+:::
+
+### After & Before content
+
+You can add additional content before or after the cell value. This can be static text or dynamic based on the record's data. You can also use badges here.
+
+```php
+use Hewcode\Hewcode\Fragments\Badge;
+
+TextColumn::make('title')
+    ->after(fn ($record) => $record->slug)
+
+TextColumn::make('name')
+    ->before(fn (User $record) => Badge::make('Admin'))
+```
+
+```php
+TextColumn::make('title')
+    ->after(fn (Post $record) => 
+        Badge::make(
+            label: $record->status->getLabel(),
+            color: match ($record->status) {
+                PostStatus::PUBLISHED => 'success',
+                PostStatus::DRAFT => 'warning',
+                PostStatus::ARCHIVED => 'secondary',
+            },
+            icon: match ($record->status) {
+                PostStatus::PUBLISHED => 'lucide-circle-check',
+                PostStatus::DRAFT => 'lucide-pencil',
+                PostStatus::ARCHIVED => 'lucide-archive',
+                default => null,
+            },
+            variant: 'secondary',
+        )
+    )
+```
+
+### Togglable Columns
+
+You can allow users to show or hide specific columns using the `->togglable()` method. This will display a popover menu where users can toggle column visibility.
+
+```php
+TextColumn::make('content')
+    ->searchable()
+    ->wrap()
+    ->togglable(),
+TextColumn::make('created_at')
+    ->togglable(isToggledHiddenByDefault: true),
+```
+
+### Relationships
+
+You can display related model data using dot notation in column definitions:
+
+```php
+// Single relationship
+TextColumn::make('user.name')
+    ->label('Author')
+
+// Nested relationships
+TextColumn::make('category.parent.name')
+    ->label('Parent Category')
+```
+
+:::warning
+Make sure to eager load relationships in your query.
+```php
+->query(Post::query()->with(['user', 'category.parent']))
+```
+:::
+
+## Filters
+
+You can specify filters to allow users to narrow down results. Filters appear in a popover panel above the table.
 
 ```php
 use Hewcode\Hewcode\Lists\Filters;
@@ -375,15 +393,9 @@ use Hewcode\Hewcode\Lists\Filters;
 ])
 ```
 
-**Filter types:**
-- `SelectFilter` - Dropdown selection (single or multiple)
-- `DateRangeFilter` - Start and end date picker
+### Relationship filters
 
-Filters automatically apply to your query based on user selections.
-
-**Relationship filters:**
-
-Load filter options from relationships with search support:
+You can also create filters that load options from related models using the `->relationship()` method:
 
 ```php
 Lists\Filters\SelectFilter::make('category')
@@ -402,20 +414,16 @@ This works identically to form relationship fields, including:
 
 **Custom relationship query:**
 
+Customize the relationship query using a closure:
+
 ```php
-Lists\Filters\SelectFilter::make('author')
-    ->label('Author')
-    ->field('author_id')
-    ->relationship(
-        relationshipName: 'author',
-        titleColumn: 'name',
-        modifyQueryUsing: fn ($query) => $query->where('active', true)
-    )
-    ->searchable()
-    ->preload()
+->relationship(
+    relationshipName: 'author',
+    titleColumn: 'name',
+    modifyQueryUsing: fn ($query) => $query->where('active', true)
+)
 ```
 
-<a name="deferred-filtering"></a>
 ### Deferred Filtering
 
 By default, filters apply immediately as users change them. For complex queries or large datasets, you may want to defer filter application until the user explicitly clicks "Apply Filters":
@@ -433,93 +441,10 @@ By default, filters apply immediately as users change them. For complex queries 
 ->deferFiltering()  // Add "Apply Filters" button
 ```
 
-**When to use deferred filtering:**
-- Complex queries that take time to execute
-- Multiple filters that users typically change together
-- Preventing unnecessary queries while users adjust filters
-- Large datasets where filtering is expensive
-
-**How it works:**
-- Users can adjust multiple filters without triggering queries
-- An "Apply Filters" button appears in the filter panel
-- A loading state shows while filters are being applied
-- The table updates only when the user clicks "Apply Filters"
-
-<a name="common-patterns"></a>
-## Common Patterns
-
-These patterns cover 80% of typical listing use cases.
-
-### Status Badge Columns
-
-Display status fields as color-coded badges:
-
-```php
-TextColumn::make('status')
-    ->badge(true, 'secondary')  // Display as badge with variant
-    ->getStateUsing(fn ($record) => $record->status->getLabel())  // Get friendly label
-    ->color(fn ($record) => match ($record->status) {  // Dynamic color
-        PostStatus::DRAFT => 'warning',
-        PostStatus::PUBLISHED => 'success',
-        PostStatus::ARCHIVED => 'secondary',
-    })
-```
-
-### Formatted Date Columns
-
-Display dates in a readable format:
-
-```php
-TextColumn::make('published_at')
-    ->label('Published')
-    ->sortable()
-    ->getStateUsing(fn ($record) => $record->published_at?->format('M j, Y'))
-```
-
-### Relationship Columns with Badges
-
-Show related data with visual styling:
-
-```php
-TextColumn::make('category.name')
-    ->sortable()
-    ->searchable()
-    ->badge()
-    ->color(fn ($record) => $record->category->color)  // Use category's color
-```
-
-### Togglable Columns
-*
-Let users show/hide columns they don't need:
-
-```php
-TextColumn::make('content')
-    ->searchable()
-    ->wrap()
-    ->togglable(),  // User can hide this column
-TextColumn::make('id')
-    ->togglable(true, true),  // Togglable and hidden by default
-TextColumn::make('created_at')
-    ->togglable(isToggledHiddenByDefault: true),  // Hidden by default
-```
-
-### Secondary Information Display
-
-Show additional context under the main column value:
-
-```php
-TextColumn::make('title')
-    ->sortable()
-    ->searchable()
-    ->after(fn ($record) => $record->slug),  // Show slug below title
-```
-
-<a name="advanced-features"></a>
 ## Advanced Features
 
 These features handle more complex use cases.
 
-<a name="tabs"></a>
 ### Tabs
 
 Tabs provide quick navigation between different data views, perfect for status-based filtering or common queries:
@@ -550,7 +475,6 @@ use Illuminate\Database\Eloquent\Builder;
 - The default tab is active when no tab parameter is in the request
 - Tab state persists based on your persistence configuration
 
-<a name="row-background-colors"></a>
 ### Row Background Colors
 
 Add visual indicators with conditional row styling:
@@ -566,7 +490,6 @@ Add visual indicators with conditional row styling:
 
 Colors use your theme's color system: `primary`, `secondary`, `success`, `danger`, `warning`, `info`.
 
-<a name="drag-and-drop-reordering"></a>
 ### Drag-and-Drop Reordering
 
 Enable users to reorder records visually:
@@ -587,10 +510,28 @@ $table->integer('order')->default(0);
 
 When reordering is enabled, users can drag rows to reposition them, and the order column updates automatically.
 
-<a name="row-actions"></a>
+## Actions
+
+You can attach actions to listings for both individual rows and bulk operations.
+
+For more details about building actions, see the [Actions](actions.md) documentation.
+
 ### Row Actions
 
 Add action buttons that appear on each row, operating on the specific record:
+
+```php
+use Hewcode\Hewcode\Actions;
+
+->actions([
+    Actions\Action::make('duplicate')
+        ->label('Duplicate')
+        ->color('secondary')
+        ->action(fn (Post $record) => $record->replicate()->save())
+])
+```
+
+You can use some predefined Eloquent actions for Editing, Deleting, and Restoring records:
 
 ```php
 use Hewcode\Hewcode\Actions;
@@ -614,28 +555,6 @@ use Hewcode\Hewcode\Forms;
         ])
         ->visible(fn (Post $record) => auth()->user()->can('update', $record)),
 
-    Actions\Action::make('duplicate')
-        ->label('Duplicate')
-        ->color('secondary')
-        ->action(fn (Post $record) => $record->replicate()->save()),
-
-    Actions\Action::make('schedule')
-        ->label('Schedule')
-        ->color('warning')
-        ->visible(fn (Post $record) => $record->status === PostStatus::DRAFT)
-        ->form([
-            Forms\Schema\DateTimePicker::make('publish_at')
-                ->label('Publish At')
-                ->required()
-                ->native(false),
-        ])
-        ->action(function (Post $record, array $data) {
-            $record->update([
-                'status' => PostStatus::SCHEDULED,
-                'published_at' => $data['publish_at'],
-            ]);
-        }),
-
     Actions\Eloquent\DeleteAction::make()
         ->visible(fn (Post $record) => auth()->user()->can('delete', $record)),
 
@@ -644,18 +563,13 @@ use Hewcode\Hewcode\Forms;
 ])
 ```
 
-**Row action features:**
-- **Authorization**: Use `->visible()` with closures for dynamic per-record authorization
-- **Forms**: Collect additional data before executing the action
-- **Confirmation**: Add `->requiresConfirmation()` for destructive actions
-- **Styling**: Use semantic colors (`primary`, `danger`, `warning`, etc.)
+:::tip
+Row actions automatically receive the `$record` parameter and form data as `$data` if a form is defined.
+:::
 
-Row actions automatically receive the current record as the first parameter, and form data as the second parameter if a form is defined.
-
-<a name="bulk-actions"></a>
 ### Bulk Actions
 
-Let users select multiple rows and perform batch operations:
+You can let users select multiple rows and perform batch operations:
 
 ```php
 use Hewcode\Hewcode\Actions;
@@ -663,13 +577,6 @@ use Hewcode\Hewcode\Toasts\Toast;
 use Illuminate\Support\Collection;
 
 ->bulkActions([
-    Actions\Eloquent\BulkDeleteAction::make(),
-
-    Actions\Eloquent\BulkDeleteAction::make()
-        ->forceDelete(),
-
-    Actions\Eloquent\BulkRestoreAction::make(),
-
     Actions\BulkAction::make('publish')
         ->label('Publish Selected')
         ->color('primary')
@@ -734,15 +641,25 @@ use Illuminate\Support\Collection;
 ])
 ```
 
-**Bulk action features:**
-- **Selection**: Users select rows with checkboxes, then choose from the bulk actions menu
-- **Form support**: Collect additional data before executing the bulk action
-- **Confirmation**: Add `->requiresConfirmation()` for destructive operations
-- **Feedback**: Use [Toast notifications](toasts.md) to provide feedback about bulk operations
+:::tip
+Bulk actions receive a Collection of selected records as `$records`, and form data as `$data` if a form is defined.
+:::
 
-Bulk actions receive a Collection of selected records as the first parameter, and form data as the second parameter if a form is defined. The action executes once with all selected records, making it efficient for batch operations.
+You can also use predefined Eloquent bulk actions for Deleting and Restoring records:
 
-<a name="state-persistence"></a>
+```php
+use Hewcode\Hewcode\Actions;
+
+->bulkActions([
+    Actions\Eloquent\BulkDeleteAction::make(),
+
+    Actions\Eloquent\BulkDeleteAction::make()
+        ->forceDelete(),
+
+    Actions\Eloquent\BulkRestoreAction::make(),
+])
+```
+
 ## State Persistence
 
 Listings can remember user preferences so they don't lose their filters, sorts, or search terms when navigating away. You have two persistence strategies: URL and session.
@@ -834,7 +751,6 @@ By default, nothing persists (providing the cleanest UX for exploratory use). To
 ->persistSortInSession(false)
 ```
 
-<a name="working-with-iterable-data"></a>
 ## Working with Iterable Data
 
 While Listings work best with Eloquent models, you can also use arrays or collections:
@@ -865,7 +781,6 @@ public function stats(): Lists\Listing
 
 For production use with large datasets, always prefer Eloquent models.
 
-<a name="complete-real-world-example"></a>
 ## Complete Real-World Example
 
 Here's a comprehensive example showing most features working together:

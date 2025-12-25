@@ -47,30 +47,6 @@ class Config
         return $this->get('datetime_format');
     }
 
-    // Static convenience methods that use the container
-
-    public static function dateFormat(?string $format = null): string|self
-    {
-        $instance = app(self::class);
-
-        if ($format === null) {
-            return $instance->getDateFormat();
-        }
-
-        return $instance->setDateFormat($format);
-    }
-
-    public static function datetimeFormat(?string $format = null): string|self
-    {
-        $instance = app(self::class);
-
-        if ($format === null) {
-            return $instance->getDatetimeFormat();
-        }
-
-        return $instance->setDatetimeFormat($format);
-    }
-
     public function setDefaultPanel(string $panel): self
     {
         return $this->set('default_panel', $panel);
