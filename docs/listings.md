@@ -201,6 +201,17 @@ TextColumn::make('price')
     ->formatStateUsing(fn ($state) => '$' . number_format($state, 2))
 ```
 
+### Limiting Text Length
+
+Truncate long text to a specified number of characters:
+
+```php
+TextColumn::make('description')
+    ->limit(100),  // Truncate to 100 characters with '...'
+TextColumn::make('content')
+    ->limit(50, '…'),  // Custom suffix
+```
+
 ### Datetime Columns
 
 Using the `->date()` or `->datetime()` methods will format the column value appropriately. This will use the default configured format which can be customized as described in the [Configuration](config.md) docs. You can also pass a custom format string.

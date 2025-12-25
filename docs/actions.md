@@ -80,6 +80,11 @@ Actions\Action::make('view_website')
     ->label('View Website')
     ->color('secondary')
     ->url('https://example.com'),
+
+Actions\Action::make('view_docs')
+    ->label('View Documentation')
+    ->url('https://docs.example.com')
+    ->openInNewTab(),  // Opens in new tab with security attributes
 ```
 
 ### Require Confirmation
