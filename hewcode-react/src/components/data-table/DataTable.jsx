@@ -449,14 +449,30 @@ const DataTable = ({
               <TableBody>
                 {displayRecords.map((record, index) => {
                   const hasRowUrl = !!record._row_url;
+                  const hasRowAction = !!record._row_action;
                   const handleRowClick = (e) => {
-                    if (hasRowUrl && !isReorderingActive && !isBulkSelecting) {
+                    if ((hasRowUrl || hasRowAction) && !isReorderingActive && !isBulkSelecting) {
                       // Don't navigate if clicking on interactive elements
                       const target = e.target;
                       if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="button"]')) {
                         return;
                       }
-                      router.visit(record._row_url);
+
+                      // Trigger action if specified
+                      if (hasRowAction) {
+                        const actionButton = document.querySelector(
+                          `button[data-record-id="${record.id}"][data-action-name="${record._row_action}"]`
+                        );
+                        if (actionButton) {
+                          actionButton.click();
+                          return;
+                        }
+                      }
+
+                      // Fall back to URL navigation
+                      if (hasRowUrl) {
+                        router.visit(record._row_url);
+                      }
                     }
                   };
 
@@ -507,7 +523,7 @@ const DataTable = ({
                   const rowBgColor = record._row_bg_color;
                   const tailwindBgClass = getTailwindBgClass(rowBgColor);
                   const rowStyle = tailwindBgClass ? undefined : rowBgColor && isHexColor(rowBgColor) ? { backgroundColor: rowBgColor } : undefined;
-                  const rowClassName = `${tailwindBgClass || ''} ${hasRowUrl ? 'cursor-pointer hover:bg-muted/50' : ''}`;
+                  const rowClassName = `${tailwindBgClass || ''} ${hasRowUrl || hasRowAction ? 'cursor-pointer hover:bg-muted/50' : ''}`;
 
                   return (
                     <TableRow key={record.id || index} style={rowStyle} className={rowClassName} onClick={handleRowClick}>

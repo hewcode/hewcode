@@ -503,11 +503,34 @@ Colors use your theme's color system: `primary`, `secondary`, `success`, `danger
 
 ### Clickable Rows
 
-Make entire table rows clickable to navigate to a detail or edit page:
+Make entire table rows clickable to navigate to a URL or trigger an action.
+
+#### Navigate to a URL
 
 ```php
 ->recordUrl(fn (Post $record) => route('posts.edit', $record))
 ```
+
+#### Trigger a Row Action
+
+Instead of navigating to a URL, you can trigger a specific row action when clicking anywhere on the row:
+
+```php
+->recordAction('edit')
+->actions([
+    Actions\Eloquent\EditAction::make(),
+])
+
+// or
+->recordAction('custom')
+->actions([
+    Actions\Action::make('custom')
+        ->label('Custom Action')
+        ->action(fn (Post $record) => /* your logic here */),
+])
+```
+
+The action name must match one of your row actions. When the row is clicked, it triggers the action exactly as if the user clicked the action button—including confirmation modals, forms, and all other action behavior.
 
 ### Drag-and-Drop Reordering
 

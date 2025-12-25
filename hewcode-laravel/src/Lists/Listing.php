@@ -55,6 +55,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     protected bool $deferFiltering = false;
     protected ?Closure $touchActionsUsing = null;
     protected ?Closure $recordUrlUsing = null;
+    protected string|Closure|null $recordActionUsing = null;
 
     // URL persistence settings
     protected bool $persistFiltersInUrl = false;
@@ -334,6 +335,13 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         return $this;
     }
 
+    public function recordAction(string|Closure $actionName): self
+    {
+        $this->recordActionUsing = $actionName;
+
+        return $this;
+    }
+
     /** @return array<Column> */
     protected function getEvaluationParameters(): array
     {
@@ -581,6 +589,11 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 // Add row URL if specified
                 if ($this->recordUrlUsing) {
                     $data['_row_url'] = $this->evaluate($this->recordUrlUsing, ['record' => $record]);
+                }
+
+                // Add row action name if specified
+                if ($this->recordActionUsing) {
+                    $data['_row_action'] = $this->evaluate($this->recordActionUsing, ['record' => $record]);
                 }
 
                 // Add row actions if specified

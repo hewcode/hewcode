@@ -137,6 +137,8 @@ export default function Action({
       href={url ? url : undefined}
       target={url && openInNewTab ? '_blank' : undefined}
       rel={url && openInNewTab ? 'noopener noreferrer' : undefined}
+      data-action-name={name}
+      data-record-id={context?.recordId}
     >
       {loading ? __('hewcode.common.loading') : label || name}
     </Button>
