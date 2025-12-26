@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import Action from '../actions/Action.jsx';
+import { IconRegistry } from '../icon-registry.jsx';
 import { Checkbox } from '../ui/checkbox.jsx';
 import { TableHeader as ShadcnTableHeader, Table, TableBody, TableCell, TableRow } from '../ui/table.jsx';
 import BulkActions from './BulkActions.jsx';
@@ -354,25 +355,7 @@ const DataTable = ({
 
   return (
     <div className="w-full">
-      {/* SVG Sprite for icons */}
-      {Object.keys(icons).length > 0 && (
-        <svg style={{ display: 'none' }} aria-hidden="true">
-          {Object.entries(icons).map(([name, svg]) => {
-            // Extract the SVG content and wrap it in a symbol
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(svg, 'image/svg+xml');
-            const svgElement = doc.querySelector('svg');
-
-            if (!svgElement) return null;
-
-            return (
-              <symbol key={name} id={name} viewBox={svgElement.getAttribute('viewBox') || '0 0 24 24'}>
-                <g dangerouslySetInnerHTML={{ __html: svgElement.innerHTML }} />
-              </symbol>
-            );
-          })}
-        </svg>
-      )}
+      <IconRegistry icons={icons} />
 
       {((showSearch || showActions || filtersForm || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && (
         <TableHeader

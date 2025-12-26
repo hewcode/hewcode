@@ -1,5 +1,6 @@
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import { Icon } from '../icon-registry';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
@@ -12,7 +13,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
           <SidebarMenuItem key={item.label}>
             <SidebarMenuButton asChild isActive={page.url.startsWith(item.url)} tooltip={{ children: item.label }}>
               <Link href={item.url} prefetch>
-                {item.icon && <item.icon />}
+                {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={16} />}
                 <span>{item.label}</span>
               </Link>
             </SidebarMenuButton>

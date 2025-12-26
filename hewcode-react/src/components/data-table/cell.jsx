@@ -1,4 +1,5 @@
 import Fragment from '../support/fragment.jsx';
+import { Icon } from '../icon-registry.jsx';
 
 export default function CellContent({ record, column }) {
   if (column.render) {
@@ -11,21 +12,7 @@ export default function CellContent({ record, column }) {
   const iconData = record[column.key + '_icon'];
 
   // Create icon element if icon data exists
-  const iconElement = iconData ? (
-    <svg
-      width={iconData.size}
-      height={iconData.size}
-      className="inline-block !size-auto flex-shrink-0"
-      style={{ width: iconData.size, height: iconData.size }}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <use href={`#${iconData.name}`} />
-    </svg>
-  ) : null;
+  const iconElement = iconData ? <Icon icon={iconData} /> : null;
 
   const value = record[column.key];
   let mainContent = <Fragment value={value} />;

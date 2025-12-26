@@ -2,9 +2,12 @@
 
 namespace Hewcode\Hewcode\Panel\Navigation;
 
+use Hewcode\Hewcode\Support\Concerns\HasIconRegistry;
+
 class Navigation
 {
     use Concerns\HasItems;
+    use HasIconRegistry;
 
     protected string $panel;
 
@@ -18,12 +21,24 @@ class Navigation
      */
     public function toData(): array
     {
+        $items = collect($this->items)
+            ->sortBy(fn (NavigationItem $item) => $item->getOrder() ?? PHP_INT_MAX)
+            ->map(function (NavigationItem $item) {
+                $data = $item->toData();
+
+                // Register icon and replace with reference
+                if (isset($data['icon'])) {
+                    $data['icon'] = $this->registerIcon($data['icon']);
+                }
+
+                return $data;
+            })
+            ->values()
+            ->all();
+
         return [
-            'items' => collect($this->items)
-                ->sortBy(fn (NavigationItem $item) => $item->getOrder() ?? PHP_INT_MAX)
-                ->map(fn (NavigationItem $item) => $item->toData())
-                ->values()
-                ->all(),
+            'items' => $items,
+            'icons' => $this->getIconRegistry(),
         ];
     }
 }

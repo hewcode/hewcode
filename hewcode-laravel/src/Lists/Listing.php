@@ -18,6 +18,7 @@ use Hewcode\Hewcode\Lists\Tabs\Tab;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
+use Hewcode\Hewcode\Support\Concerns\HasIconRegistry;
 use Illuminate\Database\Eloquent\Builder;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     use Concerns\HasRecord;
     use Concerns\HasContext;
     use Concerns\HasFormDefinition;
+    use HasIconRegistry;
 
     protected ListingDriver $driver;
     protected Closure|null $buildDriverUsing = null;
@@ -567,10 +569,8 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             ->map(fn (Column $column) => $column->getSortField())
             ->toArray();
 
-        $iconRegistry = [];
-
         return array_merge(parent::toData(), [
-            'records' => $result['records']->map(function (Model $record) use ($visibleColumns, &$iconRegistry) {
+            'records' => $result['records']->map(function (Model $record) use ($visibleColumns) {
                 $data = [];
 
                 foreach ($visibleColumns as $column) {
@@ -578,9 +578,9 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
                     $icon = $columnData[$column->getName() . '_icon'] ?? null;
 
-                    // Register icon SVG (deduplicated)
-                    if ($icon && isset($icon['name']) && ! isset($iconRegistry[$icon['name']])) {
-                        $iconRegistry[$icon['name']] = svg($icon['name'])->toHtml();
+                    // Register icon and replace with reference
+                    if ($icon && isset($icon['name'])) {
+                        $this->registerIcon($icon['name']);
                     }
 
                     $data = array_merge($data, $columnData);
@@ -624,7 +624,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             'columns' => array_map(function (Column $column) {
                 return $column->toData();
             }, $visibleColumns),
-            'icons' => $iconRegistry,
+            'icons' => $this->getIconRegistry(),
             // @todo: is this really necessary?
             'allColumns' => array_map(function (Column $column) {
                 return [
