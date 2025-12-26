@@ -38,6 +38,10 @@ class MakePageCommand extends GeneratorCommand
      */
     protected function getStub()
     {
+        if ($this->option('form')) {
+            return $this->resolveStubPath('/stubs/page.form.stub');
+        }
+
         return $this->resolveStubPath('/stubs/page.stub');
     }
 
@@ -82,6 +86,10 @@ class MakePageCommand extends GeneratorCommand
         $stub = $this->replaceIcon($stub);
         $stub = $this->replacePanels($stub);
         $stub = $this->replaceNavigation($stub);
+
+        if ($this->option('form')) {
+            $stub = $this->replaceFormClass($stub);
+        }
 
         return $stub;
     }
@@ -165,6 +173,26 @@ class MakePageCommand extends GeneratorCommand
     }
 
     /**
+     * Replace the form class for the given stub.
+     *
+     * @param  string  $stub
+     * @return string
+     */
+    protected function replaceFormClass($stub)
+    {
+        $formClass = $this->option('form');
+
+        if (!$formClass || $formClass === true) {
+            // Try to infer from controller name
+            // e.g., CustomFormController -> CustomForm
+            $controllerName = class_basename($this->getNameInput());
+            $formClass = str_replace('Controller', '', $controllerName);
+        }
+
+        return str_replace(['{{ form }}', '{{form}}'], $formClass, $stub);
+    }
+
+    /**
      * Get the console command options.
      *
      * @return array
@@ -176,6 +204,7 @@ class MakePageCommand extends GeneratorCommand
             ['icon', 'i', InputOption::VALUE_OPTIONAL, 'The icon for navigation (lucide icon name)'],
             ['panels', 'p', InputOption::VALUE_OPTIONAL, 'Comma-separated list of panels, or "all" for all panels'],
             ['no-nav', null, InputOption::VALUE_NONE, 'Exclude this page from navigation'],
+            ['form', null, InputOption::VALUE_OPTIONAL, 'Create a form controller with the specified form class name'],
         ];
     }
 }

@@ -58,6 +58,7 @@ class HewcodeServiceProvider extends PackageServiceProvider
                 Console\Commands\MakeListingCommand::class,
                 Console\Commands\MakeFormCommand::class,
                 Console\Commands\MakePageCommand::class,
+                Console\Commands\MakeResourcePageCommand::class,
             ]);
         }
     }
