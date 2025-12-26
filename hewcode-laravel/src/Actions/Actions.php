@@ -5,6 +5,7 @@ namespace Hewcode\Hewcode\Actions;
 use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Support\Container;
+use Hewcode\Hewcode\Support\Context;
 
 class Actions extends Container implements Contracts\MountsActions, Contracts\ResolvesRecords, Contracts\HasVisibility, Contracts\HasRecord
 {
@@ -12,11 +13,19 @@ class Actions extends Container implements Contracts\MountsActions, Contracts\Re
     use Concerns\InteractsWithActions;
     use Concerns\RequiresVisibility;
     use Concerns\HasRecord;
+    use Concerns\HasFormDefinition;
+    use Concerns\HasContext;
 
     public function __construct(
         /** @var Action[] $actions */
         protected array $actions = []
     ) {
+        $this->setUp();
+    }
+
+    protected function setUp(): void
+    {
+        $this->context(new Context);
     }
 
     public static function make(array $actions): static
@@ -41,6 +50,7 @@ class Actions extends Container implements Contracts\MountsActions, Contracts\Re
             'actions' => collect($this->actions)
                 ->filter(fn (Action $action) => $action
                     ->model($this->getModel())
+                    ->context($this->context)
                     ->record($this->getRecord())
                     ->isVisible()
                 )

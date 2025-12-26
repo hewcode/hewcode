@@ -5,11 +5,13 @@ namespace Hewcode\Hewcode\Panel\Controllers\Resources;
 use Hewcode\Hewcode\Actions;
 use Hewcode\Hewcode\Definition;
 use Hewcode\Hewcode\Hewcode;
+use Hewcode\Hewcode\Lists\ListingDefinition;
 use Hewcode\Hewcode\Panel\Controllers\PageController;
 use Hewcode\Hewcode\Panel\Page;
 use Hewcode\Hewcode\Panel\Resource;
 use ReflectionClass;
 use RuntimeException;
+use function Pest\Laravel\instance;
 
 /**
  * @template T of Definition
@@ -105,8 +107,19 @@ abstract class ResourceController extends PageController
     #[Actions\Expose]
     public function headerActions(): Actions\Actions
     {
+        $definition = $this->getDefinition();
+
+        $formDefinition = null;
+
+        if ($definition instanceof ListingDefinition) {
+            $formDefinition = $definition->getFormDefinition();
+        } elseif ($definition instanceof Resource) {
+            $formDefinition = $definition->createFormDefinition();
+        }
+
         return parent::headerActions()
-            ->model($this->getDefinition()->getModelClass());
+            ->usingForm($formDefinition)
+            ->model($definition->getModelClass());
     }
 
     protected function getHeaderActions(): array

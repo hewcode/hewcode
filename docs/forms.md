@@ -127,6 +127,44 @@ public function form(): Forms\Form
 }
 ```
 
+You can pass an additional context parameter which will use a different method than `default()`:
+
+```php
+#[Forms\Expose]
+public function admins(): Forms\Form
+{
+    return UserForm::make('employee', context: 'employee');
+}
+
+// In UserForm.php
+class UserForm extends Forms\FormDefinition
+{
+    // ...
+
+    public function employee(Forms\Form $form): Forms\Form
+    {
+        return $form
+            ->visible()
+            ->schema([
+                Forms\Schema\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Schema\TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255),
+                Forms\Schema\Select::make('role')
+                    ->options([
+                        'admin' => 'Admin',
+                        'editor' => 'Editor',
+                        'viewer' => 'Viewer',
+                    ])
+                    ->required(),
+            ]);
+    }
+}
+```
+
 ## Essentials
 
 ### Visibility
@@ -442,6 +480,17 @@ use Hewcode\Hewcode\Actions;
     ->label('Save Post')
     ->color('primary')
 )
+```
+
+## Context
+
+You can pass additional context to the form using the `context()` method. This allows you to customize the form behavior based on different scenarios.
+
+```php
+->context('administration')  // Pass a simple string context
+->context([
+    'project_id' => request()->route('project'),
+]) // Pass an array of context data
 ```
 
 ## Complete Real-World Example

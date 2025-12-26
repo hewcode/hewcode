@@ -48,15 +48,4 @@ class EditAction extends Action
     {
         return true;
     }
-
-    protected function getFormDefinition(): ?FormDefinition
-    {
-        $parent = $this->getParent();
-
-        if ($parent instanceof Listing && ($form = $parent->getFormDefinition())) {
-            return $form;
-        }
-
-        return parent::getFormDefinition();
-    }
 }

@@ -4,6 +4,8 @@ namespace Hewcode\Hewcode;
 
 abstract class Definition
 {
+    use Concerns\HasContext;
+
     protected string $model;
 
     public function getModelClass(): ?string

@@ -25,7 +25,7 @@ class FormDefinition extends Definition
 
     public function create(string $name = '', string $context = 'default'): Form
     {
-        $form = Form::make()->name($name);
+        $form = Form::make()->name($name)->context($this->context);
 
         if (isset($this->model) && is_a($this->model, Model::class, true)) {
             $form->model($this->model);

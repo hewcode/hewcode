@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Contracts;
 use Closure;
 use Hewcode\Hewcode\Hewcode;
 use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Support\Context;
 use Illuminate\Database\Eloquent\Model;
 
 class Action extends Component implements Contracts\HasRecord, Contracts\HasVisibility, Contracts\MountsComponents
@@ -16,11 +17,11 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     use Concerns\HasLabel;
     use Concerns\HasForm;
     use Concerns\HasModel;
+    use Concerns\HasContext;
 
     public string $color = 'primary';
     public ?Closure $action = null;
     public bool|Closure $requiresConfirmation = false;
-    public array $context = [];
     public array|Closure $args = [];
     public Closure|string|null $modalHeading = null;
     public Closure|string|null $modalDescription = null;
@@ -35,7 +36,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
 
     public function setUp(): void
     {
-        //
+        $this->context(new Context);
     }
 
     public static function make(string $name): static
@@ -170,7 +171,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
 
     public function toData(): array
     {
-        $context = $this->context;
+        $context = $this->context?->getPublicBag()->toArray() ?? [];
 
         if ($this->record) {
             $context['recordId'] = $this->record instanceof Model
@@ -200,7 +201,12 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
 
     public function getMountsModal(): bool
     {
-        return ! $this->getUrl() && ! empty($this->getFormSchema());
+        return ! $this->getUrl() && $this->hasForm();
+    }
+
+    public function hasForm(): bool
+    {
+        return ! empty($this->getFormSchema()) || $this->getFormDefinition() !== null;
     }
 
     public function getComponent(string $type, string $name): ?Component

@@ -2,8 +2,10 @@
 
 namespace Hewcode\Hewcode\Concerns;
 
+use Hewcode\Hewcode\Actions\Actions;
 use Hewcode\Hewcode\Forms\Form;
 use Hewcode\Hewcode\Forms\FormDefinition;
+use Hewcode\Hewcode\Lists\Listing;
 
 trait HasForm
 {
@@ -28,6 +30,12 @@ trait HasForm
 
     protected function getFormDefinition(): ?FormDefinition
     {
+        $parent = $this->getParent();
+
+        if (($parent instanceof Listing || $parent instanceof Actions) && ($form = $parent->getFormDefinition())) {
+            return $form;
+        }
+
         return null;
     }
 }

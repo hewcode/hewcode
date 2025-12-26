@@ -117,6 +117,32 @@ public function users(): Lists\Listing
 }
 ```
 
+You can pass an additional context parameter which will use a different method than `default()`:
+
+```php
+#[Lists\Expose]
+public function admins(): Lists\Listing
+{
+    return UserListing::make('admins', context: 'administration');
+}
+
+// In UserListing.php
+class UserListing extends Lists\ListingDefinition
+{
+    // ...
+
+    public function administration(Lists\Listing $listing): Lists\Listing
+    {
+        return $listing
+            ->visible()
+            ->query(User::query()->where('is_admin', true))
+            ->columns([
+                // ...
+            ]);
+    }
+}
+```
+
 ## Essentials
 
 ### Pagination
@@ -597,7 +623,7 @@ Instead of navigating to a URL, you can trigger a specific row action when click
 
 The action name must match one of your row actions. When the row is clicked, it triggers the action exactly as if the user clicked the action button—including confirmation modals, forms, and all other action behavior.
 
-### Drag-and-Drop Reordering
+### Reordering
 
 Enable users to reorder records visually:
 
@@ -856,6 +882,27 @@ By default, nothing persists (providing the cleanest UX for exploratory use). To
 ```php
 ->persistSearchInUrl(false)
 ->persistSortInSession(false)
+```
+
+## Context
+
+You can pass additional context to listings that will be passed down to related forms and actions within, Using the `->context()` method:
+
+```php
+->context('administration')  // Pass a simple string context
+->context([
+    'project_id' => request()->route('project'),
+]) // Pass an array of context data
+```
+
+In any closure used in the listing or its related forms/actions, you can access the context via a `$context` parameter:
+
+```php
+use Hewcode\Hewcode\Lists\Schema\TextColumn;
+use Hewcode\Hewcode\Support\Context;
+
+TextColumn::make('title')
+    ->after(fn (Context $context) => "Project ID: " . $context['project_id'])
 ```
 
 ## Working with Iterable Data

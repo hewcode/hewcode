@@ -28,7 +28,7 @@ class ListingDefinition extends Definition
 
     public function create(string $name, string $context = 'default'): Listing
     {
-        $listing = Listing::make()->name($name);
+        $listing = Listing::make()->name($name)->context($this->context);
 
         if (isset($this->model) && is_a($this->model, Model::class, true)) {
             /** @var class-string<Model> $model */

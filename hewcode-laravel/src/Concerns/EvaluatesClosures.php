@@ -4,6 +4,7 @@ namespace Hewcode\Hewcode\Concerns;
 
 use Closure;
 use Hewcode\Hewcode\Contracts\HasRecord;
+use Hewcode\Hewcode\Support\Context;
 
 trait EvaluatesClosures
 {
@@ -26,9 +27,7 @@ trait EvaluatesClosures
         }
 
         // Get class-specific evaluation parameters
-        $globalParameters = method_exists($this, 'getEvaluationParameters')
-            ? $this->getEvaluationParameters()
-            : [];
+        $globalParameters = $this->getEvaluationParameters();
 
         // Merge with any shared evaluation parameters
         $globalParameters = array_merge(
@@ -56,6 +55,12 @@ trait EvaluatesClosures
      */
     protected function getEvaluationParameters(): array
     {
+        if (property_exists($this, 'context') && $this->context instanceof Context) {
+            return [
+                'context' => $this->context,
+            ];
+        }
+
         return [];
     }
 }

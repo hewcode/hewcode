@@ -9,6 +9,7 @@ use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Forms\Schema\Field;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Support\Context;
 use Hewcode\Hewcode\Toasts\Toast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
     use Concerns\HasRecord;
     use Concerns\InteractsWithActions;
     use Concerns\RequiresVisibility;
+    use Concerns\HasContext;
 
     /** @var array<Field> */
     protected array $fields = [];
@@ -38,6 +40,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
 
     protected function setUp(): void
     {
+        $this->context(new Context);
         $this->fillUsing($this->fillForm(...));
     }
 
@@ -152,6 +155,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
             'footerActions' => collect($this->getFooterActions())
                 ->filter(fn (Action $action) => $action
                     ->parent($this)
+                    ->context($this->context)
                     ->record($this->getRecord())
                     ->args([
                         'data' => $this->state,

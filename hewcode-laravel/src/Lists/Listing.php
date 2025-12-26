@@ -17,6 +17,7 @@ use Hewcode\Hewcode\Lists\Schema\Column;
 use Hewcode\Hewcode\Lists\Tabs\Tab;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Support\Context;
 use Illuminate\Database\Eloquent\Builder;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -30,10 +31,11 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     use Concerns\RequiresVisibility;
     use Concerns\HasOwnerRecord;
     use Concerns\HasRecord;
+    use Concerns\HasContext;
+    use Concerns\HasFormDefinition;
 
     protected ListingDriver $driver;
     protected Closure|null $buildDriverUsing = null;
-    protected ?FormDefinition $formDefinition = null;
     /** @var array<Column> */
     public array $columns = [];
     /** @var array<Column>|null */
@@ -73,6 +75,16 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     protected ?string $requestScope = null;
 
     public array $filtersState = [];
+
+    public function __construct()
+    {
+        $this->setUp();
+    }
+
+    protected function setUp(): void
+    {
+        $this->context(new Context);
+    }
 
     public static function make(): self
     {
@@ -126,13 +138,6 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         }
 
         throw new BadMethodCallException('You must call either query() or data() on a Listing.');
-    }
-
-    public function usingForm(FormDefinition $formDefinition): self
-    {
-        $this->formDefinition = $formDefinition;
-
-        return $this;
     }
 
     /** @param Column[] $columns */
@@ -668,6 +673,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
         return $action
             ->parent($this)
+            ->context($this->context)
             ->shareEvaluationParameters($this->getEvaluationParameters())
             ->model($this->getModel());
     }
@@ -693,11 +699,6 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         }
 
         return null;
-    }
-
-    public function getFormDefinition(): ?FormDefinition
-    {
-        return $this->formDefinition;
     }
 
     public function getMountableActions(): array
