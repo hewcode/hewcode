@@ -195,9 +195,9 @@ Actions\Action::make('detailed_info')
         // ... complex form with lots of fields
     ]);
 
-// With string
+// With string (xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl)
 Actions\Action::make('detailed_info')
-    ->modalWidth('4xl')  // xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl
+    ->modalWidth('4xl')
     ->form([...]);
 
 // With closure
