@@ -8,6 +8,8 @@ use Closure;
 use Hewcode\Hewcode\Hewcode;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
+use Hewcode\Hewcode\Support\Enums\Color;
+use Hewcode\Hewcode\Support\Enums\Size;
 use Illuminate\Database\Eloquent\Model;
 
 class Action extends Component implements Contracts\HasRecord, Contracts\HasVisibility, Contracts\MountsComponents
@@ -25,6 +27,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     public array|Closure $args = [];
     public Closure|string|null $modalHeading = null;
     public Closure|string|null $modalDescription = null;
+    public Closure|string|null $modalWidth = null;
     public bool $shouldClose = false;
     public Closure|string|null $url = null;
     public bool $openInNewTab = false;
@@ -44,9 +47,9 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
         return (new static())->name($name);
     }
 
-    public function color(string $color): static
+    public function color(Color|string $color): static
     {
-        $this->color = $color;
+        $this->color = $color instanceof Color ? $color->value : $color;
 
         return $this;
     }
@@ -86,6 +89,13 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
         return $this;
     }
 
+    public function modalWidth(Closure|Size|string|null $modalWidth): static
+    {
+        $this->modalWidth = $modalWidth;
+
+        return $this;
+    }
+
     public function url(Closure|string|null $url): static
     {
         $this->url = $url;
@@ -119,6 +129,17 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     public function getModalDescription(): ?string
     {
         return $this->evaluate($this->modalDescription);
+    }
+
+    public function getModalWidth(): ?string
+    {
+        $width = $this->evaluate($this->modalWidth);
+
+        if ($width instanceof Size) {
+            return $width->value;
+        }
+
+        return $width;
     }
 
     public function getRequiresConfirmation(): bool
@@ -194,6 +215,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
             'mountsModal' => $this->getMountsModal(),
             'modalHeading' => $this->getModalHeading() ?? $this->getLabel(),
             'modalDescription' => $this->getModalDescription(),
+            'modalWidth' => $this->getModalWidth(),
             'url' => $this->getUrl(),
             'openInNewTab' => $this->openInNewTab,
         ];

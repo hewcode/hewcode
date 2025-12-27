@@ -63,22 +63,36 @@ Actions provide several configuration options to control their appearance and be
 Control the visual appearance of action buttons:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
+// With Color enum (recommended)
 Actions\Action::make('publish')
-    ->label('Publish Post')                    // Button text
-    ->color('primary')                         // primary, secondary, danger, warning, success
-    ->icon('lucide-send')                      // Lucide icon name
-    ->size('sm')                               // sm, md, lg
-    ->variant('outline')                       // solid (default), outline, ghost
+    ->label('Publish Post')
+    ->color(Color::PRIMARY)
+    ->icon('lucide-send')
+    ->variant('outline');
+
+// With string
+Actions\Action::make('publish')
+    ->label('Publish Post')
+    ->color('primary')  // primary, secondary, danger, warning, success, info
+    ->icon('lucide-send');
 ```
+
+:::tip
+Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values. See [Enums](enums.md) for details.
+:::
 
 ### Links
 
 You can create actions that function as simple links:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
 Actions\Action::make('view_website')
     ->label('View Website')
-    ->color('secondary')
+    ->color(Color::SECONDARY)
     ->url('https://example.com'),
 
 Actions\Action::make('view_docs')
@@ -92,9 +106,11 @@ Actions\Action::make('view_docs')
 Add confirmation dialogs for destructive or important actions:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
 Actions\Action::make('delete')
     ->label('Delete')
-    ->color('danger')
+    ->color(Color::DANGER)
     ->requiresConfirmation()
     ->modalHeading('Delete Post?')
     ->modalDescription('This action cannot be undone. The post will be permanently removed.')
@@ -106,9 +122,11 @@ Actions\Action::make('delete')
 Collect additional data from users before executing actions:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
 Actions\Action::make('schedule')
     ->label('Schedule Post')
-    ->color('primary')
+    ->color(Color::PRIMARY)
     ->form([
         Forms\Schema\DateTimePicker::make('publish_at')
             ->label('Publish At')
@@ -132,9 +150,11 @@ When users click the action, a modal with the form appears. The action receives 
 Customize the modal appearance with headings and descriptions:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
 Actions\Action::make('schedule')
     ->label('Schedule Post')
-    ->color('primary')
+    ->color(Color::PRIMARY)
     ->modalHeading('Schedule Publication')
     ->modalDescription('Choose when and how to publish this post.')
     ->form([
@@ -162,14 +182,44 @@ Both `modalHeading()` and `modalDescription()` support static strings or closure
 ->modalDescription(fn (Post $record) => "This will be published on {$record->schedule_date}.")
 ```
 
+You can also control the modal width using `modalWidth()`:
+
+```php
+use Hewcode\Hewcode\Support\Enums\Size;
+
+// With Size enum (recommended)
+Actions\Action::make('detailed_info')
+    ->modalHeading('Detailed Information')
+    ->modalWidth(Size::LARGE)
+    ->form([
+        // ... complex form with lots of fields
+    ]);
+
+// With string
+Actions\Action::make('detailed_info')
+    ->modalWidth('4xl')  // xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl
+    ->form([...]);
+
+// With closure
+Actions\Action::make('dynamic_modal')
+    ->modalWidth(fn ($record) => $record->hasLargeForm() ? '5xl' : 'lg')
+    ->form([...]);
+```
+
+:::tip
+Use the `Hewcode\Hewcode\Support\Enums\Size` enum for type-safe size values. See [Enums](enums.md) for details.
+:::
+
 ### Authorization
 
 Control who can see and use actions:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
 Actions\Action::make('delete')
     ->label('Delete')
-    ->color('danger')
+    ->color(Color::DANGER)
     ->visible(fn (Post $record) => auth()->user()->can('delete', $record))
     ->action(fn (Post $record) => $record->delete());
 
@@ -188,9 +238,11 @@ Use `->visible()` with closures for dynamic authorization or boolean values for 
 Actions work seamlessly with [toast notifications](toasts.md) to provide user feedback:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
 Actions\Action::make('sync_data')
     ->label('Sync External Data')
-    ->color('primary')
+    ->color(Color::PRIMARY)
     ->action(function () {
         try {
             $this->syncExternalData();
@@ -237,16 +289,18 @@ class PostController extends Controller
     #[Actions\Expose]
     public function actions(): Actions\Actions
     {
+        use Hewcode\Hewcode\Support\Enums\Color;
+
         return Actions\Actions::make([
             Actions\Action::make('create')
                 ->label('New Post')
-                ->color('primary')
+                ->color(Color::PRIMARY)
                 ->icon('lucide-plus')
                 ->action(fn () => redirect()->route('posts.create')),
-            
+
             Actions\Action::make('import')
                 ->label('Import Posts')
-                ->color('secondary')
+                ->color(Color::SECONDARY)
                 ->form([
                     Forms\Schema\FileUpload::make('file')
                         ->label('CSV File')
@@ -265,7 +319,7 @@ class PostController extends Controller
                 
             Actions\Action::make('export_all')
                 ->label('Export All')
-                ->color('secondary')
+                ->color(Color::SECONDARY)
                 ->action(fn () => $this->exportAllPosts()),
         ])->visible(auth()->user()?->can('manage-posts') ?? false);
     }

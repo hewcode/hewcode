@@ -21,6 +21,7 @@ export default function Action({
   label,
   modalHeading,
   modalDescription,
+  modalWidth,
   requiresConfirmation,
   color = 'primary',
   context = {},
@@ -54,6 +55,7 @@ export default function Action({
         name,
         modalHeading,
         modalDescription,
+        modalWidth,
         args: {
           ...args,
           ...additionalArgs,

@@ -4,7 +4,7 @@ import useTranslator from '../../hooks/useTranslator.js';
 import Form from '../form/Form.jsx';
 import Modal from '../modal.jsx';
 
-const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescription, onSuccess, onError, onFinish, onClose }) => {
+const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescription, modalWidth, onSuccess, onError, onFinish, onClose }) => {
   const { __ } = useTranslator();
   const { fetch } = useFetch();
   const [loading, setLoading] = useState(false);
@@ -61,7 +61,7 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
 
   if (!form) {
     return (
-      <Modal size="sm">
+      <Modal size={modalWidth || 'sm'}>
         <div className="py-4 text-center">
           {/* Loading Spinner */}
           <svg className={`mx-auto h-8 w-8 animate-spin`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -79,7 +79,7 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
   }
 
   return (
-    <Modal size="sm" title={modalHeading} description={modalDescription} onClose={onClose}>
+    <Modal size={modalWidth || 'sm'} title={modalHeading} description={modalDescription} onClose={onClose}>
       <div className="py-4 text-center">
         <Form
           {...form}

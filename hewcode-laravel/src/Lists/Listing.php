@@ -215,6 +215,13 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         return $this->requestScope;
     }
 
+    /**
+     * Set a callback to determine each row's background color.
+     *
+     * The callback can return a Color enum or string value.
+     *
+     * @param Closure(mixed $record): (Color|string|null) $callback
+     */
     public function bgColor(Closure $callback): self
     {
         $this->bgColorUsing = $callback;
@@ -588,7 +595,11 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
                 // Add row background color if specified
                 if ($this->bgColorUsing) {
-                    $data['_row_bg_color'] = $this->evaluate($this->bgColorUsing, ['record' => $record]);
+                    $bgColor = $this->evaluate($this->bgColorUsing, ['record' => $record]);
+                    // Convert Color enum to string
+                    $data['_row_bg_color'] = $bgColor instanceof \Hewcode\Hewcode\Support\Enums\Color
+                        ? $bgColor->value
+                        : $bgColor;
                 }
 
                 // Add row URL if specified

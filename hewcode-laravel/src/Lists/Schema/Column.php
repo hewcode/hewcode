@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Fragments;
 use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Support\Enums\Color;
 use Illuminate\Database\Eloquent\Model;
 
 abstract class Column extends Component implements Contracts\HasVisibility
@@ -94,9 +95,20 @@ abstract class Column extends Component implements Contracts\HasVisibility
         return $this;
     }
 
-    public function color(Closure $callback): static
+    /**
+     * Set the column's color.
+     *
+     * Accepts a direct Color enum/string value, or a callback that returns one.
+     *
+     * @param Color|string|Closure(mixed $record): (Color|string|null) $color
+     */
+    public function color(Color|string|Closure $color): static
     {
-        $this->colorUsing = $callback;
+        if ($color instanceof Color || is_string($color)) {
+            $this->colorUsing = fn () => $color;
+        } else {
+            $this->colorUsing = $color;
+        }
 
         return $this;
     }
@@ -204,7 +216,18 @@ abstract class Column extends Component implements Contracts\HasVisibility
 
     public function getColor(object $record): ?string
     {
-        return $this->colorUsing ? $this->evaluate($this->colorUsing, ['record' => $record]) : null;
+        if (! $this->colorUsing) {
+            return null;
+        }
+
+        $color = $this->evaluate($this->colorUsing, ['record' => $record]);
+
+        // Convert Color enum to string
+        if ($color instanceof Color) {
+            return $color->value;
+        }
+
+        return $color;
     }
 
     public function getBeforeContent(object $record): ?Fragments\Fragment

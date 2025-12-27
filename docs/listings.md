@@ -360,20 +360,47 @@ TextColumn::make('category.name')
 
 ### Color
 
-You can customize the color of text or badges dynamically based on the record's data.
+You can customize the color of text or badges with a static value or dynamically based on the record's data.
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
+// Static color with enum (recommended)
+TextColumn::make('priority')
+    ->badge()
+    ->color(Color::DANGER);
+
+// Static color with string
+TextColumn::make('priority')
+    ->badge()
+    ->color('danger');
+
+// Dynamic color from record data
 TextColumn::make('category.name')
     ->badge()
-    ->color(fn ($record) => $record->category->color)
+    ->color(fn ($record) => $record->category->color);
 
+// Dynamic color with conditional logic using enums
+TextColumn::make('status')
+    ->badge()
+    ->color(fn ($record) => match ($record->status) {
+        PostStatus::DRAFT => Color::WARNING,
+        PostStatus::PUBLISHED => Color::SUCCESS,
+        default => Color::SECONDARY,
+    });
+
+// Dynamic color with strings
 TextColumn::make('status')
     ->color(fn ($record) => match ($record->status) {
         PostStatus::DRAFT => 'warning',
         PostStatus::PUBLISHED => 'success',
         default => 'secondary',
-    })
+    });
 ```
+
+:::tip
+Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values. See [Enums](enums.md) for details.
+:::
 
 ### Icons
 
@@ -582,6 +609,17 @@ use Illuminate\Database\Eloquent\Builder;
 Add visual indicators with conditional row styling:
 
 ```php
+use Hewcode\Hewcode\Support\Enums\Color;
+
+// With Color enum (recommended)
+->bgColor(fn ($record) => match ($record->status) {
+    PostStatus::DRAFT => Color::WARNING,
+    PostStatus::PUBLISHED => Color::SUCCESS,
+    PostStatus::ARCHIVED => Color::SECONDARY,
+    default => null,
+})
+
+// With strings
 ->bgColor(fn ($record) => match ($record->status) {
     PostStatus::DRAFT => 'warning',      // Yellow background
     PostStatus::PUBLISHED => 'success',  // Green background
@@ -590,7 +628,9 @@ Add visual indicators with conditional row styling:
 })
 ```
 
-Colors use your theme's color system: `primary`, `secondary`, `success`, `danger`, `warning`, `info`.
+:::tip
+Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values. See [Enums](enums.md) for details.
+:::
 
 ### Clickable Rows
 
