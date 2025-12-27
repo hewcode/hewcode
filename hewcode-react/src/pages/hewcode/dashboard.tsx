@@ -1,7 +1,7 @@
 import { dashboard } from '@/routes';
-import { type BreadcrumbItem } from '@/types';
 import { PlaceholderPattern } from '../../components/ui/placeholder-pattern';
 import PageLayout from '../../layouts/pages/page-layout';
+import { type BreadcrumbItem } from '../../types';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {

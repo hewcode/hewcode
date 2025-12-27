@@ -1,5 +1,5 @@
-import { useInitials } from '@/hooks/use-initials';
-import { type User } from '@/types';
+import { useInitials } from '../../hooks/use-initials';
+import { type User } from '../../types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 export function UserInfo({ user, showEmail = false }: { user: User; showEmail?: boolean }) {

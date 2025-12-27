@@ -1,5 +1,5 @@
-import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { type ReactNode } from 'react';
+import { type BreadcrumbItem as BreadcrumbItemType } from '../../types';
 import { SidebarTrigger } from '../ui/sidebar';
 import { Breadcrumbs } from './breadcrumbs';
 

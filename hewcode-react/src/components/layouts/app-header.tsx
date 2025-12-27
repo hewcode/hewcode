@@ -1,9 +1,9 @@
-import { useInitials } from '@/hooks/use-initials';
-import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import { useInitials } from '../../hooks/use-initials';
+import { cn } from '../../lib/utils';
+import { type BreadcrumbItem, type NavItem, type SharedData } from '../../types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -45,8 +45,9 @@ interface AppHeaderProps {
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
   const page = usePage<SharedData>();
-  const { auth } = page.props;
+  const { auth } = page.props.hewcode as any;
   const getInitials = useInitials();
+
   return (
     <>
       <div className="border-sidebar-border/80 border-b">

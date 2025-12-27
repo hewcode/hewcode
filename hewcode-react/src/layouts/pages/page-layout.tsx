@@ -5,8 +5,6 @@ import AppLayout from '../../layouts/app-layout';
 export default function PageLayout({ title: customTitle = null, children }) {
   const { headerActions } = usePage().props;
 
-  console.log(headerActions);
-
   const title = customTitle || usePage().props.title || 'Page';
 
   return (

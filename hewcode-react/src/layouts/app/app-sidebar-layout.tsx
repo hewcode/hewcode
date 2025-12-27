@@ -1,9 +1,9 @@
-import { type BreadcrumbItem } from '@/types';
 import { type PropsWithChildren, type ReactNode } from 'react';
 import { AppContent } from '../../components/layouts/app-content';
 import { AppShell } from '../../components/layouts/app-shell';
 import { AppSidebar } from '../../components/layouts/app-sidebar';
 import { AppSidebarHeader } from '../../components/layouts/app-sidebar-header';
+import { type BreadcrumbItem } from '../../types';
 
 interface AppSidebarLayoutProps {
   breadcrumbs?: BreadcrumbItem[];

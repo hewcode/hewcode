@@ -1,14 +1,14 @@
-import { useIsMobile } from '@/hooks/use-mobile';
-import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { ChevronsUpDown } from 'lucide-react';
+import { useIsMobile } from '../../hooks/use-mobile';
+import { type SharedData } from '../../types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '../ui/sidebar';
 import { UserInfo } from './user-info';
 import { UserMenuContent } from './user-menu-content';
 
 export function NavUser() {
-  const { auth } = usePage<SharedData>().props;
+  const { auth } = usePage<SharedData>().props.hewcode as any;
   const { state } = useSidebar();
   const isMobile = useIsMobile();
 

@@ -1,7 +1,7 @@
 import { dashboard } from '@/routes';
-import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { useHewcode } from '../../contexts/hewcode-context';
+import { type NavItem } from '../../types';
 import { IconRegistry } from '../icon-registry';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import AppLogo from './app-logo';

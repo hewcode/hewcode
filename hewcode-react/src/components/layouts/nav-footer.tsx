@@ -1,5 +1,5 @@
-import { type NavItem } from '@/types';
 import { type ComponentPropsWithoutRef } from 'react';
+import { type NavItem } from '../../types';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import { Icon } from './icon';
 
