@@ -7,14 +7,16 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import useRoute from '../../../hooks/use-route';
+import useTranslator from '../../../hooks/useTranslator';
 import AuthLayout from '../../../layouts/auth-layout';
 
 export default function Register() {
   const route = useRoute();
+  const { __ } = useTranslator();
 
   return (
-    <AuthLayout title="Create an account" description="Enter your details below to create your account">
-      <Head title="Register" />
+    <AuthLayout title={__('hewcode.auth.create_an_account')} description={__('hewcode.auth.enter_details_to_create_account')}>
+      <Head title={__('hewcode.auth.sign_up')} />
       <Form
         action={route('panel::register.store')}
         method="post"
@@ -32,19 +34,19 @@ export default function Register() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{__('hewcode.auth.email_address')}</Label>
                 <Input id="email" type="email" required tabIndex={2} autoComplete="email" name="email" placeholder="email@example.com" />
                 <InputError message={errors.email} />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required tabIndex={3} autoComplete="new-password" name="password" placeholder="Password" />
+                <Label htmlFor="password">{__('hewcode.auth.password')}</Label>
+                <Input id="password" type="password" required tabIndex={3} autoComplete="new-password" name="password" placeholder={__('hewcode.auth.password')} />
                 <InputError message={errors.password} />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="password_confirmation">Confirm password</Label>
+                <Label htmlFor="password_confirmation">{__('hewcode.auth.confirm_password')}</Label>
                 <Input
                   id="password_confirmation"
                   type="password"
@@ -52,7 +54,7 @@ export default function Register() {
                   tabIndex={4}
                   autoComplete="new-password"
                   name="password_confirmation"
-                  placeholder="Confirm password"
+                  placeholder={__('hewcode.auth.confirm_password')}
                 />
                 <InputError message={errors.password_confirmation} />
               </div>
@@ -66,7 +68,7 @@ export default function Register() {
             <div className="text-muted-foreground text-center text-sm">
               Already have an account?{' '}
               <TextLink href={route('panel::login')} tabIndex={6}>
-                Log in
+                {__('hewcode.auth.log_in')}
               </TextLink>
             </div>
           </>

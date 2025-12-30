@@ -11,26 +11,28 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import useRoute from '../../../hooks/use-route';
+import useTranslator from '../../../hooks/useTranslator';
 
 export default function Password() {
   const passwordInput = useRef<HTMLInputElement>(null);
   const currentPasswordInput = useRef<HTMLInputElement>(null);
   const route = useRoute();
+  const { __ } = useTranslator();
 
   const breadcrumbs: BreadcrumbItem[] = [
     {
-      title: 'Password settings',
+      title: __('hewcode.settings.password_settings'),
       href: route('panel::password.edit'),
     },
   ];
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Password settings" />
+      <Head title={__('hewcode.settings.password_settings')} />
 
       <SettingsLayout>
         <div className="space-y-6">
-          <HeadingSmall title="Update password" description="Ensure your account is using a long, random password to stay secure" />
+          <HeadingSmall title={__('hewcode.settings.update_password')} description={__('hewcode.settings.update_password_description')} />
 
           <Form
             action={route('panel::password.update')}
@@ -54,7 +56,7 @@ export default function Password() {
             {({ errors, processing, recentlySuccessful }) => (
               <>
                 <div className="grid gap-2">
-                  <Label htmlFor="current_password">Current password</Label>
+                  <Label htmlFor="current_password">{__('hewcode.settings.current_password')}</Label>
 
                   <Input
                     id="current_password"
@@ -63,14 +65,14 @@ export default function Password() {
                     type="password"
                     className="mt-1 block w-full"
                     autoComplete="current-password"
-                    placeholder="Current password"
+                    placeholder={__('hewcode.settings.current_password')}
                   />
 
                   <InputError message={errors.current_password} />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="password">New password</Label>
+                  <Label htmlFor="password">{__('hewcode.settings.new_password')}</Label>
 
                   <Input
                     id="password"
@@ -79,14 +81,14 @@ export default function Password() {
                     type="password"
                     className="mt-1 block w-full"
                     autoComplete="new-password"
-                    placeholder="New password"
+                    placeholder={__('hewcode.settings.new_password')}
                   />
 
                   <InputError message={errors.password} />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="password_confirmation">Confirm password</Label>
+                  <Label htmlFor="password_confirmation">{__('hewcode.auth.confirm_password')}</Label>
 
                   <Input
                     id="password_confirmation"
@@ -94,7 +96,7 @@ export default function Password() {
                     type="password"
                     className="mt-1 block w-full"
                     autoComplete="new-password"
-                    placeholder="Confirm password"
+                    placeholder={__('hewcode.auth.confirm_password')}
                   />
 
                   <InputError message={errors.password_confirmation} />
@@ -102,7 +104,7 @@ export default function Password() {
 
                 <div className="flex items-center gap-4">
                   <Button disabled={processing} data-test="update-password-button">
-                    Save password
+                    {__('hewcode.settings.save_password')}
                   </Button>
 
                   <Transition

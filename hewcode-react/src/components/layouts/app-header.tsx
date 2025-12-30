@@ -3,6 +3,7 @@ import { Menu, Search } from 'lucide-react';
 import { useHewcode } from '../../contexts/hewcode-context';
 import { useInitials } from '../../hooks/use-initials';
 import useRoute from '../../hooks/use-route';
+import useTranslator from '../../hooks/useTranslator';
 import { cn } from '../../lib/utils';
 import { type BreadcrumbItem, type SharedData } from '../../types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -29,6 +30,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
   const { hewcode } = useHewcode();
   const route = useRoute();
   const getInitials = useInitials();
+  const { __ } = useTranslator();
 
   // Filter navigation items for header: only items without children (top-level links)
   const mainNavItems = hewcode?.panel?.navigation?.items?.filter(item => !item.items || item.items.length === 0) || [];
@@ -51,7 +53,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="bg-sidebar flex h-full w-64 flex-col items-stretch justify-between">
-                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <SheetTitle className="sr-only">{__('hewcode.common.navigation_menu')}</SheetTitle>
                 <SheetHeader className="flex justify-start text-left">
                   <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
                 </SheetHeader>

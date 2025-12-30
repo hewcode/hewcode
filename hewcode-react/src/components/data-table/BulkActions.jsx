@@ -1,10 +1,12 @@
 import { router } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import useRoute from '../../hooks/use-route.ts';
+import useTranslator from '../../hooks/useTranslator.js';
 import { Button } from '../ui/button.jsx';
 
 const BulkActions = ({ selectedCount, bulkActions, selectedRecords, onClearSelection }) => {
   const route = useRoute();
+  const { __ } = useTranslator();
 
   const executeAction = (action) => {
     router.post(
@@ -66,7 +68,7 @@ const BulkActions = ({ selectedCount, bulkActions, selectedRecords, onClearSelec
 
       <Button variant="ghost" size="sm" onClick={onClearSelection} className="h-8 w-8 p-0">
         <X className="h-4 w-4" />
-        <span className="sr-only">Clear selection</span>
+        <span className="sr-only">{__('hewcode.common.clear_selection')}</span>
       </Button>
     </div>
   );

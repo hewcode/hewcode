@@ -1,6 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
 import useRoute from '../../hooks/use-route';
+import useTranslator from '../../hooks/useTranslator';
 import { Button } from '../ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
@@ -11,27 +12,27 @@ import InputError from './input-error';
 export default function DeleteUser() {
   const passwordInput = useRef<HTMLInputElement>(null);
   const route = useRoute();
+  const { __ } = useTranslator();
 
   return (
     <div className="space-y-6">
-      <HeadingSmall title="Delete account" description="Delete your account and all of its resources" />
+      <HeadingSmall title={__('hewcode.settings.delete_account')} description={__('hewcode.settings.delete_account_description')} />
       <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
         <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
           <p className="font-medium">Warning</p>
-          <p className="text-sm">Please proceed with caution, this cannot be undone.</p>
+          <p className="text-sm">{__('hewcode.settings.proceed_with_caution')}</p>
         </div>
 
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="destructive" data-test="delete-user-button">
-              Delete account
+              {__('hewcode.settings.delete_account')}
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogTitle>Are you sure you want to delete your account?</DialogTitle>
+            <DialogTitle>{__('hewcode.settings.are_you_sure_delete_account')}</DialogTitle>
             <DialogDescription>
-              Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password to confirm you
-              would like to permanently delete your account.
+              {__('hewcode.settings.delete_account_confirmation')}
             </DialogDescription>
 
             <Form
@@ -48,10 +49,10 @@ export default function DeleteUser() {
                 <>
                   <div className="grid gap-2">
                     <Label htmlFor="password" className="sr-only">
-                      Password
+                      {__('hewcode.auth.password')}
                     </Label>
 
-                    <Input id="password" type="password" name="password" ref={passwordInput} placeholder="Password" autoComplete="current-password" />
+                    <Input id="password" type="password" name="password" ref={passwordInput} placeholder={__('hewcode.auth.password')} autoComplete="current-password" />
 
                     <InputError message={errors.password} />
                   </div>
@@ -59,13 +60,13 @@ export default function DeleteUser() {
                   <DialogFooter className="gap-2">
                     <DialogClose asChild>
                       <Button variant="secondary" onClick={() => resetAndClearErrors()}>
-                        Cancel
+                        {__('hewcode.common.cancel')}
                       </Button>
                     </DialogClose>
 
                     <Button variant="destructive" disabled={processing} asChild>
                       <button type="submit" data-test="confirm-delete-user-button">
-                        Delete account
+                        {__('hewcode.settings.delete_account')}
                       </button>
                     </Button>
                   </DialogFooter>

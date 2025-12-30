@@ -5,6 +5,7 @@ import { router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import useRoute from '../../hooks/use-route.ts';
+import useTranslator from '../../hooks/useTranslator.js';
 import { getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import Action from '../actions/Action.jsx';
@@ -70,6 +71,7 @@ const DataTable = ({
   }
 
   const route = useRoute();
+  const { __ } = useTranslator();
 
   // Helper function to get scoped parameter name
   const getScopedParam = (paramName) => {
@@ -410,7 +412,7 @@ const DataTable = ({
                 {isBulkSelecting && (
                   <TableColumnHeader
                     label={
-                      <Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label="Select all" />
+                      <Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label={__('hewcode.common.select_all')} />
                     }
                     className={thClassName}
                   />

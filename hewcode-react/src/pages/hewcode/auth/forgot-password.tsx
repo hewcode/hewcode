@@ -8,14 +8,16 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import useRoute from '../../../hooks/use-route';
+import useTranslator from '../../../hooks/useTranslator';
 import AuthLayout from '../../../layouts/auth-layout';
 
 export default function ForgotPassword({ status }: { status?: string }) {
   const route = useRoute();
+  const { __ } = useTranslator();
 
   return (
-    <AuthLayout title="Forgot password" description="Enter your email to receive a password reset link">
-      <Head title="Forgot password" />
+    <AuthLayout title={__('hewcode.auth.forgot_password')} description={__('hewcode.auth.enter_email_for_reset')}>
+      <Head title={__('hewcode.auth.forgot_password')} />
 
       {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
 
@@ -24,7 +26,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
           {({ processing, errors }) => (
             <>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{__('hewcode.auth.email_address')}</Label>
                 <Input id="email" type="email" name="email" autoComplete="off" autoFocus placeholder="email@example.com" />
 
                 <InputError message={errors.email} />
@@ -41,8 +43,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
         </Form>
 
         <div className="text-muted-foreground space-x-1 text-center text-sm">
-          <span>Or, return to</span>
-          <TextLink href={route('panel::login')}>log in</TextLink>
+          <span>{__('hewcode.auth.or_return_to')}</span>
+          <TextLink href={route('panel::login')}>{__('hewcode.auth.log_in')}</TextLink>
         </div>
       </div>
     </AuthLayout>

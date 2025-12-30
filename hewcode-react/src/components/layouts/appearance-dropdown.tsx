@@ -1,11 +1,13 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { HTMLAttributes } from 'react';
 import { useAppearance } from '../../hooks/use-appearance';
+import useTranslator from '../../hooks/useTranslator';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 export default function AppearanceToggleDropdown({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
   const { appearance, updateAppearance } = useAppearance();
+  const { __ } = useTranslator();
 
   const getCurrentIcon = () => {
     switch (appearance) {
@@ -24,7 +26,7 @@ export default function AppearanceToggleDropdown({ className = '', ...props }: H
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-md">
             {getCurrentIcon()}
-            <span className="sr-only">Toggle theme</span>
+            <span className="sr-only">{__('hewcode.common.toggle_theme')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

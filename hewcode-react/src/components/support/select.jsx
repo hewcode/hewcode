@@ -1,5 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import useTranslator from '../../hooks/useTranslator.js';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
@@ -20,6 +21,7 @@ export default function Select({
   searchUsing = null,
   error = null,
 }) {
+  const { __ } = useTranslator();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -132,7 +134,7 @@ export default function Select({
             <Button variant="outline" role="combobox" aria-expanded={open} className="h-9 w-full justify-between px-3">
               <div className="flex flex-1 flex-wrap gap-1 text-left">
                 {selectedLabels.length === 0 ? (
-                  <span className="text-muted-foreground">Select options...</span>
+                  <span className="text-muted-foreground">{__('hewcode.common.select_options')}</span>
                 ) : selectedLabels.length <= 2 ? (
                   selectedLabels.map((label, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
@@ -155,7 +157,7 @@ export default function Select({
                   <TextInput
                     value={searchQuery}
                     onChange={setSearchQuery}
-                    placeholder="Search options..."
+                    placeholder={__('hewcode.common.search_options')}
                     className="w-full"
                     autoComplete="off"
                     spellCheck="false"
@@ -165,7 +167,7 @@ export default function Select({
               )}
               {clearable && selectedValues.length > 0 && (
                 <Button variant="ghost" size="sm" className="mb-2 w-full justify-start text-xs" onClick={handleClearAll}>
-                  Clear all
+                  {__('hewcode.common.clear_all')}
                 </Button>
               )}
               {displayOptions.map(({ label, value: optionValue }) => (
@@ -206,7 +208,7 @@ export default function Select({
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" role="combobox" aria-expanded={open} className="h-9 w-full justify-between px-3">
-              <span className="truncate">{selectedOption ? selectedOption.label : 'Select option...'}</span>
+              <span className="truncate">{selectedOption ? selectedOption.label : __('hewcode.common.select_options')}</span>
               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -216,7 +218,7 @@ export default function Select({
                 <TextInput
                   value={searchQuery}
                   onChange={setSearchQuery}
-                  placeholder="Search options..."
+                  placeholder={__('hewcode.common.search_options')}
                   className="w-full"
                   autoComplete="off"
                   spellCheck="false"
@@ -233,7 +235,7 @@ export default function Select({
                     setOpen(false);
                   }}
                 >
-                  Clear selection
+                  {__('hewcode.common.clear_selection')}
                 </Button>
               )}
               {processedOptions.map(({ label, value: optionValue }) => (

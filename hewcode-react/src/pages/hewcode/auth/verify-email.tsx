@@ -5,18 +5,20 @@ import { LoaderCircle } from 'lucide-react';
 import TextLink from '../../../components/text-link';
 import { Button } from '../../../components/ui/button';
 import useRoute from '../../../hooks/use-route';
+import useTranslator from '../../../hooks/useTranslator';
 import AuthLayout from '../../../layouts/auth-layout';
 
 export default function VerifyEmail({ status }: { status?: string }) {
   const route = useRoute();
+  const { __ } = useTranslator();
 
   return (
-    <AuthLayout title="Verify email" description="Please verify your email address by clicking on the link we just emailed to you.">
-      <Head title="Email verification" />
+    <AuthLayout title={__('hewcode.auth.verify_email')} description={__('hewcode.auth.verify_email_description')}>
+      <Head title={__('hewcode.auth.email_verification')} />
 
       {status === 'verification-link-sent' && (
         <div className="mb-4 text-center text-sm font-medium text-green-600">
-          A new verification link has been sent to the email address you provided during registration.
+          {__('hewcode.settings.verification_link_sent')}
         </div>
       )}
 
@@ -25,11 +27,11 @@ export default function VerifyEmail({ status }: { status?: string }) {
           <>
             <Button disabled={processing} variant="secondary">
               {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-              Resend verification email
+              {__('hewcode.settings.resend_verification_email')}
             </Button>
 
             <TextLink href={route('panel::logout')} className="mx-auto block text-sm">
-              Log out
+              {__('hewcode.auth.log_out')}
             </TextLink>
           </>
         )}
