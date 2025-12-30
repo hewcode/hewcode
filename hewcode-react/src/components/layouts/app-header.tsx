@@ -1,41 +1,21 @@
-import { dashboard } from '@/routes';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
+import { useHewcode } from '../../contexts/hewcode-context';
 import { useInitials } from '../../hooks/use-initials';
+import useRoute from '../../hooks/use-route';
 import { cn } from '../../lib/utils';
-import { type BreadcrumbItem, type NavItem, type SharedData } from '../../types';
+import { type BreadcrumbItem, type SharedData } from '../../types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '../ui/navigation-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Icon, IconRegistry } from '../icon-registry';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 import { Breadcrumbs } from './breadcrumbs';
-import { Icon } from './icon';
 import { UserMenuContent } from './user-menu-content';
-
-const mainNavItems: NavItem[] = [
-  {
-    title: 'Dashboard',
-    href: dashboard(),
-    icon: LayoutGrid,
-  },
-];
-
-const rightNavItems: NavItem[] = [
-  {
-    title: 'Repository',
-    href: 'https://github.com/laravel/react-starter-kit',
-    icon: Folder,
-  },
-  {
-    title: 'Documentation',
-    href: 'https://laravel.com/docs/starter-kits#react',
-    icon: BookOpen,
-  },
-];
 
 const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
@@ -46,10 +26,20 @@ interface AppHeaderProps {
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
   const page = usePage<SharedData>();
   const { auth } = page.props.hewcode as any;
+  const { hewcode } = useHewcode();
+  const route = useRoute();
   const getInitials = useInitials();
+
+  // Filter navigation items for header: only items without children (top-level links)
+  const mainNavItems = hewcode?.panel?.navigation?.items?.filter(item => !item.items || item.items.length === 0) || [];
+
+  // For now, keep right nav items empty - can be configured via hewcode context later
+  const rightNavItems = [];
 
   return (
     <>
+      <IconRegistry icons={hewcode?.panel?.navigation?.icons || {}} />
+
       <div className="border-sidebar-border/80 border-b">
         <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
           {/* Mobile Menu */}
@@ -69,9 +59,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                   <div className="flex h-full flex-col justify-between text-sm">
                     <div className="flex flex-col space-y-4">
                       {mainNavItems.map((item) => (
-                        <Link key={item.title} href={item.href} className="flex items-center space-x-2 font-medium">
-                          {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                          <span>{item.title}</span>
+                        <Link key={item.label} href={item.url} className="flex items-center space-x-2 font-medium">
+                          {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={20} />}
+                          <span>{item.label}</span>
                         </Link>
                       ))}
                     </div>
@@ -79,14 +69,14 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     <div className="flex flex-col space-y-4">
                       {rightNavItems.map((item) => (
                         <a
-                          key={item.title}
-                          href={typeof item.href === 'string' ? item.href : item.href.url}
+                          key={item.label}
+                          href={item.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center space-x-2 font-medium"
                         >
-                          {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                          <span>{item.title}</span>
+                          {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={20} />}
+                          <span>{item.label}</span>
                         </a>
                       ))}
                     </div>
@@ -96,7 +86,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
             </Sheet>
           </div>
 
-          <Link href={dashboard()} prefetch className="flex items-center space-x-2">
+          <Link href={route('panel::dashboard')} prefetch className="flex items-center space-x-2">
             <AppLogo />
           </Link>
 
@@ -107,17 +97,17 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                 {mainNavItems.map((item, index) => (
                   <NavigationMenuItem key={index} className="relative flex h-full items-center">
                     <Link
-                      href={item.href}
+                      href={item.url}
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        page.url === (typeof item.href === 'string' ? item.href : item.href.url) && activeItemStyles,
+                        page.url.startsWith(item.url) && activeItemStyles,
                         'h-9 cursor-pointer px-3',
                       )}
                     >
-                      {item.icon && <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />}
-                      {item.title}
+                      {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={16} className="mr-2" />}
+                      {item.label}
                     </Link>
-                    {page.url === item.href && <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>}
+                    {page.url.startsWith(item.url) && <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>}
                   </NavigationMenuItem>
                 ))}
               </NavigationMenuList>
@@ -131,21 +121,21 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
               </Button>
               <div className="hidden lg:flex">
                 {rightNavItems.map((item) => (
-                  <TooltipProvider key={item.title} delayDuration={0}>
+                  <TooltipProvider key={item.label} delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger>
                         <a
-                          href={typeof item.href === 'string' ? item.href : item.href.url}
+                          href={item.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-accent-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring group ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                         >
-                          <span className="sr-only">{item.title}</span>
-                          {item.icon && <Icon iconNode={item.icon} className="size-5 opacity-80 group-hover:opacity-100" />}
+                          <span className="sr-only">{item.label}</span>
+                          {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={20} className="opacity-80 group-hover:opacity-100" />}
                         </a>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{item.title}</p>
+                        <p>{item.label}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
