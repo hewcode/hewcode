@@ -1,33 +1,33 @@
-import Heading from '@/components/heading';
-import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editPassword } from '@/routes/password';
-import { edit } from '@/routes/profile';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
+import Heading from '../../components/heading';
 import { Button } from '../../components/ui/button';
 import { Separator } from '../../components/ui/separator';
+import useRoute from '../../hooks/use-route';
 import { cn } from '../../lib/utils';
 import { type NavItem } from '../../types';
 
-const sidebarNavItems: NavItem[] = [
-  {
-    title: 'Profile',
-    href: edit(),
-    icon: null,
-  },
-  {
-    title: 'Password',
-    href: editPassword(),
-    icon: null,
-  },
-  {
-    title: 'Appearance',
-    href: editAppearance(),
-    icon: null,
-  },
-];
-
 export default function SettingsLayout({ children }: PropsWithChildren) {
+  const route = useRoute();
+
+  const sidebarNavItems: NavItem[] = [
+    {
+      title: 'Profile',
+      href: route('panel::profile.edit'),
+      icon: null,
+    },
+    {
+      title: 'Password',
+      href: route('panel::password.edit'),
+      icon: null,
+    },
+    {
+      title: 'Appearance',
+      href: route('panel::appearance.edit'),
+      icon: null,
+    },
+  ];
+
   // When server-side rendering, we only render the layout on the client...
   if (typeof window === 'undefined') {
     return null;

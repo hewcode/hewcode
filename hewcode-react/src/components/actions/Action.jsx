@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import ActionModal from '../../components/actions/action-modal.jsx';
 import useModalManager from '../../hooks/use-modal-manager.jsx';
+import useRoute from '../../hooks/use-route.ts';
 import useFetch from '../../hooks/useFetch.js';
 import useTranslator from '../../hooks/useTranslator.js';
 import { Button } from '../ui/button.jsx';
@@ -39,6 +40,7 @@ export default function Action({
   const modal = useModalManager();
   const { __ } = useTranslator();
   const { fetch } = useFetch();
+  const route = useRoute();
 
   const submit = async () => {
     setLoading(true);
@@ -68,7 +70,7 @@ export default function Action({
       setLoading(false);
     } else {
       fetch(
-        '/_hewcode',
+        route('hewcode.mount'),
         {
           method: 'POST',
           body: {

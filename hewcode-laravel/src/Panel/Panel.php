@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 class Panel
 {
     protected string $name;
+    protected ?string $title = null;
     protected Navigation $navigation;
     protected ?Closure $navigationUsing = null;
 
@@ -26,6 +27,13 @@ class Panel
     public static function make(?string $name): self
     {
         return new self($name);
+    }
+
+    public function title(string $title): self
+    {
+        $this->title = $title;
+
+        return $this;
     }
 
     public function register(): void
@@ -44,6 +52,9 @@ class Panel
     public function registerRoutes(): void
     {
         Route::middleware('web')->prefix('/'.$this->name)->name('hewcode.'.$this->name.'.')->group(function () {
+            require __DIR__.'/../../routes/auth.php';
+            require __DIR__.'/../../routes/settings.php';
+
             foreach (Hewcode::discovered($this->name) as $class) {
                 try {
                     if (is_a($class, Resource::class, true)) {
@@ -106,5 +117,19 @@ class Panel
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function toData(): array
+    {
+        return [
+            'name' => $this->name,
+            'title' => $this->title,
+            'navigation' => $this->getNavigation()->toData(),
+        ];
     }
 }

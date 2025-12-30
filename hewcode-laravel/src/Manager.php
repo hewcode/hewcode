@@ -55,7 +55,7 @@ class Manager
         ];
 
         if ($panel = $this->currentPanel()) {
-            $data['navigation'] = $panel->getNavigation()->toData();
+            $data['panel'] = $panel->toData();
         }
 
         return $data;
@@ -124,14 +124,18 @@ class Manager
         return $this->panel($panelName);
     }
 
-    public function routeName(string $name, ?string $panel = null): string
+    public function routeName(string $name, Panel\Panel|string|null $panel = null): string
     {
         $panel ??= Hewcode::config()->getDefaultPanel();
+
+        if ($panel instanceof Panel\Panel) {
+            $panel = $panel->getName();
+        }
 
         return 'hewcode.'.$panel.'.'.$name;
     }
 
-    public function route(string $name, array $parameters = [], bool $absolute = true, ?string $panel = null): string
+    public function route(string $name, array $parameters = [], bool $absolute = true, Panel\Panel|string|null $panel = null): string
     {
         return route($this->routeName($name, $panel), $parameters, $absolute);
     }

@@ -1,12 +1,14 @@
 import { router } from '@inertiajs/react';
 import { X } from 'lucide-react';
+import useRoute from '../../hooks/use-route.ts';
 import { Button } from '../ui/button.jsx';
 
 const BulkActions = ({ selectedCount, bulkActions, selectedRecords, onClearSelection }) => {
+  const route = useRoute();
+
   const executeAction = (action) => {
-    // Execute the bulk action via the centralized _hewcode/action route
     router.post(
-      '/_hewcode',
+      route('hewcode.mount'),
       {
         component: action.component,
         route: action.route,

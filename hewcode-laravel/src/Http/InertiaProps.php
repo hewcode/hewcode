@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Http;
 
 use Hewcode\Hewcode\Hewcode;
+use Illuminate\Support\Facades\Route;
 use Inertia\ProvidesInertiaProperties;
 use Inertia\RenderContext;
 use function Hewcode\Hewcode\flattenLocaleArray;
@@ -24,7 +25,56 @@ class InertiaProps implements ProvidesInertiaProperties
                     'user' => $context->request->user(),
                 ],
                 'sidebarOpen' => ! $context->request->hasCookie('sidebar_state') || $context->request->cookie('sidebar_state') === 'true',
+                'routes' => $this->serializeRoutes(),
             ], Hewcode::sharedData()),
+        ];
+    }
+
+    protected function serializeRoutes(): array
+    {
+        return collect($this->getSerializedRoutes())
+            ->mapWithKeys(function (string $routeName) {
+                if (str_starts_with($routeName, 'panel::')) {
+                    if (! $panel = Hewcode::currentPanel()) {
+                        return [];
+                    }
+
+                    $route = Hewcode::routeName(str($routeName)->after('panel::')->toString(), $panel);
+                } else {
+                    $route = $routeName;
+                }
+
+                $uri = Route::getRoutes()->getByName($route)?->uri() ?? '';
+
+                return [$routeName => url($uri)];
+            })
+            ->toArray();
+    }
+
+    protected function getSerializedRoutes(): array
+    {
+        return [
+            'hewcode.mount',
+
+            'panel::dashboard',
+
+            'panel::profile.edit',
+            'panel::profile.update',
+            'panel::profile.destroy',
+            'panel::appearance.edit',
+            'panel::password.edit',
+
+            'panel::password.request',
+            'panel::password.confirm.store',
+            'panel::password.email',
+            'panel::password.store',
+            'panel::password.update',
+            'panel::verification.send',
+            'panel::login',
+            'panel::login.store',
+            'panel::logout',
+            'panel::register',
+            'panel::register.store',
         ];
     }
 }

@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
 import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import useRoute from '../../hooks/use-route.ts';
 import { getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import Action from '../actions/Action.jsx';
@@ -16,7 +17,6 @@ import TableColumnHeader from './TableColumnHeader.jsx';
 import TableHeader from './TableHeader.jsx';
 import TableRowActions from './TableRowActions.jsx';
 import CellContent from './cell.jsx';
-import { Link } from '@inertiajs/react';
 
 const DataTable = ({
   records = [],
@@ -68,6 +68,8 @@ const DataTable = ({
   if (!seal) {
     return <div className="w-full p-4 text-center font-mono font-bold text-red-600">Error: DataTable component did not receive proper props.</div>;
   }
+
+  const route = useRoute();
 
   // Helper function to get scoped parameter name
   const getScopedParam = (paramName) => {
@@ -309,7 +311,7 @@ const DataTable = ({
     setOrderedRecords(newRecords);
 
     // Send reorder request to backend
-    fetch('/_hewcode', {
+    fetch(route('hewcode.mount'), {
       method: 'POST',
       body: {
         seal,
@@ -444,7 +446,7 @@ const DataTable = ({
                       // Trigger action if specified
                       if (hasRowAction) {
                         const actionButton = document.querySelector(
-                          `button[data-record-id="${record.id}"][data-action-name="${record._row_action}"]`
+                          `button[data-record-id="${record.id}"][data-action-name="${record._row_action}"]`,
                         );
                         if (actionButton) {
                           actionButton.click();

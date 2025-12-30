@@ -1,6 +1,6 @@
-import { dashboard } from '@/routes';
 import { Link } from '@inertiajs/react';
 import { useHewcode } from '../../contexts/hewcode-context';
+import useRoute from '../../hooks/use-route';
 import { type NavItem } from '../../types';
 import { IconRegistry } from '../icon-registry';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
@@ -9,26 +9,22 @@ import { NavFooter } from './nav-footer';
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
 
-const footerNavItems: NavItem[] = [
-  // {
-  //   title: 'Documentation',
-  //   href: 'https://laravel.com/docs/starter-kits#react',
-  //   icon: BookOpen,
-  // },
-];
+const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
   const { hewcode } = useHewcode();
+  const route = useRoute();
 
   return (
     <>
-      <IconRegistry icons={hewcode?.navigation?.icons || {}} />
+      <IconRegistry icons={hewcode?.panel?.navigation?.icons || {}} />
+
       <Sidebar collapsible="icon" variant="inset">
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
-                <Link href={dashboard()} prefetch>
+                <Link href={route('panel::dashboard')} prefetch>
                   <AppLogo />
                 </Link>
               </SidebarMenuButton>
@@ -37,7 +33,7 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          <NavMain items={hewcode?.navigation?.items || []} />
+          <NavMain items={hewcode?.panel?.navigation?.items || []} />
         </SidebarContent>
 
         <SidebarFooter>

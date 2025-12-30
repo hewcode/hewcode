@@ -1,6 +1,6 @@
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
+import useRoute from '../../hooks/use-route';
 import { Button } from '../ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
@@ -10,6 +10,7 @@ import InputError from './input-error';
 
 export default function DeleteUser() {
   const passwordInput = useRef<HTMLInputElement>(null);
+  const route = useRoute();
 
   return (
     <div className="space-y-6">
@@ -34,7 +35,8 @@ export default function DeleteUser() {
             </DialogDescription>
 
             <Form
-              {...ProfileController.destroy.form()}
+              action={route('panel::profile.destroy')}
+              method="post"
               options={{
                 preserveScroll: true,
               }}

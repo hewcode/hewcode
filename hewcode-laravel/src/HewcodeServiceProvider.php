@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Panel\Controllers\HewcodeController;
 use Hewcode\Hewcode\Panel\Navigation\Navigation;
 use Hewcode\Hewcode\Panel\Routing;
 use Hewcode\Hewcode\Support\Config;
+use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\LaravelPackageTools\Package;
@@ -38,6 +39,13 @@ class HewcodeServiceProvider extends PackageServiceProvider
         });
 
         $this->app->alias(Manager::class, 'hewcode');
+
+        $this->app->afterResolving(Middleware::class, function (Middleware $middleware) {
+            $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+            $middleware->web(append: [
+                Http\Middleware\HandleAppearance::class,
+            ]);
+        });
     }
 
     public function packageBooted()

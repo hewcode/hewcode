@@ -1,8 +1,10 @@
+import useRoute from '../../hooks/use-route.ts';
 import useFetch from '../../hooks/useFetch.js';
 import BaseSelect from '../support/select.jsx';
 
 export default function Select({ seal, ...props }) {
   const { fetch } = useFetch();
+  const route = useRoute();
 
   return (
     <BaseSelect
@@ -13,7 +15,7 @@ export default function Select({ seal, ...props }) {
         }
 
         const response = await fetch(
-          '/_hewcode',
+          route('hewcode.mount'),
           {
             method: 'POST',
             body: {

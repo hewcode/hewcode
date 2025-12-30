@@ -1,16 +1,18 @@
-import { dashboard } from '@/routes';
 import { PlaceholderPattern } from '../../components/ui/placeholder-pattern';
+import useRoute from '../../hooks/use-route';
 import PageLayout from '../../layouts/pages/page-layout';
 import { type BreadcrumbItem } from '../../types';
 
-const breadcrumbs: BreadcrumbItem[] = [
-  {
-    title: 'Dashboard',
-    href: dashboard().url,
-  },
-];
-
 export default function Dashboard() {
+  const route = useRoute();
+
+  const breadcrumbs: BreadcrumbItem[] = [
+    {
+      title: 'Dashboard',
+      href: route('panel::dashboard'),
+    },
+  ];
+
   return (
     <PageLayout breadcrumbs={breadcrumbs}>
       <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl">

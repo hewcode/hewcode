@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import useRoute from '../../hooks/use-route.ts';
 import useFetch from '../../hooks/useFetch.js';
 import useTranslator from '../../hooks/useTranslator.js';
 import Form from '../form/Form.jsx';
@@ -7,6 +8,7 @@ import Modal from '../modal.jsx';
 const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescription, modalWidth, onSuccess, onError, onFinish, onClose }) => {
   const { __ } = useTranslator();
   const { fetch } = useFetch();
+  const route = useRoute();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(null);
 
@@ -15,7 +17,7 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
       setLoading(true);
 
       fetch(
-        '/_hewcode',
+        route('hewcode.mount'),
         {
           method: 'POST',
           body: {
