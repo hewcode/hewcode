@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 import Heading from '../../components/heading';
 import { Button } from '../../components/ui/button';
@@ -9,24 +9,31 @@ import { type NavItem } from '../../types';
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
   const route = useRoute();
+  const { hewcode } = usePage().props as any;
+  const features = hewcode?.panel?.features || {};
 
-  const sidebarNavItems: NavItem[] = [
+  const allNavItems: NavItem[] = [
     {
       title: 'Profile',
       href: route('panel::profile.edit'),
       icon: null,
+      enabled: features.profileSettings !== false,
     },
     {
       title: 'Password',
       href: route('panel::password.edit'),
       icon: null,
+      enabled: features.passwordSettings !== false,
     },
     {
       title: 'Appearance',
       href: route('panel::appearance.edit'),
       icon: null,
+      enabled: features.appearanceSettings !== false,
     },
   ];
+
+  const sidebarNavItems = allNavItems.filter(item => item.enabled);
 
   // When server-side rendering, we only render the layout on the client...
   if (typeof window === 'undefined') {

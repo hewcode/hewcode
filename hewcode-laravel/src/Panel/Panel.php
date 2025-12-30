@@ -19,6 +19,14 @@ class Panel
     protected Navigation $navigation;
     protected ?Closure $navigationUsing = null;
 
+    protected bool $loginEnabled = true;
+    protected bool $registerEnabled = true;
+    protected bool $passwordResetEnabled = true;
+    protected bool $emailVerificationEnabled = true;
+    protected bool $profileSettingsEnabled = true;
+    protected bool $passwordSettingsEnabled = true;
+    protected bool $appearanceSettingsEnabled = true;
+
     public function __construct(?string $name)
     {
         $this->name = $name ?? Hewcode::config()->getDefaultPanel();
@@ -51,6 +59,90 @@ class Panel
         return $this;
     }
 
+    public function login(bool $enabled = true): self
+    {
+        $this->loginEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function registration(bool $enabled = true): self
+    {
+        $this->registerEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function passwordReset(bool $enabled = true): self
+    {
+        $this->passwordResetEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function emailVerification(bool $enabled = true): self
+    {
+        $this->emailVerificationEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function profileSettings(bool $enabled = true): self
+    {
+        $this->profileSettingsEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function passwordSettings(bool $enabled = true): self
+    {
+        $this->passwordSettingsEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function appearanceSettings(bool $enabled = true): self
+    {
+        $this->appearanceSettingsEnabled = $enabled;
+
+        return $this;
+    }
+
+    public function isLoginEnabled(): bool
+    {
+        return $this->loginEnabled;
+    }
+
+    public function isRegisterEnabled(): bool
+    {
+        return $this->registerEnabled;
+    }
+
+    public function isPasswordResetEnabled(): bool
+    {
+        return $this->passwordResetEnabled;
+    }
+
+    public function isEmailVerificationEnabled(): bool
+    {
+        return $this->emailVerificationEnabled;
+    }
+
+    public function isProfileSettingsEnabled(): bool
+    {
+        return $this->profileSettingsEnabled;
+    }
+
+    public function isPasswordSettingsEnabled(): bool
+    {
+        return $this->passwordSettingsEnabled;
+    }
+
+    public function isAppearanceSettingsEnabled(): bool
+    {
+        return $this->appearanceSettingsEnabled;
+    }
+
     public function register(): void
     {
         $this->registerRoutes();
@@ -67,8 +159,8 @@ class Panel
     public function registerRoutes(): void
     {
         Route::middleware('web')->prefix('/'.$this->name)->name('hewcode.'.$this->name.'.')->group(function () {
-            require __DIR__.'/../../routes/auth.php';
-            require __DIR__.'/../../routes/settings.php';
+            $this->registerAuthRoutes();
+            $this->registerSettingsRoutes();
 
             foreach (Hewcode::discovered($this->name) as $class) {
                 try {
@@ -86,6 +178,107 @@ class Panel
                 } catch (Error) {
                     //
                 }
+            }
+        });
+    }
+
+    protected function registerAuthRoutes(): void
+    {
+        Route::middleware('guest')->group(function () {
+            if ($this->registerEnabled) {
+                Route::get('register', [\Hewcode\Hewcode\Panel\Controllers\Auth\RegisteredUserController::class, 'create'])
+                    ->name('register');
+
+                Route::post('register', [\Hewcode\Hewcode\Panel\Controllers\Auth\RegisteredUserController::class, 'store'])
+                    ->name('register.store');
+            }
+
+            if ($this->loginEnabled) {
+                Route::get('login', [\Hewcode\Hewcode\Panel\Controllers\Auth\AuthenticatedSessionController::class, 'create'])
+                    ->name('login');
+
+                Route::post('login', [\Hewcode\Hewcode\Panel\Controllers\Auth\AuthenticatedSessionController::class, 'store'])
+                    ->name('login.store');
+            }
+
+            if ($this->passwordResetEnabled) {
+                Route::get('forgot-password', [\Hewcode\Hewcode\Panel\Controllers\Auth\PasswordResetLinkController::class, 'create'])
+                    ->name('password.request');
+
+                Route::post('forgot-password', [\Hewcode\Hewcode\Panel\Controllers\Auth\PasswordResetLinkController::class, 'store'])
+                    ->name('password.email');
+
+                Route::get('reset-password/{token}', [\Hewcode\Hewcode\Panel\Controllers\Auth\NewPasswordController::class, 'create'])
+                    ->name('password.reset');
+
+                Route::post('reset-password', [\Hewcode\Hewcode\Panel\Controllers\Auth\NewPasswordController::class, 'store'])
+                    ->name('password.store');
+            }
+        });
+
+        Route::middleware('auth')->group(function () {
+            if ($this->emailVerificationEnabled) {
+                Route::get('verify-email', \Hewcode\Hewcode\Panel\Controllers\Auth\EmailVerificationPromptController::class)
+                    ->name('verification.notice');
+
+                Route::get('verify-email/{id}/{hash}', \Hewcode\Hewcode\Panel\Controllers\Auth\VerifyEmailController::class)
+                    ->middleware(['signed', 'throttle:6,1'])
+                    ->name('verification.verify');
+
+                Route::post('email/verification-notification', [\Hewcode\Hewcode\Panel\Controllers\Auth\EmailVerificationNotificationController::class, 'store'])
+                    ->middleware('throttle:6,1')
+                    ->name('verification.send');
+            }
+
+            Route::get('confirm-password', [\Hewcode\Hewcode\Panel\Controllers\Auth\ConfirmablePasswordController::class, 'show'])
+                ->name('password.confirm');
+
+            Route::post('confirm-password', [\Hewcode\Hewcode\Panel\Controllers\Auth\ConfirmablePasswordController::class, 'store'])
+                ->middleware('throttle:6,1')
+                ->name('password.confirm.store');
+
+            if ($this->loginEnabled) {
+                Route::post('logout', [\Hewcode\Hewcode\Panel\Controllers\Auth\AuthenticatedSessionController::class, 'destroy'])
+                    ->name('logout');
+            }
+        });
+    }
+
+    protected function registerSettingsRoutes(): void
+    {
+        Route::middleware('auth')->group(function () {
+            if ($this->profileSettingsEnabled || $this->passwordSettingsEnabled || $this->appearanceSettingsEnabled) {
+                Route::get('settings', function () {
+                    if ($this->profileSettingsEnabled) {
+                        return redirect(Hewcode::route('profile.edit', panel: $this));
+                    } elseif ($this->passwordSettingsEnabled) {
+                        return redirect(Hewcode::route('password.edit', panel: $this));
+                    } elseif ($this->appearanceSettingsEnabled) {
+                        return redirect(Hewcode::route('appearance.edit', panel: $this));
+                    }
+
+                    return redirect(Hewcode::route('dashboard'));
+                })->name('settings');
+            }
+
+            if ($this->profileSettingsEnabled) {
+                Route::get('settings/profile', [\Hewcode\Hewcode\Panel\Controllers\Settings\ProfileController::class, 'edit'])->name('profile.edit');
+                Route::patch('settings/profile', [\Hewcode\Hewcode\Panel\Controllers\Settings\ProfileController::class, 'update'])->name('profile.update');
+                Route::delete('settings/profile', [\Hewcode\Hewcode\Panel\Controllers\Settings\ProfileController::class, 'destroy'])->name('profile.destroy');
+            }
+
+            if ($this->passwordSettingsEnabled) {
+                Route::get('settings/password', [\Hewcode\Hewcode\Panel\Controllers\Settings\PasswordController::class, 'edit'])->name('password.edit');
+
+                Route::put('settings/password', [\Hewcode\Hewcode\Panel\Controllers\Settings\PasswordController::class, 'update'])
+                    ->middleware('throttle:6,1')
+                    ->name('password.update');
+            }
+
+            if ($this->appearanceSettingsEnabled) {
+                Route::get('settings/appearance', function () {
+                    return \Inertia\Inertia::render('hewcode/settings/appearance');
+                })->name('appearance.edit');
             }
         });
     }
@@ -151,6 +344,15 @@ class Panel
             'title' => $this->title,
             'layout' => $this->layout,
             'navigation' => $this->getNavigation()->toData(),
+            'features' => [
+                'login' => $this->loginEnabled,
+                'registration' => $this->registerEnabled,
+                'passwordReset' => $this->passwordResetEnabled,
+                'emailVerification' => $this->emailVerificationEnabled,
+                'profileSettings' => $this->profileSettingsEnabled,
+                'passwordSettings' => $this->passwordSettingsEnabled,
+                'appearanceSettings' => $this->appearanceSettingsEnabled,
+            ],
         ];
     }
 }

@@ -46,6 +46,43 @@ Hewcode::panel('admin')
 
 The sidebar layout displays navigation in a collapsible sidebar, while the header layout displays navigation in a top header bar.
 
+## Features
+
+Panels include built-in authentication and settings features that can be toggled on or off. All features are enabled by default.
+
+```php
+Hewcode::panel('admin')
+    ->login(false)              // Disable login
+    ->registration(false)       // Disable registration
+    ->passwordReset(false)      // Disable password reset
+    ->emailVerification(false)  // Disable email verification
+    ->profileSettings(false)    // Disable profile settings page
+    ->passwordSettings(false)   // Disable password settings page
+    ->appearanceSettings(false); // Disable appearance settings page
+```
+
+**Available Features:**
+- `login()` - Login and logout functionality
+- `registration()` - User registration
+- `passwordReset()` - Forgot password and reset password
+- `emailVerification()` - Email verification flow
+- `profileSettings()` - Profile edit and delete account
+- `passwordSettings()` - Change password
+- `appearanceSettings()` - Theme/appearance preferences
+
+You can chain multiple feature toggles together:
+
+```php
+// Public panel with limited features
+Hewcode::panel('app')
+    ->registration(false)
+    ->profileSettings(false);
+
+// Admin panel with all features
+Hewcode::panel('admin')
+    ->headerLayout();
+```
+
 ## Resources
 
 You can create resources to quickly get started with managing records in your panels.

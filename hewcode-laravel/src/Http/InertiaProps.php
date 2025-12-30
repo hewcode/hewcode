@@ -58,6 +58,7 @@ class InertiaProps implements ProvidesInertiaProperties
 
             'panel::dashboard',
 
+            'panel::settings',
             'panel::profile.edit',
             'panel::profile.update',
             'panel::profile.destroy',
