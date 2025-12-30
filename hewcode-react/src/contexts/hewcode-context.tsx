@@ -6,6 +6,7 @@ type Hewcode = {
   panel: {
     name: string;
     title: string | null;
+    layout: string;
     navigation: {
       icons: Record<string, string>;
       items: NavItem[];

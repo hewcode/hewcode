@@ -18,14 +18,33 @@ public function register(): void
 If you pass a name to the `panel()` method, it will register the panel with that name, and you can register multiple panels:
 
 ```php
-Hewcode::panel('admin'); // Registers custom 'admin' panel  
+Hewcode::panel('admin'); // Registers custom 'admin' panel
 Hewcode::panel('dashboard'); // Registers custom 'dashboard' panel
 ```
 
 **Accessing Panels:** Once registered, panels are accessible at `/{panel-name}`:
 - Default panel: `/app`
-- Admin panel: `/admin` 
+- Admin panel: `/admin`
 - Dashboard panel: `/dashboard`
+
+## Layout
+
+Panels support two layout styles: sidebar layout (default) and header layout. You can configure the layout using the `sidebarLayout()` or `headerLayout()` methods:
+
+```php
+// Sidebar layout (default)
+Hewcode::panel('admin');
+
+// Header layout
+Hewcode::panel('admin')->headerLayout();
+
+// Chain with other configurations
+Hewcode::panel('admin')
+    ->title('Admin Panel')
+    ->headerLayout();
+```
+
+The sidebar layout displays navigation in a collapsible sidebar, while the header layout displays navigation in a top header bar.
 
 ## Resources
 

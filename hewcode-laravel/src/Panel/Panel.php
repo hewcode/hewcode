@@ -15,6 +15,7 @@ class Panel
 {
     protected string $name;
     protected ?string $title = null;
+    protected string $layout = 'sidebar';
     protected Navigation $navigation;
     protected ?Closure $navigationUsing = null;
 
@@ -32,6 +33,20 @@ class Panel
     public function title(string $title): self
     {
         $this->title = $title;
+
+        return $this;
+    }
+
+    public function sidebarLayout(): self
+    {
+        $this->layout = 'sidebar';
+
+        return $this;
+    }
+
+    public function headerLayout(): self
+    {
+        $this->layout = 'header';
 
         return $this;
     }
@@ -124,11 +139,17 @@ class Panel
         return $this->title;
     }
 
+    public function getLayout(): string
+    {
+        return $this->layout;
+    }
+
     public function toData(): array
     {
         return [
             'name' => $this->name,
             'title' => $this->title,
+            'layout' => $this->layout,
             'navigation' => $this->getNavigation()->toData(),
         ];
     }
