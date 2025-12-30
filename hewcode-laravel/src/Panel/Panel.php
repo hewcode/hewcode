@@ -27,10 +27,15 @@ class Panel
     protected bool $passwordSettingsEnabled = true;
     protected bool $appearanceSettingsEnabled = true;
 
+    protected array $middleware = [];
+
     public function __construct(?string $name)
     {
         $this->name = $name ?? Hewcode::config()->getDefaultPanel();
         $this->navigation = app(Navigation::class, ['panel' => $this->name]);
+        $this->middleware = [
+            \Hewcode\Hewcode\Http\Middleware\RedirectIfNotAuthenticated::class.':'.$this->name,
+        ];
     }
 
     public static function make(?string $name): self
@@ -108,6 +113,22 @@ class Panel
         return $this;
     }
 
+    public function middleware(array $middleware = [], array $append = []): self
+    {
+        if (! empty($append)) {
+            $this->middleware = array_merge($this->middleware, $append);
+        } else {
+            $this->middleware = $middleware;
+        }
+
+        return $this;
+    }
+
+    public function getMiddleware(): array
+    {
+        return $this->middleware;
+    }
+
     public function isLoginEnabled(): bool
     {
         return $this->loginEnabled;
@@ -162,23 +183,25 @@ class Panel
             $this->registerAuthRoutes();
             $this->registerSettingsRoutes();
 
-            foreach (Hewcode::discovered($this->name) as $class) {
-                try {
-                    if (is_a($class, Resource::class, true)) {
-                        /** @var \Hewcode\Hewcode\Panel\Resource $resource */
-                        $resource = app($class);
+            Route::middleware($this->middleware)->group(function () {
+                foreach (Hewcode::discovered($this->name) as $class) {
+                    try {
+                        if (is_a($class, Resource::class, true)) {
+                            /** @var \Hewcode\Hewcode\Panel\Resource $resource */
+                            $resource = app($class);
 
-                        /** @var ResourceController $pageController */
-                        foreach ($resource->getPageControllers() as $pageController) {
-                            $this->registerPage($pageController, ServeResourceController::class);
+                            /** @var ResourceController $pageController */
+                            foreach ($resource->getPageControllers() as $pageController) {
+                                $this->registerPage($pageController, ServeResourceController::class);
+                            }
+                        } else {
+                            $this->registerPage($class);
                         }
-                    } else {
-                        $this->registerPage($class);
+                    } catch (Error) {
+                        //
                     }
-                } catch (Error) {
-                    //
                 }
-            }
+            });
         });
     }
 
@@ -216,7 +239,7 @@ class Panel
             }
         });
 
-        Route::middleware('auth')->group(function () {
+        Route::middleware($this->middleware)->group(function () {
             if ($this->emailVerificationEnabled) {
                 Route::get('verify-email', \Hewcode\Hewcode\Panel\Controllers\Auth\EmailVerificationPromptController::class)
                     ->name('verification.notice');
@@ -246,7 +269,7 @@ class Panel
 
     protected function registerSettingsRoutes(): void
     {
-        Route::middleware('auth')->group(function () {
+        Route::middleware($this->middleware)->group(function () {
             if ($this->profileSettingsEnabled || $this->passwordSettingsEnabled || $this->appearanceSettingsEnabled) {
                 Route::get('settings', function () {
                     if ($this->profileSettingsEnabled) {

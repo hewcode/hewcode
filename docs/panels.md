@@ -70,18 +70,40 @@ Hewcode::panel('admin')
 - `passwordSettings()` - Change password
 - `appearanceSettings()` - Theme/appearance preferences
 
-You can chain multiple feature toggles together:
+## Middleware
+
+You can customize the middleware stack for each panel.
+
+### Replacing Middleware
+
+Replace the middleware stack by passing an array to `middleware()`:
 
 ```php
-// Public panel with limited features
-Hewcode::panel('app')
-    ->registration(false)
-    ->profileSettings(false);
-
-// Admin panel with all features
 Hewcode::panel('admin')
-    ->headerLayout();
+    ->middleware([
+        \App\Http\Middleware\CustomAuth::class,
+        \App\Http\Middleware\CheckSubscription::class,
+    ]);
 ```
+
+### Appending Middleware
+
+Add middleware using the `append` parameter:
+
+```php
+Hewcode::panel('admin')
+    ->middleware(append: [
+        \App\Http\Middleware\CheckSubscription::class,
+        \App\Http\Middleware\LogActivity::class,
+    ]);
+
+// Or append multiple times
+Hewcode::panel('admin')
+    ->middleware(append: [\App\Http\Middleware\CheckSubscription::class])
+    ->middleware(append: [\App\Http\Middleware\TwoFactorAuth::class]);
+```
+
+**Note:** The middleware applies to all protected routes including dashboard, resources, settings, and authenticated auth routes (email verification, password confirmation, logout). Guest routes (login, register, password reset) are not affected.
 
 ## Resources
 
