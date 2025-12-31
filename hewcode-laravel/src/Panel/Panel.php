@@ -16,6 +16,8 @@ class Panel
     protected string $name;
     protected ?string $title = null;
     protected string $layout = 'sidebar';
+    protected string|Closure|null $logo = null;
+    protected string|Closure|null $logoIcon = null;
     protected Navigation $navigation;
     protected ?Closure $navigationUsing = null;
 
@@ -60,6 +62,20 @@ class Panel
     public function headerLayout(): self
     {
         $this->layout = 'header';
+
+        return $this;
+    }
+
+    public function logo(string|Closure $logo): self
+    {
+        $this->logo = $logo;
+
+        return $this;
+    }
+
+    public function logoIcon(string|Closure $logoIcon): self
+    {
+        $this->logoIcon = $logoIcon;
 
         return $this;
     }
@@ -360,12 +376,28 @@ class Panel
         return $this->layout;
     }
 
+    public function getLogo(): ?string
+    {
+        return $this->logo instanceof Closure
+            ? ($this->logo)()
+            : $this->logo;
+    }
+
+    public function getLogoIcon(): ?string
+    {
+        return $this->logoIcon instanceof Closure
+            ? ($this->logoIcon)()
+            : $this->logoIcon;
+    }
+
     public function toData(): array
     {
         return [
             'name' => $this->name,
             'title' => $this->title,
             'layout' => $this->layout,
+            'logo' => $this->getLogo(),
+            'logoIcon' => $this->getLogoIcon(),
             'navigation' => $this->getNavigation()->toData(),
             'features' => [
                 'login' => $this->loginEnabled,

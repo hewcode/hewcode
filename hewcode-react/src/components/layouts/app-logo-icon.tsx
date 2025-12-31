@@ -1,6 +1,14 @@
 import { SVGAttributes } from 'react';
 
-export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
+interface AppLogoIconProps extends SVGAttributes<SVGElement> {
+  src?: string;
+}
+
+export default function AppLogoIcon({ src, ...props }: AppLogoIconProps) {
+  if (src) {
+    return <img src={src} alt="Logo" className={props.className} />;
+  }
+
   return (
     <svg {...props} viewBox="0 0 157 134" xmlns="http://www.w3.org/2000/svg">
       <path

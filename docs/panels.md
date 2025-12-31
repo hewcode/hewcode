@@ -27,7 +27,9 @@ Hewcode::panel('dashboard'); // Registers custom 'dashboard' panel
 - Admin panel: `/admin`
 - Dashboard panel: `/dashboard`
 
-## Layout
+## Panel
+
+### Layout
 
 Panels support two layout styles: sidebar layout (default) and header layout. You can configure the layout using the `sidebarLayout()` or `headerLayout()` methods:
 
@@ -46,7 +48,31 @@ Hewcode::panel('admin')
 
 The sidebar layout displays navigation in a collapsible sidebar, while the header layout displays navigation in a top header bar.
 
-## Features
+### Logo
+
+Customize the panel logo and icon using the `logo()` and `logoIcon()` methods:
+
+```php
+Hewcode::panel('admin')
+    ->logo(asset('images/logo.svg'))
+    ->logoIcon(asset('images/icon.svg'));
+```
+
+Both methods support lazy evaluation with closures:
+
+```php
+Hewcode::panel('admin')
+    ->logo(fn () => asset('images/logo.svg'))
+    ->logoIcon(fn () => asset('images/icon.svg'));
+```
+
+**How it works:**
+- `logo()` - Full logo image displayed in the sidebar/header. When set, it replaces the default logo completely.
+- `logoIcon()` - Icon displayed alongside the panel title. Only shown when `logo()` is not set.
+
+If neither is set, the default Hewcode logo and icon are used.
+
+### Features
 
 Panels include built-in authentication and settings features that can be toggled on or off. All features are enabled by default.
 
@@ -70,11 +96,11 @@ Hewcode::panel('admin')
 - `passwordSettings()` - Change password
 - `appearanceSettings()` - Theme/appearance preferences
 
-## Middleware
+### Middleware
 
 You can customize the middleware stack for each panel.
 
-### Replacing Middleware
+#### Replacing Middleware
 
 Replace the middleware stack by passing an array to `middleware()`:
 
@@ -86,7 +112,7 @@ Hewcode::panel('admin')
     ]);
 ```
 
-### Appending Middleware
+#### Appending Middleware
 
 Add middleware using the `append` parameter:
 
