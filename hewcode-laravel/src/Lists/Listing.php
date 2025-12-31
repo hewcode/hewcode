@@ -57,6 +57,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     protected ?Closure $bgColorUsing = null;
     protected ?string $reorderableColumn = null;
     protected bool $deferFiltering = false;
+    protected bool $inlineFilters = false;
     protected ?Closure $touchActionsUsing = null;
     protected ?Closure $recordUrlUsing = null;
     protected string|Closure|null $recordActionUsing = null;
@@ -331,6 +332,13 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     public function deferFiltering(bool $defer = true): self
     {
         $this->deferFiltering = $defer;
+
+        return $this;
+    }
+
+    public function inlineFilters(bool $inline = true): self
+    {
+        $this->inlineFilters = $inline;
 
         return $this;
     }
@@ -648,6 +656,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             }, $this->columns),
             'sortable' => array_values($sortableFields),
             'deferFiltering' => $this->deferFiltering,
+            'inlineFilters' => $this->inlineFilters,
             'filtersForm' => ! empty($this->getFilters()) ? $this->filtersForm()->toData() : null,
             'tabs' => array_map(function (Tab $tab) {
                 return $tab->toData();

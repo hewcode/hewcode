@@ -25,6 +25,7 @@ export default function Form({
   onChange = null,
   footerActions = null,
   additionalFooterActions = (state) => [],
+  className = '',
 }) {
   const [formData, setFormData] = useState(() => {
     const initial = {};
@@ -94,7 +95,7 @@ export default function Form({
 
   return (
     <form className="space-y-6">
-      <div className="space-y-4">{fields.map((field) => renderField(field))}</div>
+      <div className={className || "space-y-4"}>{fields.map((field) => renderField(field))}</div>
 
       {footerActions?.length > 0 && (
         <div className="flex justify-end gap-2">

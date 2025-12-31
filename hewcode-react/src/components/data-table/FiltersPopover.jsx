@@ -6,6 +6,89 @@ import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
 
+// Shared filter form component
+export function FiltersForm({ deferFiltering, state, onFilter, filtersForm, inline = false }) {
+  const { __ } = useTranslator();
+  const activeFiltersCount = Object.entries(state || {}).filter(([_, value]) => value !== null && value !== '').length;
+
+  if (inline) {
+    return (
+      <div className={inline ? '' : 'space-y-3'}>
+        <Form
+          {...filtersForm}
+          className={inline ? 'flex flex-wrap gap-4 items-end' : ''}
+          onChange={(newState) => {
+            if (deferFiltering) return;
+
+            onFilter(newState);
+          }}
+          additionalFooterActions={(state) =>
+            [
+              deferFiltering && (
+                <Button
+                  key="apply-filters"
+                  type="button"
+                  variant={'default'}
+                  onClick={() => {
+                    onFilter(state);
+                  }}
+                >
+                  {__('hewcode.common.apply_filters')}
+                </Button>
+              ),
+            ].filter(Boolean)
+          }
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium">{__('hewcode.common.filters')}</h4>
+        {activeFiltersCount > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {activeFiltersCount} {activeFiltersCount === 1 ? __('hewcode.common.filter') : __('hewcode.common.filters')} {__('hewcode.common.active')}
+            </span>
+            <CompactButton onClick={() => onFilter(null)} variant="ghost">
+              {__('hewcode.common.clear_all')}
+            </CompactButton>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <Form
+          {...filtersForm}
+          onChange={(newState) => {
+            if (deferFiltering) return;
+
+            onFilter(newState);
+          }}
+          additionalFooterActions={(state) =>
+            [
+              deferFiltering && (
+                <Button
+                  key="apply-filters"
+                  type="button"
+                  variant={'default'}
+                  onClick={() => {
+                    onFilter(state);
+                  }}
+                >
+                  {__('hewcode.common.apply_filters')}
+                </Button>
+              ),
+            ].filter(Boolean)
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function FiltersPopover({ deferFiltering, state, onFilter, filtersForm }) {
   const { __ } = useTranslator();
   const activeFiltersCount = Object.entries(state || {}).filter(([_, value]) => value !== null && value !== '').length;
@@ -23,41 +106,7 @@ export default function FiltersPopover({ deferFiltering, state, onFilter, filter
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96" align="start">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium">{__('hewcode.common.filters')}</h4>
-            <CompactButton onClick={() => onFilter(null)} variant="ghost">
-              {__('hewcode.common.clear_all')}
-            </CompactButton>
-          </div>
-
-          <div className="space-y-3">
-            <Form
-              {...filtersForm}
-              onChange={(newState) => {
-                if (deferFiltering) return;
-
-                onFilter(newState);
-              }}
-              additionalFooterActions={(state) =>
-                [
-                  deferFiltering && (
-                    <Button
-                      key="apply-filters"
-                      type="button"
-                      variant={'default'}
-                      onClick={() => {
-                        onFilter(state);
-                      }}
-                    >
-                      {__('hewcode.common.apply_filters')}
-                    </Button>
-                  ),
-                ].filter(Boolean)
-              }
-            />
-          </div>
-        </div>
+        <FiltersForm deferFiltering={deferFiltering} state={state} onFilter={onFilter} filtersForm={filtersForm} />
       </PopoverContent>
     </Popover>
   );

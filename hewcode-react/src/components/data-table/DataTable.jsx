@@ -33,6 +33,7 @@ const DataTable = ({
   sortable = [],
   filtersForm = null,
   deferFiltering = false,
+  inlineFilters = false,
   tabs = [],
   activeTab = null,
   onSearch,
@@ -370,6 +371,7 @@ const DataTable = ({
           filterState={filterState}
           filtersForm={filtersForm}
           deferFiltering={deferFiltering}
+          inlineFilters={inlineFilters}
           tabs={tabs}
           activeTab={activeTab}
           onSearch={onSearch}

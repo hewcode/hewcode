@@ -570,6 +570,14 @@ By default, filters apply immediately as users change them. For complex queries 
 ->deferFiltering()  // Add "Apply Filters" button
 ```
 
+### Inline Filters
+
+Display filters inline below the table header instead of in a popover:
+
+```php
+->inlineFilters()
+```
+
 ## Advanced Features
 
 These features handle more complex use cases.

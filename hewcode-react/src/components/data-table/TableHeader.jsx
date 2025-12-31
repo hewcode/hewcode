@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { ArrowUpDown, ListChecks, Search } from 'lucide-react';
+import { ArrowUpDown, ListChecks, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { throttle } from 'throttle-debounce';
 import useTranslator from '../../hooks/useTranslator.js';
@@ -7,7 +7,7 @@ import setUrlQuery from '../../utils/setUrlQuery.js';
 import { Button } from '../ui/button.jsx';
 import { Input } from '../ui/input.jsx';
 import ColumnsPopover from './ColumnsPopover.jsx';
-import FiltersPopover from './FiltersPopover.jsx';
+import FiltersPopover, { FiltersForm } from './FiltersPopover.jsx';
 import TabsActions from './TabsActions.jsx';
 
 const performSearch = throttle(650, (e, urlPersistence, getScopedParam) => {
@@ -31,6 +31,7 @@ const TableHeader = ({
   filterState,
   filtersForm,
   deferFiltering,
+  inlineFilters = false,
   headerActions = [],
   tabs = [],
   activeTab = null,
@@ -58,39 +59,44 @@ const TableHeader = ({
   isBulkSelecting = false,
   onToggleBulkSelection = null,
   getScopedParam = (param) => param,
+  seal,
 }) => {
   const [search, setSearch] = useState(currentValues.search || '');
   const { __ } = useTranslator();
 
   searchPlaceholder ||= __('hewcode.common.search') + '...';
 
-  return (
-    <div className="bg-box border-box-border mb-2 flex items-center justify-between rounded-md border p-4 shadow-sm">
-      <div className="flex items-center space-x-2">
-        {showSearch && (
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
-            <Input
-              type="text"
-              value={search || ''}
-              placeholder={searchPlaceholder}
-              className="pl-10"
-              onChange={(e) => {
-                setSearch(e.target.value);
+  const hasFilters = showFilter && filtersForm;
+  const activeFiltersCount = hasFilters ? Object.entries(filterState || {}).filter(([_, value]) => value !== null && value !== '').length : 0;
 
-                if (onSearch) {
-                  onSearch(e.target.value);
-                } else {
-                  performSearch(e, urlPersistence, getScopedParam);
-                }
-              }}
-            />
-          </div>
-        )}
-        {showFilter && filtersForm && (
-          <FiltersPopover state={filterState} onFilter={onFilter} deferFiltering={deferFiltering} filtersForm={filtersForm} />
-        )}
-        {allColumns.some((col) => col.togglable) && (
+  return (
+    <>
+      <div className="bg-box border-box-border mb-2 flex items-center justify-between rounded-md border p-4 shadow-sm">
+        <div className="flex items-center space-x-2">
+          {showSearch && (
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+              <Input
+                type="text"
+                value={search || ''}
+                placeholder={searchPlaceholder}
+                className="pl-10"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+
+                  if (onSearch) {
+                    onSearch(e.target.value);
+                  } else {
+                    performSearch(e, urlPersistence, getScopedParam);
+                  }
+                }}
+              />
+            </div>
+          )}
+          {hasFilters && !inlineFilters && (
+            <FiltersPopover state={filterState} onFilter={onFilter} deferFiltering={deferFiltering} filtersForm={filtersForm} />
+          )}
+          {allColumns.some((col) => col.togglable) && (
           <ColumnsPopover
             columns={allColumns}
             columnVisibility={columnVisibility}
@@ -127,6 +133,24 @@ const TableHeader = ({
       </div>
       {showActions && headerActions.length > 0 && <div className="flex items-center space-x-2">{headerActions}</div>}
     </div>
+
+    {hasFilters && inlineFilters && (
+      <div className={`bg-box border-box-border mb-2 rounded-md border p-4 shadow-sm relative ${activeFiltersCount > 0 ? 'pr-12' : ''}`}>
+        {activeFiltersCount > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 h-7 w-7"
+            onClick={() => onFilter(null)}
+            title={__('hewcode.common.clear_all')}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+        <FiltersForm deferFiltering={deferFiltering} state={filterState} onFilter={onFilter} filtersForm={filtersForm} inline={true} />
+      </div>
+    )}
+    </>
   );
 };
 
