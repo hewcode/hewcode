@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { ArrowUpDown, ListChecks, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { throttle } from 'throttle-debounce';
+import { useIsMobile } from '../../hooks/use-mobile.tsx';
 import useTranslator from '../../hooks/useTranslator.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import { Button } from '../ui/button.jsx';
@@ -63,11 +64,13 @@ const TableHeader = ({
 }) => {
   const [search, setSearch] = useState(currentValues.search || '');
   const { __ } = useTranslator();
+  const isMobile = useIsMobile();
 
   searchPlaceholder ||= __('hewcode.common.search') + '...';
 
   const hasFilters = showFilter && filtersForm;
   const activeFiltersCount = hasFilters ? Object.entries(filterState || {}).filter(([_, value]) => value !== null && value !== '').length : 0;
+  const showInlineFilters = inlineFilters && !isMobile;
 
   return (
     <>
@@ -93,63 +96,63 @@ const TableHeader = ({
               />
             </div>
           )}
-          {hasFilters && !inlineFilters && (
+          {hasFilters && !showInlineFilters && (
             <FiltersPopover state={filterState} onFilter={onFilter} deferFiltering={deferFiltering} filtersForm={filtersForm} />
           )}
           {allColumns.some((col) => col.togglable) && (
-          <ColumnsPopover
-            columns={allColumns}
-            columnVisibility={columnVisibility}
-            onColumnVisibilityChange={onColumnVisibilityChange}
-            onBulkColumnVisibilityChange={onBulkColumnVisibilityChange}
-          />
-        )}
-        {reorderable && (
-          <Button
-            variant={isReordering ? 'default' : 'outline'}
-            size="icon"
-            onClick={onToggleReordering}
-            className="h-9 w-9"
-            title={isReordering ? __('hewcode.common.done') : __('hewcode.common.reorder')}
-          >
-            <ArrowUpDown className="h-4 w-4" />
-          </Button>
-        )}
-        {hasBulkActions && (
-          <Button
-            variant={isBulkSelecting ? 'default' : 'outline'}
-            size="icon"
-            onClick={onToggleBulkSelection}
-            className="h-9 w-9"
-            title={isBulkSelecting ? __('hewcode.common.done') : __('hewcode.common.bulk_select')}
-          >
-            <ListChecks className="h-4 w-4" />
-          </Button>
-        )}
-        {/*separator between above items and the tabs when needed*/}
-        {(showSearch || (showFilter && filtersForm) || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) &&
-          tabs.length > 0 && <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />}
-        {tabs.length > 0 && <TabsActions tabs={tabs} activeTab={activeTab} onTabChange={onTab} />}
+            <ColumnsPopover
+              columns={allColumns}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={onColumnVisibilityChange}
+              onBulkColumnVisibilityChange={onBulkColumnVisibilityChange}
+            />
+          )}
+          {reorderable && (
+            <Button
+              variant={isReordering ? 'default' : 'outline'}
+              size="icon"
+              onClick={onToggleReordering}
+              className="h-9 w-9"
+              title={isReordering ? __('hewcode.common.done') : __('hewcode.common.reorder')}
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+          )}
+          {hasBulkActions && (
+            <Button
+              variant={isBulkSelecting ? 'default' : 'outline'}
+              size="icon"
+              onClick={onToggleBulkSelection}
+              className="h-9 w-9"
+              title={isBulkSelecting ? __('hewcode.common.done') : __('hewcode.common.bulk_select')}
+            >
+              <ListChecks className="h-4 w-4" />
+            </Button>
+          )}
+          {/*separator between above items and the tabs when needed*/}
+          {(showSearch || (showFilter && filtersForm) || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) &&
+            tabs.length > 0 && <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />}
+          {tabs.length > 0 && <TabsActions tabs={tabs} activeTab={activeTab} onTabChange={onTab} />}
+        </div>
+        {showActions && headerActions.length > 0 && <div className="flex items-center space-x-2">{headerActions}</div>}
       </div>
-      {showActions && headerActions.length > 0 && <div className="flex items-center space-x-2">{headerActions}</div>}
-    </div>
 
-    {hasFilters && inlineFilters && (
-      <div className={`bg-box border-box-border mb-2 rounded-md border p-4 shadow-sm relative ${activeFiltersCount > 0 ? 'pr-12' : ''}`}>
-        {activeFiltersCount > 0 && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 h-7 w-7"
-            onClick={() => onFilter(null)}
-            title={__('hewcode.common.clear_all')}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-        <FiltersForm deferFiltering={deferFiltering} state={filterState} onFilter={onFilter} filtersForm={filtersForm} inline={true} />
-      </div>
-    )}
+      {hasFilters && showInlineFilters && (
+        <div className={`bg-box border-box-border relative mb-2 rounded-md border p-4 shadow-sm ${activeFiltersCount > 0 ? 'pr-12' : ''}`}>
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 h-7 w-7"
+              onClick={() => onFilter(null)}
+              title={__('hewcode.common.clear_all')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+          <FiltersForm deferFiltering={deferFiltering} state={filterState} onFilter={onFilter} filtersForm={filtersForm} inline={true} />
+        </div>
+      )}
     </>
   );
 };
