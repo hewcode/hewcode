@@ -1,14 +1,23 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, Search } from 'lucide-react';
+import { ChevronRight, Menu, Search } from 'lucide-react';
 import { useHewcode } from '../../contexts/hewcode-context';
 import { useInitials } from '../../hooks/use-initials';
 import useRoute from '../../hooks/use-route';
 import useTranslator from '../../hooks/useTranslator';
 import { cn } from '../../lib/utils';
-import { type BreadcrumbItem, type SharedData } from '../../types';
+import { type BreadcrumbItem, type NavItem, type SharedData } from '../../types';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '../ui/navigation-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -24,6 +33,66 @@ interface AppHeaderProps {
   breadcrumbs?: BreadcrumbItem[];
 }
 
+// Recursive dropdown menu item component
+function NavDropdownItem({ item }: { item: NavItem }) {
+  const page = usePage();
+
+  // If item has sub-items, render as submenu
+  if (item.items && item.items.length > 0) {
+    return (
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={16} className="mr-2" />}
+          {item.label}
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          {item.items.map((subItem) => (
+            <NavDropdownItem key={subItem.label} item={subItem} />
+          ))}
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+    );
+  }
+
+  // Regular menu item with link
+  return (
+    <DropdownMenuItem asChild>
+      <Link href={item.url || '#'} className="cursor-pointer">
+        {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={16} className="mr-2" />}
+        {item.label}
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+// Mobile sheet menu item component (recursive)
+function MobileNavItem({ item }: { item: NavItem }) {
+  // If item has sub-items, render with sub-items indented
+  if (item.items && item.items.length > 0) {
+    return (
+      <div className="flex flex-col space-y-2">
+        <div className="flex items-center space-x-2 font-semibold text-neutral-500">
+          {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={20} />}
+          <span>{item.label}</span>
+        </div>
+        <div className="ml-6 flex flex-col space-y-2">
+          {item.items.map((subItem) => (
+            <MobileNavItem key={subItem.label} item={subItem} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Regular link item
+  return (
+    <Link href={item.url || '#'} className="flex items-center space-x-2 font-medium">
+      {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={20} />}
+      <span>{item.label}</span>
+    </Link>
+  );
+}
+
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
   const page = usePage<SharedData>();
   const { auth } = page.props.hewcode as any;
@@ -32,8 +101,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
   const getInitials = useInitials();
   const { __ } = useTranslator();
 
-  // Filter navigation items for header: only items without children (top-level links)
-  const mainNavItems = hewcode?.panel?.navigation?.items?.filter(item => !item.items || item.items.length === 0) || [];
+  // Get all navigation items (including groups)
+  const mainNavItems = hewcode?.panel?.navigation?.items || [];
 
   // For now, keep right nav items empty - can be configured via hewcode context later
   const rightNavItems = [];
@@ -61,10 +130,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                   <div className="flex h-full flex-col justify-between text-sm">
                     <div className="flex flex-col space-y-4">
                       {mainNavItems.map((item) => (
-                        <Link key={item.label} href={item.url} className="flex items-center space-x-2 font-medium">
-                          {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={20} />}
-                          <span>{item.label}</span>
-                        </Link>
+                        <MobileNavItem key={item.label} item={item} />
                       ))}
                     </div>
 
@@ -96,22 +162,51 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
           <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
             <NavigationMenu className="flex h-full items-stretch">
               <NavigationMenuList className="flex h-full items-stretch space-x-2">
-                {mainNavItems.map((item, index) => (
-                  <NavigationMenuItem key={index} className="relative flex h-full items-center">
-                    <Link
-                      href={item.url}
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        page.url.startsWith(item.url) && activeItemStyles,
-                        'h-9 cursor-pointer px-3',
+                {mainNavItems.map((item, index) => {
+                  // If item has sub-items, render as dropdown
+                  if (item.items && item.items.length > 0) {
+                    return (
+                      <NavigationMenuItem key={index} className="relative flex h-full items-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            className={cn(
+                              navigationMenuTriggerStyle(),
+                              'h-9 cursor-pointer px-3',
+                            )}
+                          >
+                            {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={16} className="mr-2" />}
+                            {item.label}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {item.items.map((subItem) => (
+                              <NavDropdownItem key={subItem.label} item={subItem} />
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </NavigationMenuItem>
+                    );
+                  }
+
+                  // Regular item with link
+                  return (
+                    <NavigationMenuItem key={index} className="relative flex h-full items-center">
+                      <Link
+                        href={item.url || '#'}
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          item.url && page.url.startsWith(item.url) && activeItemStyles,
+                          'h-9 cursor-pointer px-3',
+                        )}
+                      >
+                        {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={16} className="mr-2" />}
+                        {item.label}
+                      </Link>
+                      {item.url && page.url.startsWith(item.url) && (
+                        <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
                       )}
-                    >
-                      {item.icon && <Icon icon={item.icon} fallbackComponent={item.icon} size={16} className="mr-2" />}
-                      {item.label}
-                    </Link>
-                    {page.url.startsWith(item.url) && <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>}
-                  </NavigationMenuItem>
-                ))}
+                    </NavigationMenuItem>
+                  );
+                })}
               </NavigationMenuList>
             </NavigationMenu>
           </div>

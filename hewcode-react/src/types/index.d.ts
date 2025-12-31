@@ -16,10 +16,13 @@ export interface NavGroup {
 }
 
 export interface NavItem {
-    title: string;
-    href: NonNullable<InertiaLinkProps['href']>;
-    icon?: LucideIcon | null;
-    isActive?: boolean;
+    label: string;
+    url?: string;
+    icon?: string;
+    active?: boolean;
+    order?: number;
+    collapsed?: boolean;
+    items?: NavItem[]; // Groups can have nested items
 }
 
 export interface SharedData {
