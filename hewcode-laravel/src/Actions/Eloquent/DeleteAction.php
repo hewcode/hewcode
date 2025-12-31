@@ -18,6 +18,7 @@ class DeleteAction extends Action
 
         $this->color('danger');
         $this->label(__('hewcode::hewcode.actions.delete'));
+        $this->icon('lucide-trash');
         $this->requiresConfirmation();
         $this->action($this->getDefaultAction());
     }

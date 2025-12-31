@@ -109,7 +109,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
   return (
     <>
-      <IconRegistry icons={hewcode?.panel?.navigation?.icons || {}} />
+      <IconRegistry icons={hewcode?.icons || {}} />
 
       <div className="border-sidebar-border/80 border-b">
         <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">

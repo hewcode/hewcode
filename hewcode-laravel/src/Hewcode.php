@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static Collection<int, \Hewcode\Hewcode\Panel\Panel> panels()
  * @method static bool isPanel(?string $name = null)
  * @method static \Hewcode\Hewcode\Panel\Panel|null currentPanel()
+ * @method static Support\IconRegistry iconRegistry()
+ * @method static array registerIcon(?string $iconName)
  *
  * @see \Hewcode\Hewcode\Manager
  */

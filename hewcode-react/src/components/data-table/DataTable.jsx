@@ -9,7 +9,6 @@ import useTranslator from '../../hooks/useTranslator.js';
 import { getTailwindBgClass, isHexColor } from '../../lib/colors.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
 import Action from '../actions/Action.jsx';
-import { IconRegistry } from '../icon-registry.jsx';
 import { Checkbox } from '../ui/checkbox.jsx';
 import { TableHeader as ShadcnTableHeader, Table, TableBody, TableCell, TableRow } from '../ui/table.jsx';
 import BulkActions from './BulkActions.jsx';
@@ -46,7 +45,6 @@ const DataTable = ({
     totalItems: 0,
     itemsPerPage: 20,
   },
-  icons = {},
   urlPersistence = {
     persistFiltersInUrl: false,
     persistSortInUrl: false,
@@ -360,8 +358,6 @@ const DataTable = ({
 
   return (
     <div className="w-full">
-      <IconRegistry icons={icons} />
-
       {((showSearch || showActions || filtersForm || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) && (
         <TableHeader
           showSearch={showSearch}

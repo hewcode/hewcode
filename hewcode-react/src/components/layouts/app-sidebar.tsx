@@ -17,7 +17,7 @@ export function AppSidebar() {
 
   return (
     <>
-      <IconRegistry icons={hewcode?.panel?.navigation?.icons || {}} />
+      <IconRegistry icons={hewcode?.icons || {}} />
 
       <Sidebar collapsible="icon" variant="inset">
         <SidebarHeader>

@@ -38,6 +38,10 @@ class HewcodeServiceProvider extends PackageServiceProvider
             return new Manager;
         });
 
+        $this->app->singleton(Support\IconRegistry::class, function () {
+            return new Support\IconRegistry();
+        });
+
         $this->app->alias(Manager::class, 'hewcode');
 
         $this->app->afterResolving(Middleware::class, function (Middleware $middleware) {

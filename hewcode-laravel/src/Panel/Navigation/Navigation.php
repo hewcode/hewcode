@@ -2,12 +2,11 @@
 
 namespace Hewcode\Hewcode\Panel\Navigation;
 
-use Hewcode\Hewcode\Support\Concerns\HasIconRegistry;
+use Hewcode\Hewcode\Hewcode;
 
 class Navigation
 {
     use Concerns\HasItems;
-    use HasIconRegistry;
 
     protected string $panel;
 
@@ -29,7 +28,6 @@ class Navigation
 
         return [
             'items' => $items,
-            'icons' => $this->getIconRegistry(),
         ];
     }
 
@@ -42,7 +40,7 @@ class Navigation
 
         // Register icon and replace with reference
         if (isset($data['icon'])) {
-            $data['icon'] = $this->registerIcon($data['icon']);
+            $data['icon'] = Hewcode::registerIcon($data['icon']);
         }
 
         // Recursively process nested items
@@ -50,7 +48,7 @@ class Navigation
             $data['items'] = array_map(function ($nestedItemData) {
                 // Register nested icons
                 if (isset($nestedItemData['icon'])) {
-                    $nestedItemData['icon'] = $this->registerIcon($nestedItemData['icon']);
+                    $nestedItemData['icon'] = Hewcode::registerIcon($nestedItemData['icon']);
                 }
 
                 // Recursively process deeper nesting
@@ -73,7 +71,7 @@ class Navigation
     protected function processNestedItem(array $itemData): array
     {
         if (isset($itemData['icon'])) {
-            $itemData['icon'] = $this->registerIcon($itemData['icon']);
+            $itemData['icon'] = Hewcode::registerIcon($itemData['icon']);
         }
 
         if (isset($itemData['items']) && is_array($itemData['items'])) {

@@ -19,6 +19,7 @@ class EditAction extends Action
 
         $this->color('primary');
         $this->label(__('hewcode::hewcode.actions.edit'));
+        $this->icon('lucide-pencil');
         $this->action($this->getDefaultAction());
     }
 

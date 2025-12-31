@@ -284,4 +284,14 @@ class Manager
     {
         return collect($this->panels);
     }
+
+    public function iconRegistry(): Support\IconRegistry
+    {
+        return app(Support\IconRegistry::class);
+    }
+
+    public function registerIcon(?string $iconName): ?array
+    {
+        return $this->iconRegistry()->register($iconName);
+    }
 }

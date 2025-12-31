@@ -5,6 +5,7 @@ import useModalManager from '../../hooks/use-modal-manager.jsx';
 import useRoute from '../../hooks/use-route.ts';
 import useFetch from '../../hooks/useFetch.js';
 import useTranslator from '../../hooks/useTranslator.js';
+import { Icon } from '../icon-registry.jsx';
 import { Button } from '../ui/button.jsx';
 
 const colorMap = {
@@ -35,6 +36,7 @@ export default function Action({
   onFinish,
   url,
   openInNewTab = false,
+  icon,
 }) {
   const [loading, setLoading] = useState(false);
   const modal = useModalManager();
@@ -144,6 +146,7 @@ export default function Action({
       data-action-name={name}
       data-record-id={context?.recordId}
     >
+      {icon && <Icon icon={icon} size={16} className="" />}
       {loading ? __('hewcode.common.loading') : label || name}
     </Button>
   );

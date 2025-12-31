@@ -31,6 +31,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     public bool $shouldClose = false;
     public Closure|string|null $url = null;
     public bool $openInNewTab = false;
+    public Closure|string|null $icon = null;
 
     public function __construct()
     {
@@ -110,6 +111,13 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
         return $this;
     }
 
+    public function icon(Closure|string|null $icon): static
+    {
+        $this->icon = $icon;
+
+        return $this;
+    }
+
     public function close(): static
     {
         $this->shouldClose = true;
@@ -155,6 +163,11 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
     public function getUrl(): ?string
     {
         return $this->evaluate($this->url);
+    }
+
+    public function getIcon(): ?string
+    {
+        return $this->evaluate($this->icon);
     }
 
     public function execute(array $args = []): mixed
@@ -204,6 +217,10 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
             $context['model'] = $this->model->getMorphClass();
         }
 
+        if ($icon = $this->getIcon()) {
+            $icon = Hewcode::registerIcon($icon);
+        }
+
         return [
             'path' => $this->getPath(),
             'name' => $this->getName(),
@@ -218,6 +235,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
             'modalWidth' => $this->getModalWidth(),
             'url' => $this->getUrl(),
             'openInNewTab' => $this->openInNewTab,
+            'icon' => $icon,
         ];
     }
 

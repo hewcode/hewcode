@@ -18,7 +18,7 @@ use Hewcode\Hewcode\Lists\Tabs\Tab;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
-use Hewcode\Hewcode\Support\Concerns\HasIconRegistry;
+use Hewcode\Hewcode\Hewcode;
 use Illuminate\Database\Eloquent\Builder;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -34,7 +34,6 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     use Concerns\HasRecord;
     use Concerns\HasContext;
     use Concerns\HasFormDefinition;
-    use HasIconRegistry;
 
     protected ListingDriver $driver;
     protected Closure|null $buildDriverUsing = null;
@@ -595,7 +594,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
                     // Register icon and replace with reference
                     if ($icon && isset($icon['name'])) {
-                        $this->registerIcon($icon['name']);
+                        Hewcode::registerIcon($icon['name']);
                     }
 
                     $data = array_merge($data, $columnData);
@@ -630,7 +629,8 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
                     if (!empty($visibleActions)) {
                         $data['_row_actions'] = array_reduce($visibleActions, function ($carry, Action $action) use ($record) {
-                            $carry[$action->name] = $action->toData();
+                            $actionData = $action->toData();
+                            $carry[$action->name] = $actionData;
 
                             return $carry;
                         }, []);
@@ -643,7 +643,6 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             'columns' => array_map(function (Column $column) {
                 return $column->toData();
             }, $visibleColumns),
-            'icons' => $this->getIconRegistry(),
             // @todo: is this really necessary?
             'allColumns' => array_map(function (Column $column) {
                 return [

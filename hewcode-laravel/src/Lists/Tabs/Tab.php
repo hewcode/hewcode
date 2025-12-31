@@ -4,6 +4,7 @@ namespace Hewcode\Hewcode\Lists\Tabs;
 
 use Closure;
 use Hewcode\Hewcode\Concerns\EvaluatesClosures;
+use Hewcode\Hewcode\Hewcode;
 
 class Tab
 {
@@ -94,10 +95,14 @@ class Tab
 
     public function toData(): array
     {
+        if ($icon = $this->getIcon()) {
+            Hewcode::registerIcon($icon);
+        }
+
         return [
             'name' => $this->name,
             'label' => $this->label,
-            'icon' => $this->getIcon(),
+            'icon' => $icon,
             'badge' => $this->getBadge(),
             'active' => $this->active,
         ];

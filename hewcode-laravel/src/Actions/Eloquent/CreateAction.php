@@ -16,6 +16,7 @@ class CreateAction extends Action
 
         $this->color('success');
         $this->label(__('hewcode::hewcode.actions.create'));
+        $this->icon('lucide-plus-circle');
         $this->action($this->getDefaultAction());
     }
 

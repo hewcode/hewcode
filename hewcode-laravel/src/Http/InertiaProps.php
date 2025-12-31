@@ -12,7 +12,7 @@ class InertiaProps implements ProvidesInertiaProperties
 {
     public function toInertiaProperties(RenderContext $context): iterable
     {
-        return [
+        $props = [
             'hewcode' => array_merge([
                 'name' => config('app.name'),
                 'locale' => [
@@ -28,6 +28,10 @@ class InertiaProps implements ProvidesInertiaProperties
                 'routes' => $this->serializeRoutes(),
             ], Hewcode::sharedData()),
         ];
+
+        $props['hewcode']['icons'] = Hewcode::iconRegistry()->all();
+
+        return $props;
     }
 
     protected function serializeRoutes(): array
