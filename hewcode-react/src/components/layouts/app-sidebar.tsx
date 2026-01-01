@@ -2,7 +2,6 @@ import { Link } from '@inertiajs/react';
 import { useHewcode } from '../../contexts/hewcode-context';
 import useRoute from '../../hooks/use-route';
 import { type NavItem } from '../../types';
-import { IconRegistry } from '../icon-registry';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import AppLogo from './app-logo';
 import { NavFooter } from './nav-footer';
@@ -17,8 +16,6 @@ export function AppSidebar() {
 
   return (
     <>
-      <IconRegistry icons={hewcode?.icons || {}} />
-
       <Sidebar collapsible="icon" variant="inset">
         <SidebarHeader>
           <SidebarMenu>

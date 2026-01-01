@@ -21,7 +21,7 @@ import {
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '../ui/navigation-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { Icon, IconRegistry } from '../icon-registry';
+import { Icon } from '../icon-registry';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 import { Breadcrumbs } from './breadcrumbs';
@@ -109,8 +109,6 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
   return (
     <>
-      <IconRegistry icons={hewcode?.icons || {}} />
-
       <div className="border-sidebar-border/80 border-b">
         <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
           {/* Mobile Menu */}

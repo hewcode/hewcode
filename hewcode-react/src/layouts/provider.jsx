@@ -1,4 +1,5 @@
 import App from '../components/app.jsx';
+import { IconRegistry } from '../components/icon-registry.jsx';
 import { ModalRenderer } from '../components/modal-renderer';
 import { Toaster } from '../components/ui/sonner';
 import { HewcodeProvider } from '../contexts/hewcode-context';
@@ -12,6 +13,7 @@ export default function Provider({ children, ...props }) {
     <HewcodeProvider initialHewcode={hewcode}>
       <LocaleProvider locale={hewcode.locale}>
         <ModalProvider>
+          <IconRegistry icons={hewcode?.icons || {}} />
           <App toasts={hewcode.toasts}>{children}</App>
           <ModalRenderer />
           <Toaster closeButton richColors />
