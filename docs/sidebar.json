@@ -31,6 +31,10 @@
                 {
                     "title": "Actions",
                     "path": "actions.md"
+                },
+                {
+                    "title": "Widgets",
+                    "path": "widgets.md"
                 }
             ]
         },

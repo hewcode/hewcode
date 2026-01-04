@@ -1,0 +1,47 @@
+import { useState } from 'react';
+import DataTable from '../data-table/DataTable';
+import useWidgetPolling from './useWidgetPolling';
+
+export default function ListingWidget({
+  name,
+  seal,
+  label,
+  listing,
+  compact = false,
+  refreshInterval,
+  className = ''
+}) {
+  // Use state to hold widget data that can be updated via polling
+  const [widgetData, setWidgetData] = useState({
+    label,
+  });
+
+  // Set up polling if refreshInterval is provided
+  // Note: Listing data itself is not updated via polling as DataTable has its own refresh mechanisms
+  useWidgetPolling({
+    name,
+    refreshInterval,
+    seal,
+    onUpdate: (data) => {
+      setWidgetData({
+        label: data.label ?? widgetData.label,
+      });
+    },
+  });
+  if (!listing) {
+    return null;
+  }
+
+  return (
+    <div className={`bg-box border-box-border rounded-lg border shadow-sm ${className}`}>
+      {widgetData.label && (
+        <div className="border-box-border border-b px-6 py-4">
+          <h3 className="text-foreground text-lg font-semibold">{widgetData.label}</h3>
+        </div>
+      )}
+      <div className={compact ? 'compact-listing' : ''}>
+        <DataTable {...listing} borderless={true} />
+      </div>
+    </div>
+  );
+}

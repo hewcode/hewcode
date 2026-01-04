@@ -193,6 +193,23 @@ class HewcodeController extends Controller
             throw new HttpException(400);
         }
 
+        if ($callName === 'getWidget') {
+            $data = $request->validate([
+                'call.params.widgetName' => 'required|string',
+            ]);
+
+            $widgetName = $data['call']['params']['widgetName'];
+
+            // Find the widget in the container
+            $widget = $component->getComponent('widgets', $widgetName);
+
+            if (! $widget) {
+                abort(404, app()->environment('local') ? "Widget [$widgetName] not found" : '');
+            }
+
+            return response()->json($widget->toData());
+        }
+
         throw new HttpException(400);
     }
 

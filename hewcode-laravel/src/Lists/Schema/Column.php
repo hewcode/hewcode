@@ -277,7 +277,7 @@ abstract class Column extends Component implements Contracts\HasVisibility
             : $this->getDefaultValue($record);
 
         $value = $this->formatStateUsing
-            ? $this->evaluate($this->formatStateUsing, ['value' => $value, 'record' => $record])
+            ? $this->evaluate($this->formatStateUsing, ['state' => $value, 'record' => $record])
             : $value;
 
         if ($value instanceof Fragments\Fragment) {

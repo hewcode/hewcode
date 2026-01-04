@@ -47,6 +47,8 @@ class Component
 
     public function toData(): array
     {
-        return [];
+        return [
+            'name' => $this->name,
+        ];
     }
 }

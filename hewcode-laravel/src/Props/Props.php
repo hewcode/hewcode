@@ -13,6 +13,7 @@ use Hewcode\Hewcode\Lists\Listing;
 use Hewcode\Hewcode\Lists\Expose as ListingExpose;
 use Hewcode\Hewcode\Actions\Expose as ActionsExpose;
 use Hewcode\Hewcode\Forms\Expose as FormsExpose;
+use Hewcode\Hewcode\Widgets\Expose as WidgetsExpose;
 use Illuminate\Contracts\Support\Arrayable;
 use RuntimeException;
 use InvalidArgumentException;
@@ -129,15 +130,16 @@ class Props implements Arrayable
                 );
             }
 
-            // Method must have either Lists\Expose, Actions\Expose, or Forms\Expose attribute
+            // Method must have either Lists\Expose, Actions\Expose, Forms\Expose, or Widgets\Expose attribute
             $listingAttributes = $method->getAttributes(ListingExpose::class);
             $actionsAttributes = $method->getAttributes(ActionsExpose::class);
             $formsAttributes = $method->getAttributes(FormsExpose::class);
+            $widgetsAttributes = $method->getAttributes(WidgetsExpose::class);
 
-            if (empty($listingAttributes) && empty($actionsAttributes) && empty($formsAttributes)) {
+            if (empty($listingAttributes) && empty($actionsAttributes) && empty($formsAttributes) && empty($widgetsAttributes)) {
                 throw new InvalidArgumentException(
                     sprintf(
-                        'Method %s::%s() must have either #[Lists\\Expose], #[Actions\\Expose], or #[Forms\\Expose] attribute',
+                        'Method %s::%s() must have either #[Lists\\Expose], #[Actions\\Expose], #[Forms\\Expose], or #[Widgets\\Expose] attribute',
                         get_class($this->controller),
                         $componentName
                     )

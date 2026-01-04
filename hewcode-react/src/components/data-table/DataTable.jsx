@@ -2,6 +2,7 @@ import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { router } from '@inertiajs/react';
+import { clsx } from 'clsx';
 import { GripVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import useRoute from '../../hooks/use-route.ts';
@@ -64,6 +65,7 @@ const DataTable = ({
   theadClassName = '',
   reorderable = null,
   requestScope = null,
+  borderless = false,
 }) => {
   if (!seal) {
     return <div className="w-full p-4 text-center font-mono font-bold text-red-600">Error: DataTable component did not receive proper props.</div>;
@@ -388,6 +390,7 @@ const DataTable = ({
           isBulkSelecting={isBulkSelecting}
           onToggleBulkSelection={handleToggleBulkSelection}
           getScopedParam={getScopedParam}
+          borderless={borderless}
         />
       )) ||
         null}
@@ -401,7 +404,11 @@ const DataTable = ({
         />
       )}
 
-      <div className="bg-box border-box-border rounded-md border shadow-sm">
+      <div
+        className={clsx('bg-box rounded-md shadow-sm', {
+          'border-box-border border': !borderless,
+        })}
+      >
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <Table>
             <ShadcnTableHeader className={theadClassName}>
@@ -410,7 +417,12 @@ const DataTable = ({
                 {isBulkSelecting && (
                   <TableColumnHeader
                     label={
-                      <Checkbox checked={isAllSelected} indeterminate={isIndeterminate} onCheckedChange={handleSelectAll} aria-label={__('hewcode.common.select_all')} />
+                      <Checkbox
+                        checked={isAllSelected}
+                        indeterminate={isIndeterminate}
+                        onCheckedChange={handleSelectAll}
+                        aria-label={__('hewcode.common.select_all')}
+                      />
                     }
                     className={thClassName}
                   />
@@ -523,7 +535,12 @@ const DataTable = ({
       </div>
 
       {pagination.totalPages > 1 && (
-        <div className="bg-box border-box-border mt-2 rounded-md border p-4 shadow-sm">
+        <div
+          className={clsx('bg-box border-box-border mt-2 rounded-md p-4 shadow-sm', {
+            border: !borderless,
+            'rounded-t-none border-t': borderless,
+          })}
+        >
           <Pagination
             showPagination={showPagination}
             currentPage={pagination.currentPage}

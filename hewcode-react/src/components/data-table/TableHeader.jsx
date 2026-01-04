@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { clsx } from 'clsx';
 import { ArrowUpDown, ListChecks, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { throttle } from 'throttle-debounce';
@@ -61,6 +62,7 @@ const TableHeader = ({
   onToggleBulkSelection = null,
   getScopedParam = (param) => param,
   seal,
+  borderless = false,
 }) => {
   const [search, setSearch] = useState(currentValues.search || '');
   const { __ } = useTranslator();
@@ -74,7 +76,12 @@ const TableHeader = ({
 
   return (
     <>
-      <div className="bg-box border-box-border mb-2 flex items-center justify-between rounded-md border p-4 shadow-sm">
+      <div
+        className={clsx('bg-box border-box-border mb-2 flex items-center justify-between rounded-md p-4 shadow-sm', {
+          border: !borderless,
+          'rounded-none border-b': borderless,
+        })}
+      >
         <div className="flex items-center space-x-2">
           {showSearch && (
             <div className="relative">

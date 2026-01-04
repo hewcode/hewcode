@@ -33,18 +33,18 @@ class TextColumn extends Column
      */
     public function limit(int $length = 50, string $end = '...'): static
     {
-        return $this->formatStateUsing(function ($value) use ($length, $end) {
-            if ($value === null) {
+        return $this->formatStateUsing(function ($state) use ($length, $end) {
+            if ($state === null) {
                 return null;
             }
 
-            $value = (string) $value;
+            $state = (string) $state;
 
-            if (mb_strlen($value) <= $length) {
-                return $value;
+            if (mb_strlen($state) <= $length) {
+                return $state;
             }
 
-            return mb_substr($value, 0, $length) . $end;
+            return mb_substr($state, 0, $length) . $end;
         });
     }
 
@@ -58,25 +58,25 @@ class TextColumn extends Column
      */
     protected function formatDate(string $format, bool $relative): \Closure
     {
-        return function ($value) use ($format, $relative) {
-            if ($value === null) {
+        return function ($state) use ($format, $relative) {
+            if ($state === null) {
                 return null;
             }
 
             $carbonDate = null;
 
-            if ($value instanceof DateTimeInterface) {
-                $carbonDate = Carbon::instance($value);
-            } elseif (is_string($value)) {
+            if ($state instanceof DateTimeInterface) {
+                $carbonDate = Carbon::instance($state);
+            } elseif (is_string($state)) {
                 try {
-                    $carbonDate = Carbon::parse($value);
+                    $carbonDate = Carbon::parse($state);
                 } catch (\Exception $e) {
-                    return $value;
+                    return $state;
                 }
             }
 
             if ($carbonDate === null) {
-                return $value;
+                return $state;
             }
 
             return $relative ? $carbonDate->diffForHumans() : $carbonDate->format($format);
