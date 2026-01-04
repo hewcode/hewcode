@@ -25,10 +25,13 @@
     "./lib": "./src/lib",
     "./lib/*": "./src/lib/*",
     "./pages": "./src/pages",
-    "./pages/*": "./src/pages/*"
+    "./pages/*": "./src/pages/*",
+    "./vite": "./vite/index.js",
+    "./vite/*": "./vite/*"
   },
   "files": [
-    "src"
+    "src",
+    "vite"
   ],
   "scripts": {
     "build": "vite build",

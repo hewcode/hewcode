@@ -55,6 +55,10 @@
             "title": "Frontend",
             "items": [
                 {
+                    "title": "Theming",
+                    "path": "theming.md"
+                },
+                {
                     "title": "Modals",
                     "path": "modals.md"
                 },
