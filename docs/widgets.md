@@ -268,6 +268,113 @@ When `refreshInterval()` is set, the widget will automatically poll the backend 
 - Set reasonable intervals (e.g., 30 seconds or more) to avoid excessive requests
 - Consider caching expensive queries that are polled frequently
 
+## Custom Widgets
+
+Create custom widgets with your own React components for specialized visualizations or functionality.
+
+### Creating a Custom Widget
+
+**Step 1:** Create the backend widget class extending `CustomWidget`:
+
+```php
+// app/Widgets/MyCustomWidget.php
+namespace App\Widgets;
+
+use Hewcode\Hewcode\Widgets\CustomWidget;
+
+class MyCustomWidget extends CustomWidget
+{
+    protected string $customData = '';
+
+    public function customData(string $data): static
+    {
+        $this->customData = $data;
+
+        return $this;
+    }
+
+    public function toData(): array
+    {
+        return array_merge(parent::toData(), [
+            'customData' => $this->customData,
+        ]);
+    }
+}
+```
+
+**Step 2:** Create the React component at `resources/js/hewcode/widgets/{ClassName}.jsx`:
+
+```jsx
+// resources/js/hewcode/widgets/MyCustomWidget.jsx
+import React from 'react';
+
+export default function MyCustomWidget({ customData, label, seal }) {
+  return (
+    <div className="bg-box border-box-border rounded-lg border shadow-sm p-6">
+      {label && (
+        <div className="px-6 py-4 border-b border-box-border -mx-6 -mt-6 mb-6">
+          <h3 className="text-lg font-semibold text-foreground">{label}</h3>
+        </div>
+      )}
+
+      <div>
+        {/* Your custom widget UI */}
+        <p>{customData}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+**Step 3:** Use it in your controller:
+
+```php
+use App\Widgets\MyCustomWidget;
+
+#[Widgets\Expose]
+public function widgets(): Widgets\Widgets
+{
+    return Widgets\Widgets::make([
+        MyCustomWidget::make('my_custom')
+            ->label('My Custom Widget')
+            ->customData('Hello, world!'),
+    ]);
+}
+```
+
+### How It Works
+
+- Custom widgets extend `CustomWidget` which automatically sets the type to the class name
+- The frontend looks for a matching React component at `resources/js/hewcode/widgets/{ClassName}.jsx` or `.tsx`
+- Components are **lazy-loaded** for optimal performance
+- All base widget props (label, seal, refreshInterval) are automatically available
+
+### Props Available
+
+Your custom React component receives:
+- All custom props from `toData()`
+- `label` - The widget label
+- `seal` - Component seal for making authenticated requests
+- `name` - The widget name
+- `refreshInterval` - Optional polling interval
+
+### TypeScript Support
+
+You can also use TypeScript:
+
+```tsx
+// resources/js/hewcode/widgets/MyCustomWidget.tsx
+interface MyCustomWidgetProps {
+  customData: string;
+  label?: string;
+  seal?: any;
+}
+
+export default function MyCustomWidget({ customData, label, seal }: MyCustomWidgetProps) {
+  // ...
+}
+```
+
 ## Theming
 
 Widget colors automatically adapt to your application's light and dark themes using CSS variables. Chart colors use the following variables:
