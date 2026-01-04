@@ -5,11 +5,13 @@ namespace Hewcode\Hewcode\Panel;
 use Closure;
 use Error;
 use Hewcode\Hewcode\Hewcode;
+use Hewcode\Hewcode\Panel\Controllers\DashboardController;
 use Hewcode\Hewcode\Panel\Controllers\PageController;
 use Hewcode\Hewcode\Panel\Controllers\Resources\ResourceController;
 use Hewcode\Hewcode\Panel\Controllers\ServeResourceController;
 use Hewcode\Hewcode\Panel\Navigation\Navigation;
 use Illuminate\Support\Facades\Route;
+use InvalidArgumentException;
 
 class Panel
 {
@@ -30,6 +32,8 @@ class Panel
     protected bool $appearanceSettingsEnabled = true;
 
     protected array $middleware = [];
+
+    protected ?string $dashboardController = null;
 
     public function __construct(?string $name)
     {
@@ -129,6 +133,19 @@ class Panel
         return $this;
     }
 
+    public function dashboard(string $controller): self
+    {
+        if (! is_subclass_of($controller, DashboardController::class)) {
+            throw new InvalidArgumentException(
+                "Dashboard controller [{$controller}] must extend ".DashboardController::class
+            );
+        }
+
+        $this->dashboardController = $controller;
+
+        return $this;
+    }
+
     public function middleware(array $middleware = [], array $append = []): self
     {
         if (! empty($append)) {
@@ -200,8 +217,21 @@ class Panel
             $this->registerSettingsRoutes();
 
             Route::middleware($this->middleware)->group(function () {
-                foreach (Hewcode::discovered($this->name) as $class) {
+                $discovered = Hewcode::discovered($this->name);
+                $customDashboardWasDiscovered = false;
+
+                foreach ($discovered as $class) {
                     try {
+                        // Skip default DashboardController if custom one is provided
+                        if ($this->dashboardController && $class === DashboardController::class) {
+                            continue;
+                        }
+
+                        // Track if custom dashboard was discovered
+                        if ($this->dashboardController && $class === $this->dashboardController) {
+                            $customDashboardWasDiscovered = true;
+                        }
+
                         if (is_a($class, Resource::class, true)) {
                             /** @var \Hewcode\Hewcode\Panel\Resource $resource */
                             $resource = app($class);
@@ -216,6 +246,11 @@ class Panel
                     } catch (Error) {
                         //
                     }
+                }
+
+                // If custom dashboard wasn't discovered, register it manually
+                if ($this->dashboardController && ! $customDashboardWasDiscovered) {
+                    $this->registerPage($this->dashboardController);
                 }
             });
         });
@@ -324,7 +359,20 @@ class Panel
 
     public function registerNavigation(): void
     {
-        foreach (Hewcode::discovered($this->name) as $class) {
+        $discovered = Hewcode::discovered($this->name);
+        $customDashboardWasDiscovered = false;
+
+        foreach ($discovered as $class) {
+            // Skip default DashboardController if custom one is provided
+            if ($this->dashboardController && $class === DashboardController::class) {
+                continue;
+            }
+
+            // Track if custom dashboard was discovered
+            if ($this->dashboardController && $class === $this->dashboardController) {
+                $customDashboardWasDiscovered = true;
+            }
+
             if (is_a($class, Resource::class, true)) {
                 /** @var \Hewcode\Hewcode\Panel\Resource $resource */
                 $resource = app($class);
@@ -339,6 +387,13 @@ class Panel
 
                 $controller->registerNavigation($this->navigation);
             }
+        }
+
+        // If custom dashboard wasn't discovered, register its navigation manually
+        if ($this->dashboardController && ! $customDashboardWasDiscovered) {
+            /** @var PageController $controller */
+            $controller = app($this->dashboardController);
+            $controller->registerNavigation($this->navigation);
         }
     }
 

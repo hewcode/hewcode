@@ -131,6 +131,64 @@ Hewcode::panel('admin')
 
 **Note:** The middleware applies to all protected routes including dashboard, resources, settings, and authenticated auth routes (email verification, password confirmation, logout). Guest routes (login, register, password reset) are not affected.
 
+### Dashboard
+
+Each panel includes a default dashboard page. You can customize the dashboard by creating a custom controller that extends `DashboardController`:
+
+**Step 1:** Create your custom dashboard controller:
+
+```php
+// app/Panel/CustomDashboardController.php
+namespace App\Panel;
+
+use Hewcode\Hewcode\Panel\Controllers\DashboardController;
+use Hewcode\Hewcode\Widgets;
+
+class CustomDashboardController extends DashboardController
+{
+    #[Widgets\Expose]
+    public function widgets(): Widgets\Widgets
+    {
+        return Widgets\Widgets::make([
+            $this->hewcodeInfoWidget(), // Inherited from parent
+            $this->customWidget(),
+        ])->visible();
+    }
+
+    protected function customWidget(): Widgets\StatsWidget
+    {
+        return Widgets\StatsWidget::make('total_users')
+            ->label('Total Users')
+            ->value(\App\Models\User::count())
+            ->icon('lucide-users');
+    }
+
+    // Specify which panels this dashboard belongs to
+    public function panels(): array
+    {
+        return ['admin'];
+    }
+}
+```
+
+**Step 2:** Register the custom dashboard with your panel:
+
+```php
+use App\Panel\CustomDashboardController;
+
+Hewcode::panel('admin')
+    ->dashboard(CustomDashboardController::class);
+```
+
+**How it works:**
+- Your custom controller must extend `DashboardController`
+- It can be placed anywhere in your application (not limited to discovery paths)
+- If discovered automatically (e.g., in `app/Hewcode/Controllers/`), the default dashboard is skipped
+- If not discovered, it's registered manually
+- Inherits all base dashboard functionality including the Hewcode info widget
+
+**Note:** The custom dashboard controller will replace the default panel dashboard. You can still call `$this->hewcodeInfoWidget()` to include the default Hewcode version widget.
+
 ## Resources
 
 You can create resources to quickly get started with managing records in your panels.

@@ -99,7 +99,7 @@ abstract class PageController
 
         $navigation->item(
             Navigation\NavigationItem::make()
-                ->url(fn () => Hewcode::route($this->getRouteName()))
+                ->url(fn () => Hewcode::route($this->getRouteName(), panel: $navigation->getPanel()))
                 ->label($this->getNavigationTitle())
                 ->icon($this->getNavigationIcon())
                 ->order($this->navigationSort)

@@ -18,7 +18,7 @@ class DashboardController extends PageController
         return '/';
     }
 
-    public function panels(): true
+    public function panels(): array|true
     {
         return true;
     }

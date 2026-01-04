@@ -83,4 +83,9 @@ class Navigation
 
         return $itemData;
     }
+
+    public function getPanel(): string
+    {
+        return $this->panel;
+    }
 }
