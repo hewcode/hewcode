@@ -4,6 +4,7 @@ import ListWidget from './ListWidget';
 import ListingWidget from './ListingWidget';
 import CardWidget from './CardWidget';
 import ChartWidget from './ChartWidget';
+import InfoWidget from './InfoWidget';
 
 const widgetComponentMap = {
   'stats': StatsWidget,
@@ -11,6 +12,7 @@ const widgetComponentMap = {
   'listing': ListingWidget,
   'card': CardWidget,
   'chart': ChartWidget,
+  'info': InfoWidget,
 };
 
 export default function Widget({ type, seal, ...props }) {

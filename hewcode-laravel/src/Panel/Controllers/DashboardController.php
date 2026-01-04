@@ -2,6 +2,9 @@
 
 namespace Hewcode\Hewcode\Panel\Controllers;
 
+use Hewcode\Hewcode\Hewcode;
+use Hewcode\Hewcode\Widgets;
+
 class DashboardController extends PageController
 {
     protected string $view = 'hewcode/dashboard';
@@ -18,5 +21,25 @@ class DashboardController extends PageController
     public function panels(): true
     {
         return true;
+    }
+
+    protected function getComponents(): array
+    {
+        return ['headerActions', 'widgets'];
+    }
+
+    #[Widgets\Expose]
+    public function widgets(): Widgets\Widgets
+    {
+        return Widgets\Widgets::make([
+            $this->hewcodeInfoWidget(),
+        ])->visible();
+    }
+
+    protected function hewcodeInfoWidget(): Widgets\InfoWidget
+    {
+        return Widgets\InfoWidget::make('hewcode_info')
+            ->heading('Hewcode')
+            ->description(Hewcode::VERSION);
     }
 }

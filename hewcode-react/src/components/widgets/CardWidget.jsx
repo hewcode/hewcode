@@ -35,15 +35,6 @@ export default function CardWidget({
       });
     },
   });
-  const colorClasses = {
-    primary: 'border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/50',
-    secondary: 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800',
-    success: 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/50',
-    danger: 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50',
-    warning: 'border-yellow-200 dark:border-yellow-900 bg-yellow-50 dark:bg-yellow-950/50',
-    info: 'border-cyan-200 dark:border-cyan-900 bg-cyan-50 dark:bg-cyan-950/50',
-  };
-
   const iconColorClasses = {
     primary: 'text-blue-600 dark:text-blue-400',
     secondary: 'text-gray-600 dark:text-gray-400',
@@ -53,17 +44,15 @@ export default function CardWidget({
     info: 'text-cyan-600 dark:text-cyan-400',
   };
 
-  const borderColorClass = color ? colorClasses[color]?.split(' ').slice(0, 2).join(' ') : 'border-gray-200 dark:border-gray-700';
-  const bgColorClass = color ? colorClasses[color]?.split(' ').slice(2).join(' ') : 'bg-gray-50 dark:bg-gray-800';
   const iconColorClass = color ? iconColorClasses[color] : 'text-gray-600 dark:text-gray-400';
 
   return (
-    <div className={`bg-box rounded-lg border shadow-sm ${borderColorClass} ${className}`}>
+    <div className={`bg-box border-box-border rounded-lg border shadow-sm ${className}`}>
       {(widgetData.heading || icon) && (
-        <div className={`px-6 py-4 border-b ${borderColorClass} ${bgColorClass}`}>
+        <div className="px-6 py-4 border-b border-box-border">
           <div className="flex items-center gap-3">
             {icon && (
-              <Icon icon={icon} className={`h-6 w-6 ${iconColorClass}`} />
+              <Icon icon={icon} className={`h-5 w-5 ${iconColorClass}`} />
             )}
             {widgetData.heading && (
               <h3 className="text-lg font-semibold text-foreground">{widgetData.heading}</h3>

@@ -14,7 +14,7 @@ export default function PageLayout({ title: customTitle = null, children }) {
     >
       <Head title={title} />
 
-      <div className="h-full p-4">{children}</div>
+      <div className="p-4">{children}</div>
     </AppLayout>
   );
 }
