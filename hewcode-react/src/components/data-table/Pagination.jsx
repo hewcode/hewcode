@@ -3,7 +3,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useTranslator from '../../hooks/useTranslator.js';
 import { Button } from '../ui/button.jsx';
 
-const Pagination = ({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerPage = 20, onPageChange, showPagination = true }) => {
+const Pagination = ({
+  currentPage = 1,
+  totalPages = 1,
+  totalItems = 0,
+  itemsPerPage = 20,
+  onPageChange,
+  showPagination = true,
+  requestScope = 'page',
+}) => {
   const { __ } = useTranslator();
 
   if (!showPagination) return null;
@@ -14,7 +22,7 @@ const Pagination = ({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerP
   // current URL + page=X
   const pageUrl = (page) => {
     const url = new URL(window.location.href);
-    url.searchParams.set('page', page);
+    url.searchParams.set(requestScope ?? 'page', page);
 
     return url.toString();
   };

@@ -41,9 +41,10 @@ interface ListingDriver
      * Paginate the data and return records with pagination metadata.
      *
      * @param int $perPage Number of items per page
+     * @param string $pageName The query parameter name for the page number
      * @return array Array containing 'records' and 'pagination' keys
      */
-    public function paginate(int $perPage): array;
+    public function paginate(int $perPage, string $pageName = 'page'): array;
 
     /**
      * Get all records without pagination (used for non-paginated results).

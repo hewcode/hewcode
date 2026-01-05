@@ -574,7 +574,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     {
         $this->prepare();
 
-        $result = $this->driver->paginate($this->perPage);
+        $result = $this->driver->paginate($this->perPage, $this->requestScope ?? 'page');
 
         $visibleColumns = $this->getCachedColumns();
 

@@ -547,6 +547,7 @@ const DataTable = ({
             totalPages={pagination.totalPages}
             totalItems={pagination.totalItems}
             itemsPerPage={pagination.itemsPerPage}
+            requestScope={requestScope}
           />
         </div>
       )}

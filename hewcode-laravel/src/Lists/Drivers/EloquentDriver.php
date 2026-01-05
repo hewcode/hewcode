@@ -81,9 +81,9 @@ class EloquentDriver implements ListingDriver
         }
     }
 
-    public function paginate(int $perPage): array
+    public function paginate(int $perPage, string $pageName = 'page'): array
     {
-        $records = $this->query->paginate($perPage);
+        $records = $this->query->paginate($perPage, pageName: $pageName);
 
         return [
             'records' => $records->getCollection(),

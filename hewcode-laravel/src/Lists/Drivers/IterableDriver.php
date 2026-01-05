@@ -82,9 +82,9 @@ class IterableDriver implements ListingDriver
         }
     }
 
-    public function paginate(int $perPage): array
+    public function paginate(int $perPage, string $pageName = 'page'): array
     {
-        $currentPage = (int) request()->input('page', 1);
+        $currentPage = (int) request()->input($pageName, 1);
         $total = $this->data->count();
         $totalPages = (int) ceil($total / $perPage);
 
