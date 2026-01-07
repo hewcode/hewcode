@@ -399,7 +399,7 @@ TextColumn::make('status')
 ```
 
 :::tip
-Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values. See [Enums](enums.md) for details.
+Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values.
 :::
 
 ### Icons
@@ -637,7 +637,7 @@ use Hewcode\Hewcode\Support\Enums\Color;
 ```
 
 :::tip
-Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values. See [Enums](enums.md) for details.
+Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values.
 :::
 
 ### Clickable Rows

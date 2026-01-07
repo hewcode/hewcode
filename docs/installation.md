@@ -84,6 +84,6 @@ See [Automatic Locale Labels](auto-localization.md) for more details.
 
 ## Next Steps
 
-- **[Lists](listing.md)**: Build record listings with sorting, filtering, and pagination among other features.
+- **[Lists](listings.md)**: Build record listings with sorting, filtering, and pagination among other features.
 - **[Forms](forms.md)**: Create forms for creating and editing records with validation and custom fields.
 - **[Panels](panels.md)**: Quickly build dashboard panels.

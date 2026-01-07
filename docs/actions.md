@@ -80,7 +80,7 @@ Actions\Action::make('publish')
 ```
 
 :::tip
-Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values. See [Enums](enums.md) for details.
+Use the `Hewcode\Hewcode\Support\Enums\Color` enum for type-safe color values.
 :::
 
 ### Links
@@ -207,7 +207,7 @@ Actions\Action::make('dynamic_modal')
 ```
 
 :::tip
-Use the `Hewcode\Hewcode\Support\Enums\Size` enum for type-safe size values. See [Enums](enums.md) for details.
+Use the `Hewcode\Hewcode\Support\Enums\Size` enum for type-safe size values.
 :::
 
 ### Authorization
