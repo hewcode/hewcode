@@ -263,7 +263,7 @@ class ProductResource extends Panel\Resource
 ```
 
 :::info
-Resources include `form()` and `listing()` methods for inline configuration. For reusable definitions across multiple resources, see [Listing Definition](listings.md#listing-definition) and [Form Definition](forms.md#form-definition).
+Resources include `form()` and `listing()` methods for inline configuration. For reusable definitions across multiple resources, see [Listing Definition](./listings.md#listing-definition) and [Form Definition](forms.md#form-definition).
 :::
 
 ## Advanced Usage
@@ -273,7 +273,7 @@ Optionally, if you need more flexibility, you can create custom page controllers
 ### Resource Page Controllers
 
 :::info
-The examples below reference `UserListing` and `UserForm` definition classes. Learn how to create these at [Listing Definition](listings.md#listing-definition) and [Form Definition](forms.md#form-definition).
+The examples below reference `UserListing` and `UserForm` definition classes. Learn how to create these at [Listing Definition](./listings.md#listing-definition) and [Form Definition](./forms.md#form-definition).
 :::
 
 You can create custom resource page controllers that extend the base resource controllers to use your listing and form definitions.
