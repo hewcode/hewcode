@@ -294,4 +294,27 @@ class Manager
     {
         return $this->iconRegistry()->register($iconName);
     }
+
+    /**
+     * Resolves the first existing page component path from an array of potential paths.
+     * Used in Blade templates to ensure Vite only receives valid paths.
+     *
+     * Supports magic string "hewcode::" which expands to the path configured by
+     * HEWCODE_REACT_PATH env var (defaults to "node_modules/@hewcode/react").
+     */
+    public function resolvePageComponent(array $paths): ?string
+    {
+        $hewcodeBasePath = env('HEWCODE_REACT_PATH', 'node_modules/@hewcode/react');
+
+        foreach ($paths as $path) {
+            $expandedPath = str_replace('hewcode::', $hewcodeBasePath . '/src/', $path);
+            $absolutePath = base_path($expandedPath);
+
+            if (file_exists($absolutePath)) {
+                return $expandedPath;
+            }
+        }
+
+        return null;
+    }
 }

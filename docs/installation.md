@@ -30,7 +30,7 @@ npm install @hewcode/react
 ```
 
 Update your Inertia app setup (typically in `resources/js/app.tsx`) to wrap your app with the `HewcodeProvider`, and configure the `resolve` so that it can find both your app's pages and Hewcode's built-in pages:
- 
+
 ```tsx
 import HewcodeProvider from '@hewcode/react/layouts/provider';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
@@ -54,6 +54,28 @@ createInertiaApp({
     // ...
 });
 ```
+
+Update your Blade template (typically `resources/views/app.blade.php`) to include Hewcode's page components in Vite's build process:
+
+```php
+@vite([
+    'resources/js/app.tsx',
+    \Hewcode\Hewcode\Hewcode::resolvePageComponent([
+        "resources/js/pages/{$page['component']}.tsx",
+        "hewcode::pages/{$page['component']}.tsx"
+    ])
+])
+```
+
+The `hewcode::` prefix is a shorthand that expands to `node_modules/@hewcode/react/src/`. This ensures that both your app's pages and Hewcode's built-in pages (like the dashboard) are properly loaded by Vite.
+
+:::tip Local Development
+If you're developing Hewcode locally using `npm link`, add this to your `.env` file to match the symlink-resolved paths that Vite generates:
+
+```bash
+HEWCODE_REACT_PATH=packages/hewcode-react
+```
+:::
 
 Finally, add the global styles to your application's CSS file (typically `resources/css/app.css`):
 

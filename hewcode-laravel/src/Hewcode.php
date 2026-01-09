@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Hewcode\Hewcode\Panel\Panel|null currentPanel()
  * @method static Support\IconRegistry iconRegistry()
  * @method static array registerIcon(?string $iconName)
+ * @method static string|null resolvePageComponent(array $paths)
  *
  * @see \Hewcode\Hewcode\Manager
  */
