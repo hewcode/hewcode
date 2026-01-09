@@ -244,7 +244,7 @@ This allows you to filter, eager load additional relationships, or apply custom 
 
 You can declare columns to display in the listing, the column name corresponds to the model attribute.
 
-Labels are automatically generated from your locale files if no explicit label is provided. See [Automatic Locale Labels](auto-localization.md) for more details.
+Labels are automatically generated from your locale files if no explicit label is provided. See [Automatic Locale Labels](auto-localization) for more details.
 
 ```php
 ->columns([
@@ -305,7 +305,7 @@ TextColumn::make('content')
 
 ### Datetime Columns
 
-Using the `->date()` or `->datetime()` methods will format the column value appropriately. This will use the default configured format which can be customized as described in the [Configuration](config.md) docs. You can also pass a custom format string.
+Using the `->date()` or `->datetime()` methods will format the column value appropriately. This will use the default configured format which can be customized as described in the [Configuration](config) docs. You can also pass a custom format string.
 
 These methods also allow using relative display.
 
@@ -695,7 +695,7 @@ When reordering is enabled, users can drag rows to reposition them, and the orde
 
 You can attach actions to listings for both individual rows and bulk operations.
 
-For more details about building actions, see the [Actions](actions.md) documentation.
+For more details about building actions, see the [Actions](actions) documentation.
 
 ### Row Actions
 
@@ -1145,4 +1145,4 @@ class PostController extends Controller
 }
 ```
 
-For more details about standalone actions, see the [Actions documentation](actions.md).
+For more details about standalone actions, see the [Actions documentation](actions).

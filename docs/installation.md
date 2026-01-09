@@ -102,10 +102,10 @@ return [
 ];
 ```
 
-See [Automatic Locale Labels](auto-localization.md) for more details.
+See [Automatic Locale Labels](auto-localization) for more details.
 
 ## Next Steps
 
-- **[Lists](listings.md)**: Build record listings with sorting, filtering, and pagination among other features.
-- **[Forms](forms.md)**: Create forms for creating and editing records with validation and custom fields.
-- **[Panels](panels.md)**: Quickly build dashboard panels.
+- **[Lists](listings)**: Build record listings with sorting, filtering, and pagination among other features.
+- **[Forms](forms)**: Create forms for creating and editing records with validation and custom fields.
+- **[Panels](panels)**: Quickly build dashboard panels.

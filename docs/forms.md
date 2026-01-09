@@ -209,7 +209,7 @@ You can also provide a closure that receives the current record (if any) and ret
 
 Define which fields to display using the `schema()` method.
 
-Labels are automatically generated from your locale files if no explicit label is provided. See [Automatic Locale Labels](auto-localization.md) for more details.
+Labels are automatically generated from your locale files if no explicit label is provided. See [Automatic Locale Labels](auto-localization) for more details.
 
 ```php
 use Hewcode\Hewcode\Forms;

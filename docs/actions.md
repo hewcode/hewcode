@@ -235,7 +235,7 @@ Use `->visible()` with closures for dynamic authorization or boolean values for 
 
 ## Toasts
 
-Actions work seamlessly with [toast notifications](toasts.md) to provide user feedback:
+Actions work seamlessly with [toast notifications](toasts) to provide user feedback:
 
 ```php
 use Hewcode\Hewcode\Support\Enums\Color;
