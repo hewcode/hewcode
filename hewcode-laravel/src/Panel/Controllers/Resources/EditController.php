@@ -18,4 +18,12 @@ class EditController extends FormController
     {
         return 'Edit';
     }
+
+    public function getTitle(): string
+    {
+        return __('hewcode::hewcode.resources.edit_title', [
+            'resource' => $this->singularLabel(),
+            'id' => request()->route('id'),
+        ]);
+    }
 }

@@ -42,4 +42,9 @@ class DashboardController extends PageController
             ->heading('Hewcode')
             ->description(Hewcode::VERSION);
     }
+
+    public function getTitle(): string
+    {
+        return __('hewcode::hewcode.dashboard.title');
+    }
 }

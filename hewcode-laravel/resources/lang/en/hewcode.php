@@ -104,4 +104,14 @@ return [
         'verification_link_sent' => 'A new verification link has been sent to your email address.',
     ],
 
+    'resources' => [
+        'edit_title' => 'Edit :resource #:id',
+        'create_title' => 'Create :resource',
+        'view_title' => 'View :resource #:id',
+    ],
+
+    'dashboard' => [
+        'title' => 'Dashboard',
+    ],
+
 ];

@@ -57,6 +57,21 @@ abstract class ResourceController extends PageController
             ->kebab();
     }
 
+    public function singularLabel(): string
+    {
+        return str($this->name())
+            ->headline()
+            ->lower()
+            ->singular();
+    }
+
+    public function pluralLabel(): string
+    {
+        return str($this->name())
+            ->headline()
+            ->plural();
+    }
+
     public function getControllerNamePrefix(): string
     {
         return '';

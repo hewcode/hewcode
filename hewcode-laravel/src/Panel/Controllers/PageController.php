@@ -34,6 +34,9 @@ abstract class PageController
             $this->props(
                 Props\Props::make($this)
                     ->components($this->getComponents())
+                    ->data([
+                        'title' => $this->getTitle(),
+                    ])
             )
         );
     }
@@ -55,12 +58,23 @@ abstract class PageController
 
     public function getTitle(): string
     {
+        return str($this->singularLabel())->title();
+    }
+
+    public function singularLabel(): string
+    {
         return str(static::class)
             ->afterLast('\\')
             ->before('Controller')
             ->replace('-', ' ')
             ->kebab()
-            ->title();
+            ->title()
+            ->lower();
+    }
+
+    public function pluralLabel(): string
+    {
+        return str($this->singularLabel())->plural();
     }
 
     public function getRoutePath(): string
