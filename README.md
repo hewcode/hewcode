@@ -27,7 +27,7 @@ For hands-on learning, explore the example applications and component demonstrat
 
 ## Security Vulnerabilities
 
-Please review [our security policy](https://github.com/hewcode/hewcode/security/policy) on how to report security vulnerabilities.
+Please review [our security policy](SECURITY.md) on how to report security vulnerabilities.
 
 ## License
 
