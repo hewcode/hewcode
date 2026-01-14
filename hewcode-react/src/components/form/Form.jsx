@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import useFetch from '../../hooks/useFetch.js';
+import useRoute from '../../hooks/use-route.ts';
 import Action from '../actions/Action.jsx';
 import DateTimePicker from '../support/date-time-picker.jsx';
 import TextInput from '../support/text-input.jsx';
@@ -27,6 +28,7 @@ export default function Form({
   additionalFooterActions = (state) => [],
   className = '',
 }) {
+  const [currentFields, setCurrentFields] = useState(fields);
   const [formData, setFormData] = useState(() => {
     const initial = {};
     fields.forEach((field) => {
@@ -37,15 +39,23 @@ export default function Form({
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingRefresh, setPendingRefresh] = useState(false);
   const { fetch } = useFetch();
+  const route = useRoute();
 
+  // Sync currentFields when fields prop changes
+  useEffect(() => {
+    setCurrentFields(fields);
+  }, [fields]);
+
+  // Only sync formData when the state/fields props change, not when currentFields updates
   useEffect(() => {
     const updatedData = {};
     fields.forEach((field) => {
       updatedData[field.name] = state[field.name] ?? field.default ?? '';
     });
     setFormData(updatedData);
-  }, [state]);
+  }, [state, fields]);
 
   const handleFieldChange = (fieldName, value) => {
     setFormData((prev) => ({
@@ -61,6 +71,12 @@ export default function Form({
       });
     }
 
+    // Check if this field is reactive and trigger form refresh
+    const field = currentFields.find((f) => f.name === fieldName);
+    if (field?.reactive) {
+      setPendingRefresh(true);
+    }
+
     if (onChange) {
       onChange({
         ...formData,
@@ -68,6 +84,45 @@ export default function Form({
       });
     }
   };
+
+  // Debounced refresh effect for reactive fields
+  useEffect(() => {
+    if (!pendingRefresh || !seal) return;
+
+    const timeoutId = setTimeout(async () => {
+      const response = await fetch(
+        route('hewcode.mount'),
+        {
+          method: 'POST',
+          body: {
+            seal,
+            call: {
+              name: 'mountComponent',
+              params: ['getFormData', formData],
+            },
+          },
+        },
+        true,
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update fields (visibility may have changed)
+        setCurrentFields(data.fields);
+        // Apply state modifications from backend (from onStateUpdate callbacks)
+        if (data.state) {
+          setFormData((prev) => ({
+            ...prev,
+            ...data.state,
+          }));
+        }
+      }
+
+      setPendingRefresh(false);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [pendingRefresh, formData, fetch, route, seal]);
 
   const renderField = ({ attributes, name, type, ...field }) => {
     const FieldComponent = fieldComponentMap[type];
@@ -95,7 +150,7 @@ export default function Form({
 
   return (
     <form className="space-y-6">
-      <div className={className || "space-y-4"}>{fields.map((field) => renderField(field))}</div>
+      <div className={className || "space-y-4"}>{currentFields.map((field) => renderField(field))}</div>
 
       {footerActions?.length > 0 && (
         <div className="flex justify-end gap-2">

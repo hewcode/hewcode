@@ -2,9 +2,11 @@
 
 namespace Hewcode\Hewcode\Forms\Schema;
 
+use BackedEnum;
 use Closure;
 use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
+use Hewcode\Hewcode\Forms\Set;
 use Hewcode\Hewcode\Support\Component;
 
 abstract class Field extends Component implements Contracts\HasVisibility, Contracts\HasRecord
@@ -18,9 +20,11 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
     use Concerns\HasRecord;
 
     protected bool $dehydrated = true;
+    protected bool $reactive = false;
     protected ?Closure $formatStateUsing = null;
     protected ?Closure $dehydrateStateUsing = null;
     protected ?Closure $saveUsing = null;
+    protected ?Closure $onStateUpdate = null;
 
     public function __construct()
     {
@@ -40,6 +44,20 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
     public function dehydrated(bool $dehydrated = true): static
     {
         $this->dehydrated = $dehydrated;
+
+        return $this;
+    }
+
+    public function reactive(bool $reactive = true): static
+    {
+        $this->reactive = $reactive;
+
+        return $this;
+    }
+
+    public function onStateUpdate(Closure $callback): static
+    {
+        $this->onStateUpdate = $callback;
 
         return $this;
     }
@@ -81,6 +99,10 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
             return $this->evaluate($this->formatStateUsing, ['state' => $state]);
         }
 
+        if ($state instanceof BackedEnum) {
+            return property_exists($state, 'value') ? $state->value : $state->name;
+        }
+
         return $state;
     }
 
@@ -112,6 +134,29 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
         ]);
     }
 
+    public function executeStateUpdate(array $state): array
+    {
+        if (! $this->onStateUpdate) {
+            return [];
+        }
+
+        $modifications = [];
+
+        $set = new Set($modifications);
+
+        $this->evaluate($this->onStateUpdate, [
+            'set' => $set,
+            'state' => $state,
+        ]);
+
+        return $modifications;
+    }
+
+    public function isReactive(): bool
+    {
+        return $this->reactive;
+    }
+
     /**
      * Get field-specific data to merge with base field data
      * Override in subclasses to add field-type-specific properties
@@ -138,6 +183,7 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
             'placeholder' => $this->getPlaceholder(),
             'default' => $this->getDefault(),
             'required' => $this->isRequired(),
+            'reactive' => $this->reactive,
         ], $this->getFieldSpecificData());
     }
 }

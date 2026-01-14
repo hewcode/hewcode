@@ -10,6 +10,7 @@ use Hewcode\Hewcode\Forms\Schema\Field;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
+use Hewcode\Hewcode\Support\Expose;
 use Hewcode\Hewcode\Toasts\Toast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -78,14 +79,24 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
     }
 
     /** @return array<Field> */
-    public function getFields(): array
+    public function getPreparedFields(): array
     {
         return array_map(
             fn (Field $field) => $field
+                ->shareEvaluationParameters($this->getEvaluationParameters())
+                ->parent($this)
                 ->record($this->record)
                 ->model($this->model instanceof Model ? $this->model : null),
+            $this->fields
+        );
+    }
+
+    /** @return array<Field> */
+    public function getFields(): array
+    {
+        return array_values(
             array_filter(
-                $this->fields,
+                $this->getPreparedFields(),
                 fn (Field $field) => $field->isVisible()
             )
         );
@@ -100,26 +111,19 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
 
     protected function getEvaluationParameters(): array
     {
-        $parameters = [
+        return [
             'form' => $this,
+            'record' => $this->record,
+            'model' => $this->model,
+            'state' => $this->state,
         ];
-
-        if ($this->record !== null) {
-            $parameters['record'] = $this->record;
-        }
-
-        if ($this->model !== null) {
-            $parameters['model'] = $this->model;
-        }
-
-        return $parameters;
     }
 
     public function fillForm(): array
     {
         $state = [];
 
-        foreach ($this->getFields() as $field) {
+        foreach ($this->getPreparedFields() as $field) {
             $state[$field->getName()] = $field->formatState(
                 $this->record ? data_get($this->record, $field->getName()) : $field->getDefault()
             );
@@ -263,5 +267,24 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
         }
 
         return null;
+    }
+
+    #[Expose]
+    public function getFormData(array $state): array
+    {
+        $stateModifications = [];
+
+        foreach ($this->getPreparedFields() as $field) {
+            if ($field instanceof Field && $field->isReactive()) {
+                $modifications = $field->executeStateUpdate($state);
+                $stateModifications = array_merge($stateModifications, $modifications);
+            }
+        }
+
+        $state = array_merge($state, $stateModifications);
+
+        $this->fillUsing(fn () => $state);
+
+        return $this->toData();
     }
 }

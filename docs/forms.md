@@ -303,6 +303,32 @@ Forms\Schema\Select::make('tags')
     })
 ```
 
+## Reactive Fields
+
+Fields can be made reactive to respond to state changes and update other form fields dynamically. When a reactive field changes, it can trigger callbacks that modify other field values.
+
+### Basic Reactive Behavior
+
+Make a field reactive using the `reactive()` method, then define state update logic with `onStateUpdate()`:
+
+```php
+Forms\Schema\Select::make('status')
+    ->label('Status')
+    ->options(PostStatus::class)
+    ->reactive()
+    ->onStateUpdate(function (Forms\Set $set, array $state) {
+        // Clear published_at when status changes away from published
+        if (($state['status'] ?? null) !== 'published') {
+            $set('published_at', null);
+        }
+    })
+    ->required()
+```
+
+The `onStateUpdate()` callback receives two parameters:
+- `$set` - Helper to modify other field values using `$set('field_name', $value)`
+- `$state` - Current form state array with all field values
+
 ## Field Types
 
 ### TextInput
@@ -539,6 +565,13 @@ class PostController extends Controller
                     ->label('Status')
                     ->options(PostStatus::class)
                     ->default(PostStatus::DRAFT->value)
+                    ->reactive()
+                    ->onStateUpdate(function (Forms\Set $set, array $state) {
+                        // Clear published_at when status changes away from published
+                        if (($state['status'] ?? null) !== 'published') {
+                            $set('published_at', null);
+                        }
+                    })
                     ->required(),
                 Forms\Schema\Select::make('category_id')
                     ->label('Category')
