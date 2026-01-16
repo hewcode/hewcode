@@ -24,7 +24,7 @@ trait HasForm
             ->record($record = $this->getRecord())
             ->model($record ?? $this->getModel())
             ->visible($this->isVisible())
-            ->shareEvaluationParameters($this->getEvaluationParameters())
+            ->shareEvaluationParameters($this->getAllEvaluationParameters())
             ->submitUsing($this->action);
     }
 

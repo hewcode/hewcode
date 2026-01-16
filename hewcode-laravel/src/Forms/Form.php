@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Forms\Schema\Field;
+use Hewcode\Hewcode\Forms\Schema;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
@@ -57,6 +58,13 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
         return $this;
     }
 
+    public function state(array $state): static
+    {
+        $this->state = $state;
+
+        return $this;
+    }
+
     public function fillUsing(?Closure $callback): static
     {
         $this->fillUsing = $callback;
@@ -83,7 +91,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
     {
         return array_map(
             fn (Field $field) => $field
-                ->shareEvaluationParameters($this->getEvaluationParameters())
+                ->shareEvaluationParameters($this->getAllEvaluationParameters())
                 ->parent($this)
                 ->record($this->record)
                 ->model($this->model instanceof Model ? $this->model : null),
@@ -138,7 +146,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
             return [];
         }
 
-        return $this->evaluate($this->fillUsing, $this->getEvaluationParameters());
+        return $this->evaluate($this->fillUsing, $this->getAllEvaluationParameters());
     }
 
     public function toData(): array
@@ -228,14 +236,38 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
 
     function getMountableActions(): array
     {
-        return $this->getFooterActions();
+        return array_merge(
+            $this->getFooterActions(),
+            $this->getFieldActions()
+        );
+    }
+
+    protected function getFieldActions(): array
+    {
+        $actions = [];
+
+        foreach ($this->getPreparedFields() as $field) {
+            if ($field instanceof Schema\ActionsContainer && $field->isVisible()) {
+                $actions = array_merge($actions, $field->getMountableActions());
+            }
+        }
+
+        return $actions;
     }
 
     protected function getFooterActions(): array
     {
-        return array_merge($this->footerActions, [
-            $this->getSubmitAction()
-        ]);
+        return array_map(
+            fn (Action $action) => $action
+                ->shareEvaluationParameters($this->getAllEvaluationParameters())
+                ->parent($this)
+                ->record($this->record)
+                ->model($this->model instanceof Model ? $this->model : null)
+                ->withPublicContext('state', $this->state),
+            array_merge($this->footerActions, [
+                $this->getSubmitAction()
+            ])
+        );
     }
 
     public function getSubmitAction(): Action

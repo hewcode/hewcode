@@ -26,14 +26,7 @@ trait EvaluatesClosures
             return $callback;
         }
 
-        // Get class-specific evaluation parameters
-        $globalParameters = $this->getEvaluationParameters();
-
-        // Merge with any shared evaluation parameters
-        $globalParameters = array_merge(
-            $globalParameters,
-            $this->sharedEvaluationParameters,
-        );
+        $globalParameters = $this->getAllEvaluationParameters();
 
         // Merge with any additional parameters passed to this call
         $parameters = array_merge($globalParameters, $additionalParameters);
@@ -62,5 +55,13 @@ trait EvaluatesClosures
         }
 
         return [];
+    }
+
+    protected function getAllEvaluationParameters(): array
+    {
+        return array_merge(
+            $this->getEvaluationParameters(),
+            $this->sharedEvaluationParameters,
+        );
     }
 }

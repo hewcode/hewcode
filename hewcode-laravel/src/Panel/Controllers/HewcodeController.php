@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Contracts\HasVisibility;
 use Hewcode\Hewcode\Contracts\MountsActions;
 use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecords;
+use Hewcode\Hewcode\Forms\Form;
 use Hewcode\Hewcode\Support\Container;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -29,6 +30,7 @@ class HewcodeController extends Controller
             'context.recordId' => 'sometimes|string',
             'context.recordIds' => 'sometimes|array',
             'context.model' => 'sometimes|string',
+            'context.state' => 'sometimes|array',
             'seal.component' => 'required|string',
             'seal.route' => 'required|string',
             'seal.hash' => 'required|string',
@@ -42,6 +44,7 @@ class HewcodeController extends Controller
         $recordId = $request->input('context.recordId');
         $recordIds = $request->input('context.recordIds');
         $model = $request->input('context.model');
+        $state = $request->input('context.state', []);
 
         // Check seal expiration (1 hour)
         $maxAge = 3600;
@@ -89,6 +92,10 @@ class HewcodeController extends Controller
         $component
             ->name($componentName)
             ->route($routeName);
+
+        if ($component instanceof Form && ! empty($state)) {
+            $component->state($state);
+        }
 
         $component->prepare();
 

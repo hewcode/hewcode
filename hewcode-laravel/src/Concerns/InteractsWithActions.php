@@ -86,7 +86,7 @@ trait InteractsWithActions
                 }
 
                 return $action
-                    ->parent($parent)
+                    ->parent($action->parent ?? $parent)
                     ->model($this->getModel())
                     ->isVisible();
             });

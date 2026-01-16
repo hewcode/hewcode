@@ -9,7 +9,7 @@
 
 ## About Hewcode
 
-Hewcode is a Laravel package for building admin panels and dashboards with React. It brings a <a href="https://filament.com">Filament</a>-like developer experience to the Laravel-Inertia-React stack, enabling rapid development of data-driven applications through declarative PHP definitions that automatically render React components.
+Hewcode is a Laravel package for building admin panels and dashboards with React. It brings a <a href="https://filamentphp.com">Filament</a>-like developer experience to the Laravel-Inertia-React stack, enabling rapid development of data-driven applications through declarative PHP definitions that automatically render React components.
 
 Hewcode includes:
 

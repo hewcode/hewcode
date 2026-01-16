@@ -145,6 +145,7 @@ export default function Action({
       rel={url && openInNewTab ? 'noopener noreferrer' : undefined}
       data-action-name={name}
       data-record-id={context?.recordId}
+      type="button"
     >
       {icon && <Icon icon={icon} size={16} className="" />}
       {loading ? __('hewcode.common.loading') : label || name}

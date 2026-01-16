@@ -388,7 +388,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         if ($this->cachedColumns === null) {
             $this->cachedColumns = collect($this->columns)
                 ->filter(fn (Column $column) => $column
-                    ->shareEvaluationParameters($this->getEvaluationParameters())
+                    ->shareEvaluationParameters($this->getAllEvaluationParameters())
                     ->model($this->getModel())
                     ->isVisible()
                 )
@@ -499,7 +499,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     {
         return collect($this->filters)
             ->filter(fn (Filter $filter) => $filter
-                ->shareEvaluationParameters($this->getEvaluationParameters())
+                ->shareEvaluationParameters($this->getAllEvaluationParameters())
                 ->model($this->getModel())
                 ->isVisible()
             )
@@ -693,7 +693,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         return $action
             ->parent($this)
             ->context($this->context)
-            ->shareEvaluationParameters($this->getEvaluationParameters())
+            ->shareEvaluationParameters($this->getAllEvaluationParameters())
             ->model($this->getModel());
     }
 

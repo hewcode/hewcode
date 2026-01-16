@@ -638,3 +638,31 @@ export default function Edit() {
     );
 }
 ```
+
+## ActionsContainer
+
+The `ActionsContainer` allows you to embed one or more actions directly within a form. This is useful for providing quick actions or secondary operations that relate to the form data.
+
+```php
+Forms\Schema\ActionsContainer::make('quick_actions')
+    ->label('Quick Actions')
+    ->actions([
+        Actions\Action::make('save_draft')
+            ->label('Save as Draft')
+            ->color(Color::SECONDARY)
+            ->action(function (array $state) {
+                // Access form data and perform action
+                Toast::make()
+                    ->title('Draft saved')
+                    ->success()
+                    ->send();
+            }),
+        Actions\Action::make('preview')
+            ->label('Preview')
+            ->url('/posts/preview')
+            ->openInNewTab()
+            ->icon('lucide-eye'),
+    ]),
+```
+
+Actions in forms have access to the current form data through the `$state` parameter in their action closure, allowing you to perform operations based on the form's current state without needing to submit the form.

@@ -6,6 +6,7 @@ import DateTimePicker from '../support/date-time-picker.jsx';
 import TextInput from '../support/text-input.jsx';
 import Textarea from '../support/textarea.jsx';
 import Select from './select.jsx';
+import Actions from './actions.jsx';
 
 const fieldComponentMap = {
   'text-input': TextInput,
@@ -14,6 +15,7 @@ const fieldComponentMap = {
   'date-picker': DateTimePicker,
   'time-picker': DateTimePicker,
   'datetime-picker': DateTimePicker,
+  actions: Actions,
 };
 
 export default function Form({

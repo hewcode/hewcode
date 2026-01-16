@@ -32,4 +32,11 @@ trait HasContext
 
         return $this;
     }
+
+    public function withPublicContext(string|array $key, mixed $value = null): static
+    {
+        $this->context->with($key, $value, true);
+
+        return $this;
+    }
 }
