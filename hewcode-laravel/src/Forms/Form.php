@@ -8,6 +8,7 @@ use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Forms\Schema\Field;
 use Hewcode\Hewcode\Forms\Schema;
+use Hewcode\Hewcode\Forms\Schema\Wizard\Step;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
@@ -35,6 +36,12 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
     /** @var array<Action> */
     protected array $footerActions = [];
 
+    // Wizard properties
+    /** @var array<Step> */
+    protected array $wizardSteps = [];
+    protected bool $wizardSkippable = true;
+    protected bool $wizardShowFooterActionsInLastStep = true;
+
     public function __construct()
     {
         $this->setUp();
@@ -56,6 +63,35 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
         $this->fields = $fields;
 
         return $this;
+    }
+
+    /**
+     * @param array<Step> $steps
+     */
+    public function wizard(array $steps): static
+    {
+        $this->wizardSteps = $steps;
+
+        return $this;
+    }
+
+    public function skippable(bool $skippable = true): static
+    {
+        $this->wizardSkippable = $skippable;
+
+        return $this;
+    }
+
+    public function showFooterActionsInLastStep(bool $showFooterActionsInLastStep = true): static
+    {
+        $this->wizardShowFooterActionsInLastStep = $showFooterActionsInLastStep;
+
+        return $this;
+    }
+
+    public function isWizard(): bool
+    {
+        return count($this->wizardSteps) > 0;
     }
 
     public function state(array $state): static
@@ -110,9 +146,67 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
         );
     }
 
+    /** @return array<Step> */
+    public function getPreparedSteps(): array
+    {
+        return array_map(
+            fn (Step $step) => $step
+                ->shareEvaluationParameters($this->getAllEvaluationParameters())
+                ->parent($this)
+                ->record($this->record)
+                ->model($this->model instanceof Model ? $this->model : null),
+            $this->wizardSteps
+        );
+    }
+
+    /** @return array<Step> */
+    public function getSteps(): array
+    {
+        return array_values(
+            array_filter(
+                $this->getPreparedSteps(),
+                fn (Step $step) => $step->isVisible()
+            )
+        );
+    }
+
+    /**
+     * Get all fields - from wizard steps if wizard mode, otherwise regular fields
+     * @return array<Field>
+     */
+    public function getFlattenedFields(): array
+    {
+        if ($this->isWizard()) {
+            $fields = [];
+            foreach ($this->getSteps() as $step) {
+                $fields = array_merge($fields, $step->getFields());
+            }
+            return $fields;
+        }
+
+        return $this->getFields();
+    }
+
+    /**
+     * Get all prepared fields - from wizard steps if wizard mode, otherwise regular fields
+     * @return array<Field>
+     */
+    protected function getFlattenedPreparedFields(): array
+    {
+        if ($this->isWizard()) {
+            $fields = [];
+            foreach ($this->getPreparedSteps() as $step) {
+                $fields = array_merge($fields, $step->getPreparedFields());
+            }
+            return $fields;
+        }
+
+        return $this->getPreparedFields();
+    }
+
     public function getValidationRules(): array
     {
-        return collect($this->getFields())
+        return collect($this->getFlattenedFields())
             ->mapWithKeys(fn (Field $field) => [$field->getName() => $field->getRules()])
             ->toArray();
     }
@@ -131,7 +225,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
     {
         $state = [];
 
-        foreach ($this->getPreparedFields() as $field) {
+        foreach ($this->getFlattenedPreparedFields() as $field) {
             $state[$field->getName()] = $field->formatState(
                 $this->record ? data_get($this->record, $field->getName()) : $field->getDefault()
             );
@@ -157,7 +251,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
 
         $this->state = $this->getFillUsing();
 
-        return array_merge(parent::toData(), [
+        $data = [
             'recordId' => $this->record instanceof Model ? $this->record->getKey() : null,
             'fields' => array_map(
                 fn (Field $field) => $field->toData(),
@@ -177,12 +271,26 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
                 ->map(fn (Action $action) => $action->toData())
                 ->values()
                 ->toArray(),
-        ]);
+        ];
+
+        // Add wizard data if in wizard mode
+        if ($this->isWizard()) {
+            $data['wizard'] = [
+                'steps' => array_map(
+                    fn (Step $step) => $step->toData(),
+                    $this->getSteps()
+                ),
+                'skippable' => $this->wizardSkippable,
+                'showFooterActionsInLastStep' => $this->wizardShowFooterActionsInLastStep,
+            ];
+        }
+
+        return array_merge(parent::toData(), $data);
     }
 
     public function getState(): array
     {
-        $attributes = collect($this->getFields())
+        $attributes = collect($this->getFlattenedFields())
             ->mapWithKeys(fn (Field $field) => [$field->getName() => $field->getLabel()])
             ->toArray();
 
@@ -191,7 +299,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
 
     protected function submit(array $data): void
     {
-        $fields = $this->getFields();
+        $fields = $this->getFlattenedFields();
 
         $this->state = $data;
 
@@ -246,7 +354,12 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
     {
         $actions = [];
 
-        foreach ($this->getPreparedFields() as $field) {
+        // Get fields from wizard steps if in wizard mode, otherwise regular fields
+        $fields = $this->isWizard()
+            ? $this->getFlattenedFields()
+            : $this->getPreparedFields();
+
+        foreach ($fields as $field) {
             if ($field instanceof Schema\ActionsContainer && $field->isVisible()) {
                 $actions = array_merge($actions, $field->getMountableActions());
             }
@@ -306,7 +419,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
     {
         $stateModifications = [];
 
-        foreach ($this->getPreparedFields() as $field) {
+        foreach ($this->getFlattenedPreparedFields() as $field) {
             if ($field instanceof Field && $field->isReactive()) {
                 $modifications = $field->executeStateUpdate($state);
                 $stateModifications = array_merge($stateModifications, $modifications);
@@ -318,5 +431,42 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
         $this->fillUsing(fn () => $state);
 
         return $this->toData();
+    }
+
+    #[Expose]
+    public function validateWizardStep(int $stepIndex, array $state): array
+    {
+        if (! $this->isWizard()) {
+            return ['valid' => false, 'errors' => ['form' => 'Form is not a wizard']];
+        }
+
+        $this->state = $state;
+
+        $steps = $this->getSteps();
+        if (! isset($steps[$stepIndex])) {
+            return ['valid' => false, 'errors' => ['step' => 'Step not found']];
+        }
+
+        $step = $steps[$stepIndex];
+        $stepFields = $step->getFields();
+
+        // Build validation rules for this step's fields
+        $rules = [];
+        $attributes = [];
+        foreach ($stepFields as $field) {
+            $rules[$field->getName()] = $field->getRules();
+            $attributes[$field->getName()] = $field->getLabel();
+        }
+
+        $validator = Validator::make($state, $rules, [], $attributes);
+
+        if ($validator->fails()) {
+            return [
+                'valid' => false,
+                'errors' => $validator->errors()->toArray(),
+            ];
+        }
+
+        return ['valid' => true, 'errors' => []];
     }
 }

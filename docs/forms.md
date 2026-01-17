@@ -666,3 +666,112 @@ Forms\Schema\ActionsContainer::make('quick_actions')
 ```
 
 Actions in forms have access to the current form data through the `$state` parameter in their action closure, allowing you to perform operations based on the form's current state without needing to submit the form.
+
+## Wizard
+
+A form can be turned into a multi-step wizard using the `wizard()` method. Users navigate through steps using Previous/Next buttons, with a step indicator showing progress. The submit button only appears on the last step.
+
+### Basic Usage
+
+Use `wizard()` instead of `schema()` to define your form as a wizard:
+
+```php
+Forms\Form::make()
+    ->model(Post::class)
+    ->visible()
+    ->wizard([
+        Forms\Schema\Wizard\Step::make('basic')
+            ->label('Basic Info')
+            ->description('Enter the basic information')
+            ->schema([
+                Forms\Schema\TextInput::make('title')
+                    ->required(),
+                Forms\Schema\Textarea::make('content')
+                    ->required(),
+            ]),
+        Forms\Schema\Wizard\Step::make('publishing')
+            ->label('Publishing')
+            ->schema([
+                Forms\Schema\Select::make('status')
+                    ->options(PostStatus::class)
+                    ->required(),
+                Forms\Schema\DateTimePicker::make('published_at'),
+            ]),
+        Forms\Schema\Wizard\Step::make('category')
+            ->label('Category')
+            ->schema([
+                Forms\Schema\Select::make('category_id')
+                    ->relationship('category')
+                    ->required(),
+            ]),
+    ])
+```
+
+### Step Configuration
+
+Each step supports:
+
+- `label()` - Display name shown in the step indicator
+- `description()` - Optional text shown above the step's fields
+- `icon()` - Optional icon identifier
+- `schema()` - Array of fields for this step
+- `visible()` - Control step visibility with a boolean or closure
+
+```php
+Forms\Schema\Wizard\Step::make('advanced')
+    ->label('Advanced Settings')
+    ->description('Configure advanced options')
+    ->icon('lucide-settings')
+    ->visible(fn () => auth()->user()->isAdmin())
+    ->schema([...])
+```
+
+### Step Validation
+
+By default, users can skip between steps freely. To enforce validation before proceeding to the next step, use `skippable(false)` on the form:
+
+```php
+Forms\Form::make()
+    ->visible()
+    ->skippable(false)
+    ->wizard([...])
+```
+
+When `skippable(false)` is set:
+- Clicking Next triggers server-side validation of the current step's fields
+- Validation errors are displayed on the relevant fields
+- Navigation is blocked until all required fields pass validation
+- Clicking a future step in the indicator also triggers validation
+
+### Footer Actions Visibility
+
+By default, footer actions (including the submit button) only appear on the last step. To show them on all steps:
+
+```php
+Forms\Form::make()
+    ->visible()
+    ->showFooterActionsInLastStep(false)
+    ->wizard([...])
+```
+
+### Reactive Fields in Wizards
+
+Reactive fields work within wizard steps. When a field changes, it can update other fields in the same or different steps:
+
+```php
+Forms\Schema\Wizard\Step::make('publishing')
+    ->label('Publishing')
+    ->schema([
+        Forms\Schema\Select::make('status')
+            ->options(PostStatus::class)
+            ->reactive()
+            ->onStateUpdate(function (Forms\Set $set, array $state) {
+                if (($state['status'] ?? null) !== 'published') {
+                    $set('published_at', null);
+                }
+            })
+            ->required(),
+        Forms\Schema\DateTimePicker::make('published_at')
+            ->visible(fn (array $state) => ($state['status'] ?? null) === 'published'),
+    ])
+```
