@@ -15,11 +15,32 @@ export default function Widgets({ widgets = {}, columns = 1, seal, className = '
     ''
   }`;
 
+  const getColspanClass = (colspan) => {
+    if (!colspan || colspan === 1) return '';
+
+    const maxSpan = Math.min(colspan, columns);
+
+    // Use explicit class names for Tailwind purge/safelist
+    const colspanClasses = {
+      2: 'md:col-span-2',
+      3: 'md:col-span-3',
+      4: 'md:col-span-4',
+    };
+
+    return colspanClasses[maxSpan] || '';
+  };
+
   return (
     <div className={`${gridClass} ${className}`}>
-      {widgetEntries.map(([key, widgetProps]) => (
-        <Widget key={key} seal={seal} {...widgetProps} />
-      ))}
+      {widgetEntries.map(([key, widgetProps]) => {
+        const colspanClass = getColspanClass(widgetProps.colspan);
+
+        return (
+          <div key={key} className={colspanClass}>
+            <Widget seal={seal} {...widgetProps} />
+          </div>
+        );
+      })}
     </div>
   );
 }

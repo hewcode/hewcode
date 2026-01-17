@@ -221,6 +221,28 @@ Widgets\Widgets::make([
 
 The grid is responsive and automatically adjusts for mobile screens.
 
+### Column Spanning
+
+Individual widgets can span multiple columns using `colspan()`:
+
+```php
+Widgets\Widgets::make([
+    Widgets\StatsWidget::make('users')
+        ->label('Total Users')
+        ->value(1234),
+
+    Widgets\ChartWidget::make('sales')
+        ->label('Sales Overview')
+        ->colspan(2)  // Spans 2 columns
+        ->chartType('area')
+        ->data([...]),
+
+    Widgets\StatsWidget::make('revenue')
+        ->label('Revenue')
+        ->value(45230),
+])->columns(3);
+```
+
 ## Common Patterns
 
 ### Dynamic Values

@@ -20,6 +20,8 @@ abstract class Widget extends Component
 
     protected ?int $refreshInterval = null;
 
+    protected int $colspan = 1;
+
     abstract public function getType(): string;
 
     public function __construct()
@@ -68,6 +70,13 @@ abstract class Widget extends Component
         return $this;
     }
 
+    public function colspan(int $colspan): static
+    {
+        $this->colspan = $colspan;
+
+        return $this;
+    }
+
     public function toData(): array
     {
         return array_merge(parent::toData(), [
@@ -76,6 +85,7 @@ abstract class Widget extends Component
             'description' => $this->description,
             'value' => $this->getValue(),
             'refreshInterval' => $this->refreshInterval,
+            'colspan' => $this->colspan,
         ]);
     }
 }
