@@ -34,6 +34,7 @@ abstract class Column extends Component implements Contracts\HasVisibility
     protected string|Closure|null $iconUsing = null;
     protected string $iconPosition = 'before';
     protected int $iconSize = 16;
+    protected string $cardRole = 'content';
 
     public function __construct()
     {
@@ -170,6 +171,46 @@ abstract class Column extends Component implements Contracts\HasVisibility
         $this->isToggledHiddenByDefault = $isToggledHiddenByDefault;
 
         return $this;
+    }
+
+    public function asCardTitle(): static
+    {
+        $this->cardRole = 'title';
+
+        return $this;
+    }
+
+    public function asCardSubtitle(): static
+    {
+        $this->cardRole = 'subtitle';
+
+        return $this;
+    }
+
+    public function asCardImage(): static
+    {
+        $this->cardRole = 'image';
+
+        return $this;
+    }
+
+    public function asCardContent(): static
+    {
+        $this->cardRole = 'content';
+
+        return $this;
+    }
+
+    public function hideInCard(): static
+    {
+        $this->cardRole = 'hidden';
+
+        return $this;
+    }
+
+    public function getCardRole(): string
+    {
+        return $this->cardRole;
     }
 
     public function model(?Model $model): static
@@ -356,6 +397,7 @@ abstract class Column extends Component implements Contracts\HasVisibility
             'togglable' => $this->isTogglable(),
             'isToggledHiddenByDefault' => $this->isToggledHiddenByDefault(),
             'hidden' => ! $this->isVisible(),
+            'cardRole' => $this->getCardRole(),
         ]);
     }
 }

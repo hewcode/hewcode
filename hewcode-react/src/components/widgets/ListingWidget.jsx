@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import DataTable from '../data-table/DataTable';
+import Listing from '../data-table/Listing';
 import useWidgetPolling from './useWidgetPolling';
 
 export default function ListingWidget({
@@ -17,7 +17,7 @@ export default function ListingWidget({
   });
 
   // Set up polling if refreshInterval is provided
-  // Note: Listing data itself is not updated via polling as DataTable has its own refresh mechanisms
+  // Note: Listing data itself is not updated via polling as Listing has its own refresh mechanisms
   useWidgetPolling({
     name,
     refreshInterval,
@@ -40,7 +40,7 @@ export default function ListingWidget({
         </div>
       )}
       <div className={compact ? 'compact-listing' : ''}>
-        <DataTable {...listing} borderless={true} />
+        <Listing {...listing} borderless={true} />
       </div>
     </div>
   );

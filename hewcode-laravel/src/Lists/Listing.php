@@ -60,6 +60,11 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
     protected ?Closure $touchActionsUsing = null;
     protected ?Closure $recordUrlUsing = null;
     protected string|Closure|null $recordActionUsing = null;
+    protected string $layout = 'table';
+    protected array $cardLayoutConfig = [
+        'columns' => 3,
+        'aspectRatio' => null,
+    ];
 
     // URL persistence settings
     protected bool $persistFiltersInUrl = false;
@@ -361,6 +366,25 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
         $this->recordActionUsing = $actionName;
 
         return $this;
+    }
+
+    public function cardLayout(int $columns = 3, ?string $aspectRatio = null): self
+    {
+        $this->layout = 'cards';
+        $this->cardLayoutConfig['columns'] = $columns;
+        $this->cardLayoutConfig['aspectRatio'] = $aspectRatio;
+
+        return $this;
+    }
+
+    public function getLayout(): string
+    {
+        return $this->layout;
+    }
+
+    public function getCardLayoutConfig(): array
+    {
+        return $this->cardLayoutConfig;
     }
 
     /** @return array<Column> */
@@ -681,6 +705,8 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 return $this->prepareAction($bulkAction)->isVisible();
             })),
             'reorderable' => $this->reorderableColumn,
+            'layout' => $this->getLayout(),
+            'cardLayoutConfig' => $this->getCardLayoutConfig(),
         ]);
     }
 

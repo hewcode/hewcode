@@ -535,15 +535,15 @@ If you create custom views, they should follow this pattern:
 ```tsx
 // Custom index page
 import { usePage } from '@inertiajs/react';
-import DataTable from '@hewcode/react/components/data-table/DataTable';
+import Listing from '@hewcode/react/components/data-table/Listing';
 import PageLayout from '@/layouts/pages/page-layout';
 
 export default function CustomIndex() {
     const { listing } = usePage().props;
-    
+
     return (
         <PageLayout>
-            <DataTable {...listing} />
+            <Listing {...listing} />
         </PageLayout>
     );
 }

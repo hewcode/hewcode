@@ -40,13 +40,13 @@ Remember to always make sure the visibility of actions is properly set using aut
 On the frontend, just spread the props:
 
 ```tsx
-import DataTable from '@hewcode/react/components/data-table/DataTable';
+import Listing from '@hewcode/react/components/data-table/Listing';
 import { usePage } from '@inertiajs/react';
 
 export default function Index() {
     const { posts } = usePage().props;
-    
-    return <DataTable {...posts} />;
+
+    return <Listing {...posts} />;
 }
 ```
 

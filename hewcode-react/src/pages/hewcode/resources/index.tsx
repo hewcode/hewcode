@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import DataTable from '../../../components/data-table/DataTable';
+import Listing from '../../../components/data-table/Listing';
 import PageLayout from '../../../layouts/pages/page-layout';
 
 export default function Index() {
@@ -7,7 +7,7 @@ export default function Index() {
 
   return (
     <PageLayout>
-      <DataTable {...listing} />
+      <Listing {...listing} />
     </PageLayout>
   );
 }
