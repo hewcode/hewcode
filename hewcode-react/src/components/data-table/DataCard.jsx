@@ -1,23 +1,12 @@
 import { router } from '@inertiajs/react';
-import { cn } from '../../lib/utils.js';
 import { getTailwindBgClass, isHexColor } from '../../lib/colors.js';
+import { cn } from '../../lib/utils.js';
 import Action from '../actions/Action.jsx';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card.tsx';
 import { Checkbox } from '../ui/checkbox.jsx';
 import CellContent from './cell.jsx';
-import TableRowActions from './TableRowActions.jsx';
 
-const DataCard = ({
-  record,
-  titleColumn,
-  subtitleColumn,
-  imageColumn,
-  contentColumns,
-  isSelected,
-  isBulkSelecting,
-  onSelect,
-  seal,
-}) => {
+const DataCard = ({ record, titleColumn, subtitleColumn, imageColumn, contentColumns, isSelected, isBulkSelecting, onSelect, seal }) => {
   const hasRowUrl = !!record._row_url;
   const hasRowAction = !!record._row_action;
   const rowBgColor = record._row_bg_color;
@@ -25,12 +14,7 @@ const DataCard = ({
   const handleCardClick = (e) => {
     // Don't navigate if clicking interactive elements
     const target = e.target;
-    if (
-      target.closest('button') ||
-      target.closest('a') ||
-      target.closest('input') ||
-      target.closest('[role="button"]')
-    ) {
+    if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[role="button"]')) {
       return;
     }
 
@@ -45,26 +29,18 @@ const DataCard = ({
 
   return (
     <Card
-      className={cn(
-        'relative flex flex-col',
-        hasRowUrl ? 'cursor-pointer hover:shadow-md transition-shadow' : '',
-        tailwindBgClass,
-      )}
+      className={cn('relative flex flex-col', hasRowUrl ? 'cursor-pointer transition-shadow hover:shadow-md' : '', tailwindBgClass)}
       style={cardStyle}
       onClick={handleCardClick}
     >
       {isBulkSelecting && (
-        <div className="absolute top-4 left-4 z-10">
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={onSelect}
-            onClick={(e) => e.stopPropagation()}
-          />
+        <div className="absolute left-4 top-4 z-10">
+          <Checkbox checked={isSelected} onCheckedChange={onSelect} onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 
       {imageColumn && record[imageColumn.key] && (
-        <div className="aspect-video overflow-hidden rounded-t-xl">
+        <div className="aspect-video overflow-hidden">
           <CellContent record={record} column={imageColumn} />
         </div>
       )}
@@ -85,14 +61,10 @@ const DataCard = ({
       )}
 
       {contentColumns.length > 0 && (
-        <CardContent className="space-y-2 flex-1">
+        <CardContent className="flex-1 space-y-2">
           {contentColumns.map((column) => (
             <div key={column.key} className="flex items-start gap-2">
-              {column.label && (
-                <span className="text-sm font-medium text-muted-foreground min-w-[100px]">
-                  {column.label}:
-                </span>
-              )}
+              {column.label && <span className="text-muted-foreground min-w-[100px] text-sm font-medium">{column.label}:</span>}
               <div className="flex-1">
                 <CellContent record={record} column={column} />
               </div>
@@ -103,7 +75,7 @@ const DataCard = ({
 
       {record._row_actions && Object.keys(record._row_actions).length > 0 && (
         <CardFooter className="justify-end">
-          <div className="space-x-2 flex items-center">
+          <div className="flex items-center space-x-2">
             {Object.values(record._row_actions).map((action) => (
               <Action key={action.name} seal={seal} {...action} />
             ))}

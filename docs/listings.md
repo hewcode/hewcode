@@ -161,6 +161,60 @@ Users can still change the sort by clicking column headers, but this sets the in
 ```php
 ->defaultSort('created_at', 'desc')  // Second param defaults to 'asc'
 ```
+
+### Card Layout
+
+Display your listing as cards instead of a table. Cards show one record per card with a configurable grid layout:
+
+```php
+Lists\Listing::make()
+    ->query(Post::query()->with(['user', 'category']))
+    ->cardLayout(columns: 3)  // 3 cards per row on desktop
+    ->columns([
+        Lists\Schema\ImageColumn::make('image')
+            ->disk('public')
+            ->asCardImage(),      // Full-width at top of card
+        Lists\Schema\TextColumn::make('title')
+            ->searchable()
+            ->asCardTitle(),      // Primary heading
+        Lists\Schema\TextColumn::make('user.name')
+            ->badge(variant: 'outline')
+            ->asCardSubtitle(),   // Secondary heading
+        Lists\Schema\TextColumn::make('status')
+            ->badge()
+            ->asCardContent(),    // Body content
+        Lists\Schema\TextColumn::make('published_at')
+            ->date()
+            ->asCardContent(),    // Body content
+    ]);
+```
+
+#### Column Roles
+
+Assign each column a role in the card layout:
+
+- `asCardImage()` - Full-width image at top (aspect-video container)
+- `asCardTitle()` - Main heading text
+- `asCardSubtitle()` - Secondary heading text below title
+- `asCardContent()` - Body content area
+- `hideInCard()` - Hidden in card view (but visible in table if user switches)
+
+#### Grid Configuration
+
+The `columns` parameter controls cards per row on desktop (automatically responsive):
+
+```php
+->cardLayout(columns: 1)  // Single column layout
+->cardLayout(columns: 2)  // Two columns
+->cardLayout(columns: 3)  // Three columns (default)
+->cardLayout(columns: 4)  // Four columns
+```
+
+Responsive breakpoints:
+- **Mobile**: 1 column
+- **Tablet (md)**: 2 columns
+- **Desktop (lg)**: As configured (1-4 columns)
+
 ### Relationships
 
 #### Listing Records from a Relationship
@@ -254,6 +308,33 @@ Labels are automatically generated from your locale files if no explicit label i
         ->label('Author'),
 ])
 ```
+
+### Image Columns
+
+Display images in your listings with automatic URL generation from storage paths:
+
+```php
+Lists\Schema\ImageColumn::make('avatar')
+    ->label('Avatar')
+    ->size(48)           // 48x48px in table view
+    ->circular()         // Display as circular image
+    ->disk('public')     // Laravel filesystem disk
+```
+
+**In table view:** Images display at the specified size (e.g., 48x48px thumbnail).
+
+**In card view:** When using `->asCardImage()`, images display full-width at the top of the card in an aspect-video container.
+
+Available methods:
+- `size(int)` - Set both width and height (for square images)
+- `width(int)` - Set specific width in pixels
+- `height(int)` - Set specific height in pixels
+- `circular(bool)` - Display as circular image (default: false)
+- `disk(string)` - Laravel filesystem disk (default: `config('filesystems.default')`)
+
+The column automatically converts storage paths to URLs using `Storage::disk()->url()`:
+- Database stores: `posts/image.jpg`
+- Frontend displays: `/storage/posts/image.jpg`
 
 ### Visibility
 

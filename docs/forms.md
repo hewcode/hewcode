@@ -450,6 +450,64 @@ Forms\Schema\DateTimePicker::make('published_at')
     ->native(false)  // Custom calendar/time picker with popover
 ```
 
+### FileUpload
+
+Upload single or multiple files with drag-and-drop support, file previews, and validation:
+
+```php
+Forms\Schema\FileUpload::make('thumbnail')
+    ->label('Thumbnail')
+    ->image()
+    ->maxSize(2048)  // 2MB max
+    ->required()
+```
+
+**Single file upload:**
+
+```php
+Forms\Schema\FileUpload::make('document')
+    ->label('Document')
+    ->acceptedFileTypes(['pdf', 'doc', 'docx'])
+    ->maxSize(5120)  // 5MB
+    ->disk('public')
+    ->directory('documents')
+```
+
+**Multiple file uploads:**
+
+```php
+Forms\Schema\FileUpload::make('attachments')
+    ->label('Attachments')
+    ->multiple()
+    ->maxFiles(5)
+    ->acceptedFileTypes(['pdf', 'jpg', 'png', 'zip'])
+    ->maxSize(10240)  // 10MB per file
+```
+
+**Image uploads with preview:**
+
+```php
+Forms\Schema\FileUpload::make('gallery')
+    ->label('Gallery Images')
+    ->image()  // Restricts to image types and enables preview
+    ->multiple()
+    ->maxFiles(10)
+    ->maxSize(5120)
+    ->disk('public')
+    ->directory('gallery')
+```
+
+Available methods:
+- `image()` - Restrict to image types (jpg, jpeg, png, gif, svg, webp) and enable preview
+- `acceptedFileTypes(array)` - Restrict allowed file types (e.g., `['pdf', 'docx']`)
+- `maxSize(int)` - Maximum file size in kilobytes
+- `multiple()` - Allow multiple file uploads
+- `maxFiles(int)` - Maximum number of files when using `multiple()`
+- `disk(string)` - Laravel filesystem disk to store files on (default: `config('filesystems.default')`)
+- `directory(string)` - Directory path within the disk (default: `'uploads'`)
+- `storeFileNames()` - Preserve original file names instead of generating unique names
+- `enablePreview(bool)` - Show/hide file previews (default: `true`)
+
 ## Footer Actions
 
 Add custom action buttons to the form footer alongside the default submit button:

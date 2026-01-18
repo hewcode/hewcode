@@ -8,6 +8,7 @@ import { Button } from '../ui/button.jsx';
 import DateTimePicker from '../support/date-time-picker.jsx';
 import TextInput from '../support/text-input.jsx';
 import Textarea from '../support/textarea.jsx';
+import FileUpload from '../support/file-upload.jsx';
 import Select from './select.jsx';
 import Actions from './actions.jsx';
 
@@ -18,6 +19,7 @@ const fieldComponentMap = {
   'date-picker': DateTimePicker,
   'time-picker': DateTimePicker,
   'datetime-picker': DateTimePicker,
+  'file-upload': FileUpload,
   actions: Actions,
 };
 

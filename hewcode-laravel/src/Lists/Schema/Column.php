@@ -371,7 +371,7 @@ abstract class Column extends Component implements Contracts\HasVisibility
         return $data;
     }
 
-    private function toFragment(object $record): Fragments\Fragment
+    protected function toFragment(object $record): mixed
     {
         $value = $this->getValue($record);
 

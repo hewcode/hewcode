@@ -12,12 +12,65 @@ export default async function _fetch(url, options = {}, hewcode, vanilla = false
   return fetchWithInertia(url, options, hewcode, toast, setHewcode);
 }
 
+// Helper to detect files in object
+function containsFiles(obj) {
+  if (obj instanceof File || obj instanceof FileList) return true;
+  if (Array.isArray(obj)) {
+    return obj.some((item) => containsFiles(item));
+  }
+  if (obj && typeof obj === 'object') {
+    return Object.values(obj).some((value) => containsFiles(value));
+  }
+  return false;
+}
+
+// Helper to convert nested object to FormData
+function convertToFormData(obj, formData = new FormData(), parentKey = '') {
+  Object.keys(obj).forEach((key) => {
+    const value = obj[key];
+    const formKey = parentKey ? `${parentKey}[${key}]` : key;
+
+    if (value instanceof File) {
+      formData.append(formKey, value);
+    } else if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        if (item instanceof File) {
+          formData.append(`${formKey}[]`, item);
+        } else if (item && typeof item === 'object') {
+          convertToFormData({ [index]: item }, formData, formKey);
+        } else {
+          formData.append(`${formKey}[${index}]`, item === null ? '' : item);
+        }
+      });
+    } else if (value && typeof value === 'object' && !(value instanceof File)) {
+      convertToFormData(value, formData, formKey);
+    } else if (value !== null && value !== undefined) {
+      formData.append(formKey, value === null ? '' : value);
+    }
+  });
+
+  return formData;
+}
+
 function fetchJson(url, options, hewcode, toast) {
+  const hasFiles = options.body && containsFiles(options.body);
+
   const defaultHeaders = {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
     'X-CSRF-TOKEN': hewcode.csrfToken, // ensures we are always using a fresh CSRF token.
   };
+
+  // Only set Content-Type for JSON, let browser set it for FormData
+  if (!hasFiles) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
+
+  let body;
+  if (hasFiles) {
+    body = convertToFormData(options.body);
+  } else {
+    body = options.body ? JSON.stringify(options.body) : null;
+  }
 
   const fetchOptions = {
     method: options.method || 'GET',
@@ -25,7 +78,7 @@ function fetchJson(url, options, hewcode, toast) {
       ...defaultHeaders,
       ...(options.headers || {}),
     },
-    body: options.body ? JSON.stringify(options.body) : null,
+    body,
   };
 
   return fetch(url, fetchOptions)
