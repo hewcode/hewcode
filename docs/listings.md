@@ -207,13 +207,13 @@ The `columns` parameter controls cards per row on desktop (automatically respons
 ->cardLayout(columns: 1)  // Single column layout
 ->cardLayout(columns: 2)  // Two columns
 ->cardLayout(columns: 3)  // Three columns (default)
-->cardLayout(columns: 4)  // Four columns
+->cardLayout(columns: 4)  // Four columns, maximum is 6
 ```
 
 Responsive breakpoints:
 - **Mobile**: 1 column
 - **Tablet (md)**: 2 columns
-- **Desktop (lg)**: As configured (1-4 columns)
+- **Desktop (lg)**: As configured (1-6 columns)
 
 ### Relationships
 

@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { clsx } from 'clsx';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import useRoute from '../../hooks/use-route.ts';
 import useTranslator from '../../hooks/useTranslator.js';
 import setUrlQuery from '../../utils/setUrlQuery.js';
@@ -81,10 +81,10 @@ const DataCards = ({
   const [selectedRecords, setSelectedRecords] = useState(new Set());
   const [isBulkSelecting, setIsBulkSelecting] = useState(false);
 
-  const handleSort = (columnKey) => {
+  const handleSort = (columnKey, forceDirection = null) => {
     if (!sortable.includes(columnKey)) return;
 
-    const direction = sortConfig.sort === columnKey ? (sortConfig.direction === 'asc' ? 'desc' : null) : 'asc';
+    const direction = forceDirection ?? (sortConfig.sort === columnKey ? (sortConfig.direction === 'asc' ? 'desc' : null) : 'asc');
 
     if (!direction) {
       columnKey = null;
@@ -135,6 +135,40 @@ const DataCards = ({
     }
   };
 
+  /* Apply filters */
+  onFilter ||= (state) => {
+    setFilterState(state);
+
+    const [url, params] = setUrlQuery(getScopedParam('filter'), state);
+
+    // Add clear parameter when clearing filters
+    if (state === null) {
+      params[getScopedParam('clear')] = 'filters';
+    }
+
+    router.get(url, params, {
+      replace: true,
+      preserveState: true,
+      preserveUrl: !urlPersistence.persistFiltersInUrl,
+    });
+  };
+
+  /* Handle tab changes */
+  onTab ||= (tab) => {
+    const [url, params] = setUrlQuery(getScopedParam('activeTab'), tab);
+
+    // Add clear parameter when clearing tabs
+    if (tab === null) {
+      params[getScopedParam('clear')] = 'activeTab';
+    }
+
+    router.get(url, params, {
+      replace: true,
+      preserveState: true,
+      preserveUrl: true,
+    });
+  };
+
   // Filter visible columns
   const visibleColumns = columns.filter((col) => !col.hidden);
 
@@ -144,16 +178,12 @@ const DataCards = ({
 
   return (
     <div className="w-full space-y-4">
-      {(showSearch ||
-        showFilter ||
-        showActions ||
-        bulkActions.length > 0 ||
-        tabs.length > 0 ||
-        (headerActions && headerActions.length > 0)) && (
+      {(showSearch || showFilter || showActions || bulkActions.length > 0 || tabs.length > 0 || (headerActions && headerActions.length > 0)) && (
         <TableHeader
           showSearch={showSearch}
           showFilter={showFilter}
           showActions={showActions}
+          showSortControl={true}
           searchPlaceholder={searchPlaceholder}
           filtersForm={filtersForm}
           deferFiltering={deferFiltering}
@@ -164,6 +194,8 @@ const DataCards = ({
           onSearch={onSearch}
           onFilter={onFilter}
           onTab={onTab}
+          onSort={handleSort}
+          sortable={sortable}
           urlPersistence={urlPersistence}
           currentValues={currentValues}
           seal={seal}
@@ -177,6 +209,8 @@ const DataCards = ({
           allColumns={allColumns}
           columnVisibility={{}}
           onColumnVisibilityChange={() => {}}
+          hasBulkActions={bulkActions.length > 0}
+          onToggleBulkSelection={handleToggleBulkSelecting}
           getScopedParam={getScopedParam}
           borderless={borderless}
         />

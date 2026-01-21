@@ -129,10 +129,10 @@ const DataTable = ({
 
   const [columnVisibility, setColumnVisibility] = useState(initializeColumnVisibility);
 
-  const handleSort = (columnKey) => {
-    if (!sortable.includes(columnKey) && columnKey !== reorderable) return;
+  const handleSort = (columnKey, forceDirection = null) => {
+    if (!sortable.includes(columnKey)) return;
 
-    const direction = sortConfig.sort === columnKey ? (sortConfig.direction === 'asc' ? 'desc' : null) : 'asc';
+    const direction = forceDirection ?? (sortConfig.sort === columnKey ? (sortConfig.direction === 'asc' ? 'desc' : null) : 'asc');
 
     if (!direction) {
       columnKey = null;

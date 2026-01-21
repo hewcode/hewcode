@@ -89,11 +89,6 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
             const data = await response.json();
             const shouldClose = data.actions?.[name]?.shouldClose || false;
 
-            console.log({
-              name,
-              data: data.actions,
-            });
-
             if (shouldClose && onClose) {
               onClose();
             }

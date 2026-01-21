@@ -10,6 +10,7 @@ import { Button } from '../ui/button.jsx';
 import { Input } from '../ui/input.jsx';
 import ColumnsPopover from './ColumnsPopover.jsx';
 import FiltersPopover, { FiltersForm } from './FiltersPopover.jsx';
+import SortControl from './SortControl.jsx';
 import TabsActions from './TabsActions.jsx';
 
 const performSearch = throttle(650, (e, urlPersistence, getScopedParam) => {
@@ -26,10 +27,12 @@ const TableHeader = ({
   showSearch = true,
   showFilter = true,
   showActions = true,
+  showSortControl = false,
   searchPlaceholder,
   onSearch,
   onFilter,
   onTab,
+  onSort,
   filterState,
   filtersForm,
   deferFiltering,
@@ -54,6 +57,7 @@ const TableHeader = ({
     filter: {},
     columns: {},
   },
+  sortable = [],
   reorderable = null,
   isReordering = false,
   onToggleReordering = null,
@@ -136,14 +140,26 @@ const TableHeader = ({
               <ListChecks className="h-4 w-4" />
             </Button>
           )}
+          {showSortControl && (
+            <SortControl
+              columns={allColumns}
+              sortConfig={{ sort: currentValues.sort, direction: currentValues.direction }}
+              onSort={onSort}
+              sortable={sortable}
+            />
+          )}
           {/*separator between above items and the tabs when needed*/}
-          {(showSearch || (showFilter && filtersForm) || allColumns.some((col) => col.togglable) || reorderable || hasBulkActions) &&
+          {(showSearch ||
+            (showFilter && filtersForm) ||
+            allColumns.some((col) => col.togglable) ||
+            reorderable ||
+            hasBulkActions ||
+            showSortControl) &&
             tabs.length > 0 && <div className="ml-2 mr-4 h-6 w-px bg-gray-200 dark:bg-gray-800" />}
           {tabs.length > 0 && <TabsActions tabs={tabs} activeTab={activeTab} onTabChange={onTab} />}
         </div>
         {showActions && headerActions.length > 0 && <div className="flex items-center space-x-2">{headerActions}</div>}
       </div>
-
       {hasFilters && showInlineFilters && (
         <div className={`bg-box border-box-border relative mb-2 rounded-md border p-4 shadow-sm ${activeFiltersCount > 0 ? 'pr-12' : ''}`}>
           {activeFiltersCount > 0 && (
