@@ -1,16 +1,16 @@
 import { Check, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import useFetch from '../../hooks/useFetch.js';
 import useRoute from '../../hooks/use-route.ts';
+import useFetch from '../../hooks/useFetch.js';
 import { cn } from '../../lib/utils';
 import Action from '../actions/Action.jsx';
-import { Button } from '../ui/button.jsx';
 import DateTimePicker from '../support/date-time-picker.jsx';
+import FileUpload from '../support/file-upload.jsx';
 import TextInput from '../support/text-input.jsx';
 import Textarea from '../support/textarea.jsx';
-import FileUpload from '../support/file-upload.jsx';
-import Select from './select.jsx';
+import { Button } from '../ui/button.jsx';
 import Actions from './actions.jsx';
+import Select from './select.jsx';
 
 const fieldComponentMap = {
   'text-input': TextInput,
@@ -39,6 +39,7 @@ const wizardStepCache = {};
 
 export default function Form({
   seal,
+  path,
   fields = [],
   state = {},
   wizard = null,
@@ -179,7 +180,7 @@ export default function Form({
             seal,
             call: {
               name: 'mountComponent',
-              params: ['getFormData', formData],
+              params: [(path ? path + '.' : '') + 'getFormData', formData],
             },
           },
         },
@@ -369,10 +370,7 @@ export default function Form({
               const isCurrent = index === currentStep;
 
               return (
-                <li
-                  key={s.name}
-                  className={cn('relative', index !== totalSteps - 1 && 'flex-1 pr-8 sm:pr-20')}
-                >
+                <li key={s.name} className={cn('relative', index !== totalSteps - 1 && 'flex-1 pr-8 sm:pr-20')}>
                   <div className="flex items-center">
                     <button
                       type="button"
@@ -381,18 +379,14 @@ export default function Form({
                       className={cn(
                         'relative flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors',
                         isCompleted && 'bg-primary text-primary-foreground',
-                        isCurrent && 'border-2 border-primary bg-background text-primary',
-                        !isCompleted && !isCurrent && 'border-2 border-muted bg-background text-muted-foreground',
+                        isCurrent && 'border-primary bg-background text-primary border-2',
+                        !isCompleted && !isCurrent && 'border-muted bg-background text-muted-foreground border-2',
                       )}
                     >
                       {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
                     </button>
                     <span
-                      className={cn(
-                        'ml-3 text-sm font-medium hidden sm:block',
-                        isCurrent && 'text-primary',
-                        !isCurrent && 'text-muted-foreground',
-                      )}
+                      className={cn('ml-3 hidden text-sm font-medium sm:block', isCurrent && 'text-primary', !isCurrent && 'text-muted-foreground')}
                     >
                       {s.label || s.name}
                     </span>
@@ -401,10 +395,7 @@ export default function Form({
                   {/* Connector line */}
                   {index !== totalSteps - 1 && (
                     <div
-                      className={cn(
-                        'absolute top-4 left-8 -ml-px h-0.5 w-full sm:left-32',
-                        isCompleted ? 'bg-primary' : 'bg-muted',
-                      )}
+                      className={cn('absolute left-8 top-4 -ml-px h-0.5 w-full sm:left-32', isCompleted ? 'bg-primary' : 'bg-muted')}
                       style={{ width: 'calc(100% - 2rem)' }}
                     />
                   )}
@@ -416,24 +407,14 @@ export default function Form({
 
         {/* Step content */}
         <div className="wizard-step">
-          {step?.description && (
-            <p className="text-muted-foreground mb-4 text-sm">{step.description}</p>
-          )}
+          {step?.description && <p className="text-muted-foreground mb-4 text-sm">{step.description}</p>}
 
-          <div className={className || 'space-y-4'}>
-            {step?.fields?.map((field) => renderField(field))}
-          </div>
+          <div className={className || 'space-y-4'}>{step?.fields?.map((field) => renderField(field))}</div>
         </div>
 
         {/* Navigation buttons */}
         <div className="mt-8 flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={goPrev}
-            disabled={isFirstStep || isValidating}
-            className={cn(isFirstStep && 'invisible')}
-          >
+          <Button type="button" variant="outline" onClick={goPrev} disabled={isFirstStep || isValidating} className={cn(isFirstStep && 'invisible')}>
             <ChevronLeft className="mr-1 h-4 w-4" />
             Previous
           </Button>
@@ -441,9 +422,7 @@ export default function Form({
           <div className="flex gap-2">
             {!isLastStep && (
               <Button type="button" onClick={goNext} disabled={isValidating}>
-                {isValidating ? (
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                ) : null}
+                {isValidating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
                 Next
                 {!isValidating && <ChevronRight className="ml-1 h-4 w-4" />}
               </Button>
@@ -461,15 +440,9 @@ export default function Form({
   // Render regular form mode
   return (
     <form className="space-y-6">
-      <div className={className || 'space-y-4'}>
-        {currentFields.map((field) => renderField(field))}
-      </div>
+      <div className={className || 'space-y-4'}>{currentFields.map((field) => renderField(field))}</div>
 
-      {footerActions?.length > 0 && (
-        <div className="flex justify-end gap-2">
-          {renderFooterActions()}
-        </div>
-      )}
+      {footerActions?.length > 0 && <div className="flex justify-end gap-2">{renderFooterActions()}</div>}
       {additionalFooterActions(formData)}
     </form>
   );

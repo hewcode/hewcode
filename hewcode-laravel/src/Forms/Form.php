@@ -217,7 +217,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
             'form' => $this,
             'record' => $this->record,
             'model' => $this->model,
-            'state' => $this->state,
+            'data' => $this->state,
         ];
     }
 

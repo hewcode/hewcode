@@ -7,7 +7,7 @@ import { Button } from '../ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover.jsx';
 
 // Shared filter form component
-export function FiltersForm({ deferFiltering, state, onFilter, filtersForm, inline = false }) {
+export function FiltersForm({ seal, deferFiltering, state, onFilter, filtersForm, inline = false }) {
   const { __ } = useTranslator();
   const activeFiltersCount = Object.entries(state || {}).filter(([_, value]) => value !== null && value !== '').length;
 
@@ -16,7 +16,8 @@ export function FiltersForm({ deferFiltering, state, onFilter, filtersForm, inli
       <div className={inline ? '' : 'space-y-3'}>
         <Form
           {...filtersForm}
-          className={inline ? 'flex flex-wrap gap-4 items-end' : ''}
+          seal={seal}
+          className={inline ? 'flex flex-wrap items-end gap-4' : ''}
           onChange={(newState) => {
             if (deferFiltering) return;
 
@@ -49,8 +50,9 @@ export function FiltersForm({ deferFiltering, state, onFilter, filtersForm, inli
         <h4 className="font-medium">{__('hewcode.common.filters')}</h4>
         {activeFiltersCount > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {activeFiltersCount} {activeFiltersCount === 1 ? __('hewcode.common.filter') : __('hewcode.common.filters')} {__('hewcode.common.active')}
+            <span className="text-muted-foreground text-xs">
+              {activeFiltersCount} {activeFiltersCount === 1 ? __('hewcode.common.filter') : __('hewcode.common.filters')}{' '}
+              {__('hewcode.common.active')}
             </span>
             <CompactButton onClick={() => onFilter(null)} variant="ghost">
               {__('hewcode.common.clear_all')}
@@ -62,6 +64,7 @@ export function FiltersForm({ deferFiltering, state, onFilter, filtersForm, inli
       <div className="space-y-3">
         <Form
           {...filtersForm}
+          seal={seal}
           onChange={(newState) => {
             if (deferFiltering) return;
 
@@ -89,7 +92,7 @@ export function FiltersForm({ deferFiltering, state, onFilter, filtersForm, inli
   );
 }
 
-export default function FiltersPopover({ deferFiltering, state, onFilter, filtersForm }) {
+export default function FiltersPopover({ seal, deferFiltering, state, onFilter, filtersForm }) {
   const { __ } = useTranslator();
   const activeFiltersCount = Object.entries(state || {}).filter(([_, value]) => value !== null && value !== '').length;
 
@@ -106,7 +109,7 @@ export default function FiltersPopover({ deferFiltering, state, onFilter, filter
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96" align="start">
-        <FiltersForm deferFiltering={deferFiltering} state={state} onFilter={onFilter} filtersForm={filtersForm} />
+        <FiltersForm deferFiltering={deferFiltering} state={state} onFilter={onFilter} filtersForm={filtersForm} seal={seal} />
       </PopoverContent>
     </Popover>
   );

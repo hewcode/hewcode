@@ -108,6 +108,10 @@ class FileUpload extends Field
                 return;
             }
 
+            if (! $value) {
+                return;
+            }
+
             $extensions = array_map(fn($t) => ltrim($t, '.'), $types);
 
             // For multiple files
@@ -210,6 +214,10 @@ class FileUpload extends Field
         $this->rules[] = function ($attribute, $value, $fail) {
             // Skip validation for metadata objects (existing files)
             if (is_array($value) && isset($value['path'])) {
+                return;
+            }
+
+            if (! $value) {
                 return;
             }
 

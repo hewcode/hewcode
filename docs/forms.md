@@ -316,9 +316,9 @@ Forms\Schema\Select::make('status')
     ->label('Status')
     ->options(PostStatus::class)
     ->reactive()
-    ->onStateUpdate(function (Forms\Set $set, array $state) {
+    ->onStateUpdate(function (Forms\Set $set, array $data) {
         // Clear published_at when status changes away from published
-        if (($state['status'] ?? null) !== 'published') {
+        if (($data['status'] ?? null) !== 'published') {
             $set('published_at', null);
         }
     })
@@ -327,7 +327,7 @@ Forms\Schema\Select::make('status')
 
 The `onStateUpdate()` callback receives two parameters:
 - `$set` - Helper to modify other field values using `$set('field_name', $value)`
-- `$state` - Current form state array with all field values
+- `$data` - Current form state array with all field values
 
 ## Field Types
 
@@ -624,9 +624,9 @@ class PostController extends Controller
                     ->options(PostStatus::class)
                     ->default(PostStatus::DRAFT->value)
                     ->reactive()
-                    ->onStateUpdate(function (Forms\Set $set, array $state) {
+                    ->onStateUpdate(function (Forms\Set $set, array $data) {
                         // Clear published_at when status changes away from published
-                        if (($state['status'] ?? null) !== 'published') {
+                        if (($data['status'] ?? null) !== 'published') {
                             $set('published_at', null);
                         }
                     })

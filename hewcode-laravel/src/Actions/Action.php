@@ -221,9 +221,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
             $icon = Hewcode::registerIcon($icon);
         }
 
-        return [
-            'path' => $this->getPath(),
-            'name' => $this->getName(),
+        return array_merge(parent::toData(), [
             'label' => $this->getLabel(),
             'color' => $this->color,
             'requiresConfirmation' => $this->getRequiresConfirmation(),
@@ -236,7 +234,7 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
             'url' => $this->getUrl(),
             'openInNewTab' => $this->openInNewTab,
             'icon' => $icon,
-        ];
+        ]);
     }
 
     public function getMountsModal(): bool

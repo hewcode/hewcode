@@ -2,6 +2,8 @@
 
 namespace Hewcode\Hewcode;
 
+use Hewcode\Hewcode\Contracts\MountsComponents;
+use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Expose;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -103,4 +105,43 @@ function resolveLocaleLabel(string $fieldName, ?Model $model = null): string
     }
 
     return generateFieldLabel($fieldName);
+}
+
+function seekComponent(string $name, Component $component): ?Component
+{
+    if (! str_contains($name, '.')) {
+        return $component->getComponent($name, $name);
+    }
+
+    $lastPart = null;
+    $lastComponent = null;
+
+    foreach (explode('.', $name) as $part) {
+        $currentPart = ($lastPart ? $lastPart . '.' : '') . $part;
+
+        if (! $lastComponent) {
+            $lastComponent = $actions->first(fn (Action $action) => $action->name === $part);
+        } else {
+            if ($lastComponent instanceof MountsComponents) {
+                $component = $lastComponent->getComponent($part, $part);
+
+                if ($component) {
+                    $lastComponent = $component;
+                    $lastPart = $currentPart;
+                    continue;
+                }
+            }
+
+            if ($lastComponent instanceof MountsActions) {
+                $lastComponent = $this->filterMountableActions($lastComponent->getMountableActions(), $lastComponent)
+                    ->first(fn (Action $action) => $action->name === $part);
+            }
+        }
+
+        $lastPart = $currentPart;
+    }
+
+    if ($lastComponent instanceof Action) {
+        $action = $lastComponent;
+    }
 }

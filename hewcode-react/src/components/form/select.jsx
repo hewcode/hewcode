@@ -10,7 +10,7 @@ export default function Select({ seal, ...props }) {
     <BaseSelect
       {...props}
       searchUsing={async (query) => {
-        if (!route || !hash) {
+        if (!seal.route || !seal.hash) {
           return [];
         }
 

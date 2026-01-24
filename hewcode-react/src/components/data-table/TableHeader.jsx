@@ -108,7 +108,7 @@ const TableHeader = ({
             </div>
           )}
           {hasFilters && !showInlineFilters && (
-            <FiltersPopover state={filterState} onFilter={onFilter} deferFiltering={deferFiltering} filtersForm={filtersForm} />
+            <FiltersPopover state={filterState} onFilter={onFilter} deferFiltering={deferFiltering} filtersForm={filtersForm} seal={seal} />
           )}
           {allColumns.some((col) => col.togglable) && (
             <ColumnsPopover

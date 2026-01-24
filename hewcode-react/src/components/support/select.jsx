@@ -43,6 +43,7 @@ export default function Select({
           setSearchResults(options.filter((option) => option.label.toLowerCase().includes(query.trim().toLowerCase())));
         }
       } catch (error) {
+        console.error('Error during search:', error);
         setSearchResults([]);
       } finally {
         setIsSearching(false);
