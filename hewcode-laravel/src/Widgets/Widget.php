@@ -18,7 +18,7 @@ abstract class Widget extends Component
 
     protected ?Closure $valueUsing = null;
 
-    protected ?int $refreshInterval = null;
+    protected ?int $pollingInterval = null;
 
     protected int $colspan = 1;
 
@@ -62,10 +62,9 @@ abstract class Widget extends Component
         return $this->evaluate($this->valueUsing) ?? $this->value;
     }
 
-    public function refreshInterval(int $seconds): static
+    public function poll(int $seconds): static
     {
-        // Store as milliseconds for frontend
-        $this->refreshInterval = $seconds * 1000;
+        $this->pollingInterval = $seconds * 1000;
 
         return $this;
     }
@@ -84,7 +83,7 @@ abstract class Widget extends Component
             'label' => $this->getLabel(),
             'description' => $this->description,
             'value' => $this->getValue(),
-            'refreshInterval' => $this->refreshInterval,
+            'refreshInterval' => $this->pollingInterval,
             'colspan' => $this->colspan,
         ]);
     }
