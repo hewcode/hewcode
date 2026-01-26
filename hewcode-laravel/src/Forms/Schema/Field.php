@@ -176,9 +176,8 @@ abstract class Field extends Component implements Contracts\HasVisibility, Contr
      */
     public function toData(): array
     {
-        return array_merge([
+        return array_merge(parent::toData(), [
             'type' => $this->getFieldType(),
-            'name' => $this->getName(),
             'label' => $this->getLabel(),
             'placeholder' => $this->getPlaceholder(),
             'default' => $this->getDefault(),

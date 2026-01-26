@@ -15,6 +15,7 @@ use Hewcode\Hewcode\Actions\BulkAction;
 use Hewcode\Hewcode\Lists\Filters\Filter;
 use Hewcode\Hewcode\Lists\Schema\Column;
 use Hewcode\Hewcode\Lists\Tabs\Tab;
+use Hewcode\Hewcode\Support\ComponentCollection;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
@@ -414,6 +415,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 ->filter(fn (Column $column) => $column
                     ->shareEvaluationParameters($this->getAllEvaluationParameters())
                     ->model($this->getModel())
+                    ->componentCollection('columns')
                     ->isVisible()
                 )
                 ->values()
@@ -525,6 +527,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
             ->filter(fn (Filter $filter) => $filter
                 ->shareEvaluationParameters($this->getAllEvaluationParameters())
                 ->model($this->getModel())
+                ->componentCollection('filters')
                 ->isVisible()
             )
             ->values()
@@ -647,6 +650,7 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
                 if (! empty($this->actions)) {
                     $visibleActions = array_filter($this->actions, function (Action $action) use ($record) {
                         return $this->prepareAction($action)
+                            ->componentCollection('actions')
                             ->record($record)
                             ->isVisible();
                     });
@@ -748,16 +752,41 @@ class Listing extends Container implements Contracts\MountsActions, Contracts\Mo
 
     public function getMountableActions(): array
     {
-        return array_merge($this->actions, $this->bulkActions);
+        return array_merge($this->getActions(), $this->getBulkActions());
     }
 
-    public function getComponent(string $type, string $name): ?Component
+    public function getBulkActions(): array
     {
-        return match ($type) {
-            'columns' => $this->getColumn($name),
-            'filters' => $this->getFilter($name),
+        return array_filter($this->bulkActions, function (BulkAction $bulkAction) {
+            return $this->prepareAction($bulkAction)
+                ->componentCollection('actions')
+                ->isVisible();
+        });
+    }
+
+    public function getActions(): array
+    {
+        return array_filter($this->actions, function (Action $action) {
+            return $this->prepareAction($action)
+                ->componentCollection('actions')
+                ->record($this->getRecord())
+                ->isVisible();
+        });
+    }
+
+    public function getComponent(string $name): Component|ComponentCollection|null
+    {
+        return match ($name) {
+            'columns' => new ComponentCollection($this->getColumns()),
+            'filters' => new ComponentCollection($this->getFilters()),
+            'actions' => new ComponentCollection($this->getMountableActions()),
             default => null,
         };
+    }
+
+    public function getColumns(): array
+    {
+        return $this->getCachedColumns();
     }
 
     public function getFilter(string $name): ?Filter

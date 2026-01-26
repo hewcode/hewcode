@@ -7,6 +7,7 @@ use Hewcode\Hewcode\Contracts;
 use Closure;
 use Hewcode\Hewcode\Hewcode;
 use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Support\ComponentCollection;
 use Hewcode\Hewcode\Support\Context;
 use Hewcode\Hewcode\Support\Enums\Color;
 use Hewcode\Hewcode\Support\Enums\Size;
@@ -247,9 +248,9 @@ class Action extends Component implements Contracts\HasRecord, Contracts\HasVisi
         return ! empty($this->getFormSchema()) || $this->getFormDefinition() !== null;
     }
 
-    public function getComponent(string $type, string $name): ?Component
+    public function getComponent(string $name): Component|ComponentCollection|null
     {
-        return match ($type) {
+        return match ($name) {
             'form' => $this->getForm(),
             default => null,
         };

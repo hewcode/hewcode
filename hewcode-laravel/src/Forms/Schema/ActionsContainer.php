@@ -6,9 +6,11 @@ use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Forms\Form;
+use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Support\ComponentCollection;
 use Illuminate\Database\Eloquent\Model;
 
-class ActionsContainer extends Field implements Contracts\MountsActions
+class ActionsContainer extends Field implements Contracts\MountsActions, Contracts\MountsComponents
 {
     use Concerns\InteractsWithActions;
 
@@ -40,6 +42,14 @@ class ActionsContainer extends Field implements Contracts\MountsActions
             ),
             fn (Action $action) => $action->isVisible()
         );
+    }
+
+    public function getComponent(string $name): Component|ComponentCollection|null
+    {
+        return match ($name) {
+            'actions' => new ComponentCollection($this->filterMountableActions($this->getMountableActions(), $this)->all()),
+            default => null,
+        };
     }
 
     protected function getFieldType(): string

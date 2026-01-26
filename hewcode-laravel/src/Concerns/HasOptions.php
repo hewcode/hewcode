@@ -162,8 +162,9 @@ trait HasOptions
 
         return $query
             ->get(['id', $titleColumn])
-            ->mapWithKeys(fn ($model) => [
-                $model->id => $model->{$titleColumn},
+            ->map(fn ($model) => [
+                'label' => $model->{$titleColumn},
+                'value' => $model->id,
             ])
             ->toArray();
     }

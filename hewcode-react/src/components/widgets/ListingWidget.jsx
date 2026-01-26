@@ -2,15 +2,7 @@ import { useState } from 'react';
 import Listing from '../data-table/Listing';
 import useWidgetPolling from './useWidgetPolling';
 
-export default function ListingWidget({
-  name,
-  seal,
-  label,
-  listing,
-  compact = false,
-  refreshInterval,
-  className = ''
-}) {
+export default function ListingWidget({ name, path, seal, label, listing, compact = false, refreshInterval, className = '' }) {
   // Use state to hold widget data that can be updated via polling
   const [widgetData, setWidgetData] = useState({
     label,
@@ -20,6 +12,7 @@ export default function ListingWidget({
   // Note: Listing data itself is not updated via polling as Listing has its own refresh mechanisms
   useWidgetPolling({
     name,
+    path,
     refreshInterval,
     seal,
     onUpdate: (data) => {

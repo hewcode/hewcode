@@ -14,52 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 trait InteractsWithActions
 {
-    public function mountAction(string $name, array $args): mixed
+    public function mountAction(Action $action, array $args): mixed
     {
-        $actions = $this->filterMountableActions($this->getMountableActions(), $this);
-
-        // Check regular actions first
-        /** @var Action|null $action */
-        $action = $actions->first(fn (Action $action) => $action->name === $name);
-
-        if (! $action && str_contains($name, '.')) {
-            $lastPart = null;
-            $lastComponent = null;
-
-            foreach (explode('.', $name) as $part) {
-                $currentPart = ($lastPart ? $lastPart . '.' : '') . $part;
-
-                if (! $lastComponent) {
-                    $lastComponent = $actions->first(fn (Action $action) => $action->name === $part);
-                } else {
-                    if ($lastComponent instanceof MountsComponents) {
-                        $component = $lastComponent->getComponent($part, $part);
-
-                        if ($component) {
-                            $lastComponent = $component;
-                            $lastPart = $currentPart;
-                            continue;
-                        }
-                    }
-
-                    if ($lastComponent instanceof MountsActions) {
-                        $lastComponent = $this->filterMountableActions($lastComponent->getMountableActions(), $lastComponent)
-                            ->first(fn (Action $action) => $action->name === $part);
-                    }
-                }
-
-                $lastPart = $currentPart;
-            }
-
-            if ($lastComponent instanceof Action) {
-                $action = $lastComponent;
-            }
-        }
-
-        if (! $action instanceof Action) {
-            throw new InvalidArgumentException("Action [$name] not found.");
-        }
-
         if (! $action->isVisible()) {
             abort(403, 'Unauthorized.');
         }

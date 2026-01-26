@@ -2,6 +2,7 @@
 
 namespace Hewcode\Hewcode\Panel\Controllers;
 
+use Hewcode\Hewcode\Actions\Action;
 use Hewcode\Hewcode\Contracts\HasRecord;
 use Hewcode\Hewcode\Contracts\HasVisibility;
 use Hewcode\Hewcode\Contracts\MountsActions;
@@ -9,6 +10,7 @@ use Hewcode\Hewcode\Contracts\MountsComponents;
 use Hewcode\Hewcode\Contracts\ResolvesRecords;
 use Hewcode\Hewcode\Forms\Form;
 use Hewcode\Hewcode\Support\Container;
+use Hewcode\Hewcode\Widgets\Widget;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -121,106 +123,48 @@ class HewcodeController extends Controller
             $component->model($modelClass);
         }
 
-        if ($callName === 'mountAction') {
-            if (! $component instanceof MountsActions) {
-                abort(400);
-            }
-
+        if ($callName === 'mount') {
             $data = $request->validate([
                 'call.params.name' => 'required|string',
                 'call.params.args' => 'sometimes|array',
             ]);
 
-            $actionName = $data['call']['params']['name'];
-            $actionArgs = $data['call']['params']['args'] ?? [];
+            $mountName = $data['call']['params']['name'];
+            $mountArgs = $data['call']['params']['args'] ?? [];
 
             // remove componentName. prefix from actionName if present
-            if (str_starts_with($actionName, $componentName.'.')) {
-                $actionName = substr($actionName, strlen($componentName) + 1);
+            if (str_starts_with($mountName, $componentName.'.')) {
+                $mountName = substr($mountName, strlen($componentName) + 1);
             }
 
-            return $this->mountAction($component, $actionName, $actionArgs);
-        }
+            // now we will need to create a method that can traverse the mountName path recursively
+            // and call a getComponent method on every part of the path, until we reach the final part
+            // let's assume we already have that implemented as $this->getMountableComponent($component, $mountName)
+            $mountableComponent = $this->getMountableComponent($component, $mountName);
 
-        if ($callName === 'mountComponent') {
-            if (! $component instanceof MountsComponents) {
-                abort(400);
+            if (! $mountableComponent) {
+                throw new HttpException(400);
             }
 
-            $request->validate([
-                'call.params' => 'required|array',
-                'call.params.0' => 'required|string',
-            ]);
+            if ($component instanceof MountsActions && $mountableComponent instanceof Action) {
+                return $this->mountAction($component, $mountableComponent, $mountArgs);
+            }
 
-            $params = $request->input('call.params');
-
-            $path = $params[0];
-            $pathParts = explode('.', $path);
-
-            if (count($pathParts) === 3) {
-                $type = $pathParts[0];
-                $subComponentName = $pathParts[1];
-                $method = $pathParts[2];
-                $args = collect($params)->slice(1)->values()->all();
-
-                $subComponent = $component->getComponent($type, $subComponentName);
-
-                if (! $subComponent) {
-                    throw new HttpException(400);
-                }
-
-                if (! method_exists($subComponent, $method)) {
-                    throw new HttpException(400);
-                }
-
-                if (! exposed($subComponent, $method)) {
-                    throw new HttpException(400);
-                }
-
+            if (is_array($mountableComponent) && is_callable($mountableComponent)) {
                 return $this->primitiveToJsonResponse(
-                    $subComponent->{$method}(...$args)
-                );
-            } elseif (count($pathParts) === 1) {
-                $method = $pathParts[0];
-                $args = collect($params)->slice(1)->values()->all();
-
-                if (! method_exists($component, $method)) {
-                    throw new HttpException(400);
-                }
-
-                if (! exposed($component, $method)) {
-                    throw new HttpException(400);
-                }
-
-                return $this->primitiveToJsonResponse(
-                    $component->{$method}(...$args)
+                    call_user_func_array($mountableComponent, $mountArgs)
                 );
             }
 
-            throw new HttpException(400);
-        }
-
-        if ($callName === 'getWidget') {
-            $data = $request->validate([
-                'call.params.widgetName' => 'required|string',
-            ]);
-
-            $widgetName = $data['call']['params']['widgetName'];
-
-            // Find the widget in the container
-            $widget = $component->getComponent('widgets', $widgetName);
-
-            if (! $widget) {
-                abort(404, app()->environment('local') ? "Widget [$widgetName] not found" : '');
+            if ($mountableComponent instanceof Widget) {
+                return response()->json($mountableComponent->toData());
             }
-
-            return response()->json($widget->toData());
         }
 
         throw new HttpException(400);
     }
 
-    protected function mountAction(MountsActions $component, string $action, array $args): mixed
+    protected function mountAction(MountsActions $component, Action $action, array $args): mixed
     {
         return $component->mountAction($action, $args);
     }
@@ -254,5 +198,35 @@ class HewcodeController extends Controller
             ->send($request)
             ->through($middleware)
             ->then(fn ($request) => new \Illuminate\Http\Response());
+    }
+
+    protected function getMountableComponent(Container $component, string $mountName): mixed
+    {
+        $pathParts = explode('.', $mountName);
+        $current = $component;
+
+        foreach ($pathParts as $i => $part) {
+            $isLastPart = ($i === count($pathParts) - 1);
+
+            // Try to get it as a child component
+            if ($current instanceof MountsComponents) {
+                $child = $current->getComponent($part);
+
+                if ($child !== null) {
+                    $current = $child;
+                    continue;
+                }
+            }
+
+            // If not a child component, check if it's an exposed method on current
+            if ($isLastPart && method_exists($current, $part) && exposed($current, $part)) {
+                return [$current, $part];
+            }
+
+            // Could not resolve this part of the path
+            return null;
+        }
+
+        return $current;
     }
 }

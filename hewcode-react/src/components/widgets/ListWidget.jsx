@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Icon } from '../icon-registry';
 import useWidgetPolling from './useWidgetPolling';
 
 export default function ListWidget({
   name,
+  path,
   seal,
   label,
   items = [],
@@ -21,6 +22,7 @@ export default function ListWidget({
   // Set up polling if refreshInterval is provided
   useWidgetPolling({
     name,
+    path,
     refreshInterval,
     seal,
     onUpdate: (data) => {
@@ -34,13 +36,11 @@ export default function ListWidget({
     return (
       <div className={`bg-box border-box-border rounded-lg border shadow-sm ${className}`}>
         {widgetData.label && (
-          <div className="px-6 py-4 border-b border-box-border">
-            <h3 className="text-lg font-semibold text-foreground">{widgetData.label}</h3>
+          <div className="border-box-border border-b px-6 py-4">
+            <h3 className="text-foreground text-lg font-semibold">{widgetData.label}</h3>
           </div>
         )}
-        <div className="p-6 text-center text-muted-foreground">
-          {emptyState}
-        </div>
+        <div className="text-muted-foreground p-6 text-center">{emptyState}</div>
       </div>
     );
   }
@@ -48,17 +48,13 @@ export default function ListWidget({
   return (
     <div className={`bg-box border-box-border rounded-lg border shadow-sm ${className}`}>
       {widgetData.label && (
-        <div className="px-6 py-4 border-b border-box-border">
-          <h3 className="text-lg font-semibold text-foreground">{widgetData.label}</h3>
+        <div className="border-box-border border-b px-6 py-4">
+          <h3 className="text-foreground text-lg font-semibold">{widgetData.label}</h3>
         </div>
       )}
-      <ul className="divide-y divide-border">
+      <ul className="divide-border divide-y">
         {widgetData.items.map((item, index) => (
-          <ListItem
-            key={index}
-            item={item}
-            hasAction={hasAction}
-          />
+          <ListItem key={index} item={item} hasAction={hasAction} />
         ))}
       </ul>
     </div>
@@ -81,21 +77,13 @@ function ListItem({ item, hasAction }) {
     <li className={`px-6 py-4 ${hasAction ? 'hover:bg-muted/50 cursor-pointer' : ''}`}>
       <div className="flex items-start gap-3">
         {item.icon && (
-          <div className="flex-shrink-0 mt-0.5">
+          <div className="mt-0.5 flex-shrink-0">
             <Icon icon={item.icon} className={`h-5 w-5 ${iconColorClass}`} />
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          {item.description && (
-            <p className="text-sm font-medium text-foreground">
-              {item.description}
-            </p>
-          )}
-          {item.time && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {item.time}
-            </p>
-          )}
+        <div className="min-w-0 flex-1">
+          {item.description && <p className="text-foreground text-sm font-medium">{item.description}</p>}
+          {item.time && <p className="text-muted-foreground mt-1 text-xs">{item.time}</p>}
         </div>
       </div>
     </li>

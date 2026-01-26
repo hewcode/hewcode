@@ -79,7 +79,7 @@ export default function Action({
             seal,
             context,
             call: {
-              name: 'mountAction',
+              name: 'mount',
               params: {
                 name: path,
                 args: {

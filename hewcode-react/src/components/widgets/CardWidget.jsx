@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Icon } from '../icon-registry';
+import { useState } from 'react';
 import Actions from '../actions/Actions';
+import { Icon } from '../icon-registry';
 import useWidgetPolling from './useWidgetPolling';
 
 export default function CardWidget({
   name,
+  path,
   seal,
   heading,
   description,
@@ -25,6 +26,7 @@ export default function CardWidget({
   // Set up polling if refreshInterval is provided
   useWidgetPolling({
     name,
+    path,
     refreshInterval,
     seal,
     onUpdate: (data) => {
@@ -49,32 +51,23 @@ export default function CardWidget({
   return (
     <div className={`bg-box border-box-border rounded-lg border shadow-sm ${className}`}>
       {(widgetData.heading || icon) && (
-        <div className="px-6 py-4 border-b border-box-border">
+        <div className="border-box-border border-b px-6 py-4">
           <div className="flex items-center gap-3">
-            {icon && (
-              <Icon icon={icon} className={`h-5 w-5 ${iconColorClass}`} />
-            )}
-            {widgetData.heading && (
-              <h3 className="text-lg font-semibold text-foreground">{widgetData.heading}</h3>
-            )}
+            {icon && <Icon icon={icon} className={`h-5 w-5 ${iconColorClass}`} />}
+            {widgetData.heading && <h3 className="text-foreground text-lg font-semibold">{widgetData.heading}</h3>}
           </div>
         </div>
       )}
 
       <div className="p-6">
-        {widgetData.description && (
-          <p className="text-muted-foreground mb-4">{widgetData.description}</p>
-        )}
+        {widgetData.description && <p className="text-muted-foreground mb-4">{widgetData.description}</p>}
 
         {widgetData.content && (
-          <div
-            className="prose prose-sm dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: widgetData.content }}
-          />
+          <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: widgetData.content }} />
         )}
 
         {actions && Object.keys(actions).length > 0 && (
-          <div className="mt-4 pt-4 border-t border-border">
+          <div className="border-border mt-4 border-t pt-4">
             <Actions seal={seal} actions={actions} spacing="space-x-3" />
           </div>
         )}

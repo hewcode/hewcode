@@ -24,7 +24,7 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
             seal,
             context,
             call: {
-              name: 'mountAction',
+              name: 'mount',
               params: {
                 name: path,
                 args: {
@@ -85,6 +85,8 @@ const ActionModal = ({ seal, context, path, name, args, modalHeading, modalDescr
       <div className="py-4 text-center">
         <Form
           {...form}
+          seal={seal}
+          context={context}
           onSuccess={async (action, state, response) => {
             const data = await response.json();
             const shouldClose = data.actions?.[name]?.shouldClose || false;

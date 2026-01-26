@@ -10,6 +10,8 @@ class Component
 
     protected ?string $name = null;
 
+    protected ?string $collectionName = null;
+
     protected ?self $parent = null;
 
     public function name(?string $name): static
@@ -38,11 +40,24 @@ class Component
 
     public function getPath(): string
     {
-        if ($this->parent) {
-            return $this->parent->getPath() . '.' . $this->getName();
+        $name = $this->getName();
+
+        if ($this->collectionName) {
+            $name = $this->collectionName . '.' . $name;
         }
 
-        return $this->getName();
+        if ($this->parent) {
+            return $this->parent->getPath() . '.' . $name;
+        }
+
+        return $name;
+    }
+
+    public function componentCollection(string $collectionName): self
+    {
+        $this->collectionName = $collectionName;
+
+        return $this;
     }
 
     public function toData(): array

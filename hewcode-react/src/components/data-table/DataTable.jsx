@@ -319,8 +319,11 @@ const DataTable = ({
       body: {
         seal,
         call: {
-          name: 'mountComponent',
-          params: ['reorder', active.id, newIndex],
+          name: 'mount',
+          params: {
+            name: 'reorder',
+            args: [active.id, newIndex],
+          },
         },
       },
     }).catch((error) => {

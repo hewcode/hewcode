@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import { useState } from 'react';
 import { Icon } from '../icon-registry';
-import { ArrowUp, ArrowDown } from 'lucide-react';
 import useWidgetPolling from './useWidgetPolling';
 
 export default function StatsWidget({
   name,
+  path,
   seal,
   label,
   value,
@@ -28,6 +29,7 @@ export default function StatsWidget({
   // Set up polling if refreshInterval is provided
   useWidgetPolling({
     name,
+    path,
     refreshInterval,
     seal,
     onUpdate: (data) => {
@@ -54,32 +56,23 @@ export default function StatsWidget({
 
   return (
     <div className={`bg-box border-box-border rounded-lg border p-6 shadow-sm ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-muted-foreground">{widgetData.label}</span>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-muted-foreground text-sm font-medium">{widgetData.label}</span>
         {icon && (
-          <div className={`p-2 rounded-lg ${iconBgClass}`}>
+          <div className={`rounded-lg p-2 ${iconBgClass}`}>
             <Icon icon={icon} className={`h-5 w-5 ${iconColorClass}`} />
           </div>
         )}
       </div>
 
-      <div className="text-3xl font-bold text-foreground mb-1">
-        {widgetData.formatted_value || widgetData.value}
-      </div>
+      <div className="text-foreground mb-1 text-3xl font-bold">{widgetData.formatted_value || widgetData.value}</div>
 
-      {widgetData.description && (
-        <p className="text-sm text-muted-foreground mb-2">{widgetData.description}</p>
-      )}
+      {widgetData.description && <p className="text-muted-foreground mb-2 text-sm">{widgetData.description}</p>}
 
       {widgetData.trend && (
         <div className="flex items-center text-sm">
-          <TrendIndicator
-            value={widgetData.trend.value}
-            direction={widgetData.trend.direction}
-          />
-          {widgetData.trend.label && (
-            <span className="ml-2 text-muted-foreground">{widgetData.trend.label}</span>
-          )}
+          <TrendIndicator value={widgetData.trend.value} direction={widgetData.trend.direction} />
+          {widgetData.trend.label && <span className="text-muted-foreground ml-2">{widgetData.trend.label}</span>}
         </div>
       )}
     </div>
@@ -93,7 +86,7 @@ function TrendIndicator({ value, direction }) {
 
   return (
     <div className={`flex items-center ${colorClass} font-medium`}>
-      <TrendIcon className="h-4 w-4 mr-1" />
+      <TrendIcon className="mr-1 h-4 w-4" />
       <span>{Math.abs(value).toFixed(1)}%</span>
     </div>
   );

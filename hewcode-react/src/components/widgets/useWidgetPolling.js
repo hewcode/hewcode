@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import useFetch from '../../hooks/useFetch.js';
+import { useEffect, useState } from 'react';
 import useRoute from '../../hooks/use-route.ts';
+import useFetch from '../../hooks/useFetch.js';
 
 /**
  * Hook to poll for widget updates
@@ -10,7 +10,7 @@ import useRoute from '../../hooks/use-route.ts';
  * @param {Object} params.seal - Seal object for authentication
  * @param {Function} params.onUpdate - Callback when widget data updates
  */
-export default function useWidgetPolling({ name, refreshInterval, seal, onUpdate }) {
+export default function useWidgetPolling({ name, path, refreshInterval, seal, onUpdate }) {
   const [isPolling, setIsPolling] = useState(false);
   const { fetch } = useFetch();
   const route = useRoute();
@@ -30,9 +30,9 @@ export default function useWidgetPolling({ name, refreshInterval, seal, onUpdate
           body: {
             seal,
             call: {
-              name: 'getWidget',
+              name: 'mount',
               params: {
-                widgetName: name,
+                name: path,
               },
             },
           },

@@ -9,6 +9,7 @@ use Hewcode\Hewcode\Contracts;
 use Hewcode\Hewcode\Forms\Schema\Field;
 use Hewcode\Hewcode\Forms\Schema;
 use Hewcode\Hewcode\Forms\Schema\Wizard\Step;
+use Hewcode\Hewcode\Support\ComponentCollection;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Component;
 use Hewcode\Hewcode\Support\Context;
@@ -130,6 +131,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
                 ->shareEvaluationParameters($this->getAllEvaluationParameters())
                 ->parent($this)
                 ->record($this->record)
+                ->componentCollection('fields')
                 ->model($this->model instanceof Model ? $this->model : null),
             $this->fields
         );
@@ -376,6 +378,7 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
                 ->parent($this)
                 ->record($this->record)
                 ->model($this->model instanceof Model ? $this->model : null)
+                ->componentCollection('actions')
                 ->withPublicContext('state', $this->state),
             array_merge($this->footerActions, [
                 $this->getSubmitAction()
@@ -395,10 +398,11 @@ class Form extends Container implements Contracts\ResolvesRecords, Contracts\Has
         return $action;
     }
 
-    public function getComponent(string $type, string $name): ?Component
+    public function getComponent(string $name): Component|ComponentCollection|null
     {
-        return match ($type) {
-            'fields' => $this->getField($name),
+        return match ($name) {
+            'fields' => new ComponentCollection($this->getFields()),
+            'actions' => new ComponentCollection($this->getMountableActions()),
             default => null,
         };
     }

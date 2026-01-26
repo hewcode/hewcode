@@ -4,10 +4,12 @@ namespace Hewcode\Hewcode\Actions;
 
 use Hewcode\Hewcode\Concerns;
 use Hewcode\Hewcode\Contracts;
+use Hewcode\Hewcode\Support\Component;
+use Hewcode\Hewcode\Support\ComponentCollection;
 use Hewcode\Hewcode\Support\Container;
 use Hewcode\Hewcode\Support\Context;
 
-class Actions extends Container implements Contracts\MountsActions, Contracts\ResolvesRecords, Contracts\HasVisibility, Contracts\HasRecord
+class Actions extends Container implements Contracts\MountsActions, Contracts\MountsComponents, Contracts\ResolvesRecords, Contracts\HasVisibility, Contracts\HasRecord
 {
     use Concerns\ResolvesRecords;
     use Concerns\InteractsWithActions;
@@ -47,15 +49,9 @@ class Actions extends Container implements Contracts\MountsActions, Contracts\Re
     public function toData(): array
     {
         return array_merge(parent::toData(), [
-            'actions' => collect($this->actions)
-                ->filter(fn (Action $action) => $action
-                    ->model($this->getModel())
-                    ->context($this->context)
-                    ->record($this->getRecord())
-                    ->isVisible()
-                )
+            'actions' => collect($this->getMountableActions())
                 ->mapWithKeys(fn (Action $action) => [
-                    $action->name => $action->parent($this)->toData(),
+                    $action->name => $action->toData(),
                 ])
                 ->toArray(),
         ]);
@@ -63,6 +59,19 @@ class Actions extends Container implements Contracts\MountsActions, Contracts\Re
 
     public function getMountableActions(): array
     {
-        return $this->actions;
+        return collect($this->actions)
+            ->filter(fn (Action $action) => $action
+                ->model($this->getModel())
+                ->context($this->context)
+                ->record($this->getRecord())
+                ->parent($this)
+                ->isVisible()
+            )
+            ->toArray();
+    }
+
+    public function getComponent(string $name): Component|ComponentCollection|null
+    {
+        return (new ComponentCollection($this->getMountableActions()))->getComponent($name);
     }
 }

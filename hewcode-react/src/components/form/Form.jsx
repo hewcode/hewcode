@@ -39,6 +39,7 @@ const wizardStepCache = {};
 
 export default function Form({
   seal,
+  context,
   path,
   fields = [],
   state = {},
@@ -178,9 +179,13 @@ export default function Form({
           method: 'POST',
           body: {
             seal,
+            context,
             call: {
-              name: 'mountComponent',
-              params: [(path ? path + '.' : '') + 'getFormData', formData],
+              name: 'mount',
+              params: {
+                name: (path ? path + '.' : '') + 'getFormData',
+                args: [formData],
+              },
             },
           },
         },
@@ -226,9 +231,13 @@ export default function Form({
           method: 'POST',
           body: {
             seal,
+            context,
             call: {
-              name: 'mountComponent',
-              params: ['validateWizardStep', stepIndex, formData],
+              name: 'mount',
+              params: {
+                name: (path ? path + '.' : '') + 'validateWizardStep',
+                args: [stepIndex, formData],
+              },
             },
           },
         },
@@ -312,6 +321,7 @@ export default function Form({
     return (
       <FieldComponent
         seal={seal}
+        context={context}
         key={name}
         type={type}
         name={name}

@@ -2,7 +2,7 @@ import useRoute from '../../hooks/use-route.ts';
 import useFetch from '../../hooks/useFetch.js';
 import BaseSelect from '../support/select.jsx';
 
-export default function Select({ seal, ...props }) {
+export default function Select({ seal, context, ...props }) {
   const { fetch } = useFetch();
   const route = useRoute();
 
@@ -20,9 +20,13 @@ export default function Select({ seal, ...props }) {
             method: 'POST',
             body: {
               seal,
+              context,
               call: {
-                name: 'mountComponent',
-                params: ['fields.' + props.name + '.getSearchResults', query],
+                name: 'mount',
+                params: {
+                  name: props.path + '.getSearchResults',
+                  args: [query],
+                },
               },
             },
           },

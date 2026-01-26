@@ -1,25 +1,26 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  AreaChart,
   Area,
-  PieChart,
-  Pie,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
   Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
 import useWidgetPolling from './useWidgetPolling';
 
 export default function ChartWidget({
   name,
+  path,
   seal,
   label,
   chartType = 'line',
@@ -39,6 +40,7 @@ export default function ChartWidget({
   // Set up polling if refreshInterval is provided
   useWidgetPolling({
     name,
+    path,
     refreshInterval,
     seal,
     onUpdate: (data) => {
@@ -50,13 +52,8 @@ export default function ChartWidget({
   });
 
   // Use passed colors or default chart color CSS variables
-  const chartColors = colors.length > 0 ? colors : [
-    'var(--chart-data-1)',
-    'var(--chart-data-2)',
-    'var(--chart-data-3)',
-    'var(--chart-data-4)',
-    'var(--chart-data-5)',
-  ];
+  const chartColors =
+    colors.length > 0 ? colors : ['var(--chart-data-1)', 'var(--chart-data-2)', 'var(--chart-data-3)', 'var(--chart-data-4)', 'var(--chart-data-5)'];
 
   const renderChart = () => {
     const commonProps = {
@@ -69,15 +66,8 @@ export default function ChartWidget({
         return (
           <LineChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis
-              dataKey={options.xAxisKey || 'name'}
-              className="text-xs text-muted-foreground"
-              stroke="var(--muted-foreground)"
-            />
-            <YAxis
-              className="text-xs text-muted-foreground"
-              stroke="var(--muted-foreground)"
-            />
+            <XAxis dataKey={options.xAxisKey || 'name'} className="text-muted-foreground text-xs" stroke="var(--muted-foreground)" />
+            <YAxis className="text-muted-foreground text-xs" stroke="var(--muted-foreground)" />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'var(--popover)',
@@ -105,15 +95,8 @@ export default function ChartWidget({
         return (
           <BarChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis
-              dataKey={options.xAxisKey || 'name'}
-              className="text-xs text-muted-foreground"
-              stroke="var(--muted-foreground)"
-            />
-            <YAxis
-              className="text-xs text-muted-foreground"
-              stroke="var(--muted-foreground)"
-            />
+            <XAxis dataKey={options.xAxisKey || 'name'} className="text-muted-foreground text-xs" stroke="var(--muted-foreground)" />
+            <YAxis className="text-muted-foreground text-xs" stroke="var(--muted-foreground)" />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'var(--popover)',
@@ -124,12 +107,7 @@ export default function ChartWidget({
             />
             <Legend wrapperStyle={{ fontSize: '12px', color: 'var(--foreground)' }} />
             {options.bars?.map((bar, index) => (
-              <Bar
-                key={bar.dataKey}
-                dataKey={bar.dataKey}
-                fill={bar.fill || chartColors[index % chartColors.length]}
-                name={bar.name}
-              />
+              <Bar key={bar.dataKey} dataKey={bar.dataKey} fill={bar.fill || chartColors[index % chartColors.length]} name={bar.name} />
             ))}
           </BarChart>
         );
@@ -138,15 +116,8 @@ export default function ChartWidget({
         return (
           <AreaChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis
-              dataKey={options.xAxisKey || 'name'}
-              className="text-xs text-muted-foreground"
-              stroke="var(--muted-foreground)"
-            />
-            <YAxis
-              className="text-xs text-muted-foreground"
-              stroke="var(--muted-foreground)"
-            />
+            <XAxis dataKey={options.xAxisKey || 'name'} className="text-muted-foreground text-xs" stroke="var(--muted-foreground)" />
+            <YAxis className="text-muted-foreground text-xs" stroke="var(--muted-foreground)" />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'var(--popover)',
@@ -200,15 +171,15 @@ export default function ChartWidget({
         );
 
       default:
-        return <div className="text-center text-muted-foreground">Unsupported chart type: {chartType}</div>;
+        return <div className="text-muted-foreground text-center">Unsupported chart type: {chartType}</div>;
     }
   };
 
   return (
     <div className={`bg-box border-box-border rounded-lg border shadow-sm ${className}`}>
       {widgetData.label && (
-        <div className="px-6 py-4 border-b border-box-border">
-          <h3 className="text-lg font-semibold text-foreground">{widgetData.label}</h3>
+        <div className="border-box-border border-b px-6 py-4">
+          <h3 className="text-foreground text-lg font-semibold">{widgetData.label}</h3>
         </div>
       )}
       <div className="p-6">
