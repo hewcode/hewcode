@@ -4,17 +4,26 @@ namespace Hewcode\Hewcode\Forms\Schema;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class FileUpload extends Field
 {
     protected array $acceptedFileTypes = [];
+
     protected ?int $maxSize = null; // in kilobytes
+
     protected bool $multiple = false;
+
     protected ?int $maxFiles = null;
+
     protected bool $image = false;
+
     protected bool $enablePreview = true;
+
     protected ?string $disk = null;
+
     protected ?string $directory = null;
+
     protected bool $storeFileNames = false;
 
     protected function setUp(): void
@@ -23,7 +32,7 @@ class FileUpload extends Field
 
         // Format state for frontend display
         $this->formatStateUsing(function ($state) {
-            if (!$state) {
+            if (! $state) {
                 return $this->multiple ? [] : null;
             }
 
@@ -42,6 +51,7 @@ class FileUpload extends Field
             // If it's a JSON string (multiple files stored), decode it
             if ($this->multiple && is_string($state)) {
                 $paths = json_decode($state, true) ?? [];
+
                 return array_map($pathToMetadata, $paths);
             }
 
@@ -55,12 +65,12 @@ class FileUpload extends Field
 
         // Handle file storage when saving
         $this->dehydrateStateUsing(function ($state) {
-            if (!$state) {
+            if (! $state) {
                 return null;
             }
 
             // If state is already a path (editing existing), return as-is
-            if (is_string($state) && !($state instanceof UploadedFile)) {
+            if (is_string($state) && ! ($state instanceof UploadedFile)) {
                 return $state;
             }
 
@@ -70,7 +80,7 @@ class FileUpload extends Field
             }
 
             // Handle metadata object from frontend (single file)
-            if (is_array($state) && isset($state['path']) && !isset($state[0])) {
+            if (is_array($state) && isset($state['path']) && ! isset($state[0])) {
                 // If no new file uploaded, keep existing path
                 return $state['path'];
             }
@@ -101,47 +111,20 @@ class FileUpload extends Field
     {
         $this->acceptedFileTypes = $types;
 
-        // Custom validation that skips metadata objects
-        $this->rules[] = function ($attribute, $value, $fail) use ($types) {
-            // Skip validation for metadata objects (existing files)
-            if (is_array($value) && isset($value['path'])) {
-                return;
-            }
+        // Normalize extensions
+        $extensions = array_map(fn ($t) => ltrim($t, '.'), $types);
 
-            if (! $value) {
-                return;
-            }
+        $this->rules[] = function ($attribute, $value, $fail) use ($extensions) {
+            $this->validateFiles($attribute, $value, $fail, function ($file) use ($attribute, $fail, $extensions) {
+                $validator = Validator::make(
+                    [$attribute => $file],
+                    [$attribute => 'mimes:'.implode(',', $extensions)]
+                );
 
-            $extensions = array_map(fn($t) => ltrim($t, '.'), $types);
-
-            // For multiple files
-            if ($this->multiple && is_array($value)) {
-                foreach ($value as $item) {
-                    if (is_array($item) && isset($item['path'])) {
-                        continue;
-                    }
-                    if (!($item instanceof \Illuminate\Http\UploadedFile)) {
-                        $fail("The $attribute must be a file.");
-                        return;
-                    }
-                    $ext = $item->getClientOriginalExtension();
-                    if (!in_array(strtolower($ext), $extensions)) {
-                        $fail("The $attribute must be a file of type: " . implode(', ', $extensions) . ".");
-                        return;
-                    }
+                if ($validator->fails()) {
+                    $fail($validator->errors()->first($attribute));
                 }
-                return;
-            }
-
-            // For single file
-            if (!($value instanceof \Illuminate\Http\UploadedFile)) {
-                $fail("The $attribute must be a file.");
-                return;
-            }
-            $ext = $value->getClientOriginalExtension();
-            if (!in_array(strtolower($ext), $extensions)) {
-                $fail("The $attribute must be a file of type: " . implode(', ', $extensions) . ".");
-            }
+            });
         };
 
         return $this;
@@ -151,33 +134,17 @@ class FileUpload extends Field
     {
         $this->maxSize = $kilobytes;
 
-        // Custom validation that skips metadata objects
         $this->rules[] = function ($attribute, $value, $fail) use ($kilobytes) {
-            // Skip validation for metadata objects (existing files)
-            if (is_array($value) && isset($value['path'])) {
-                return;
-            }
+            $this->validateFiles($attribute, $value, $fail, function ($file) use ($attribute, $fail, $kilobytes) {
+                $validator = Validator::make(
+                    [$attribute => $file],
+                    [$attribute => "max:$kilobytes"]
+                );
 
-            $maxBytes = $kilobytes * 1024;
-
-            // For multiple files
-            if ($this->multiple && is_array($value)) {
-                foreach ($value as $item) {
-                    if (is_array($item) && isset($item['path'])) {
-                        continue;
-                    }
-                    if ($item instanceof \Illuminate\Http\UploadedFile && $item->getSize() > $maxBytes) {
-                        $fail("The $attribute must not be greater than $kilobytes kilobytes.");
-                        return;
-                    }
+                if ($validator->fails()) {
+                    $fail($validator->errors()->first($attribute));
                 }
-                return;
-            }
-
-            // For single file
-            if ($value instanceof \Illuminate\Http\UploadedFile && $value->getSize() > $maxBytes) {
-                $fail("The $attribute must not be greater than $kilobytes kilobytes.");
-            }
+            });
         };
 
         return $this;
@@ -210,43 +177,17 @@ class FileUpload extends Field
         $this->image = true;
         $this->acceptedFileTypes(['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp']);
 
-        // Only validate as image if it's an actual file upload, not metadata
         $this->rules[] = function ($attribute, $value, $fail) {
-            // Skip validation for metadata objects (existing files)
-            if (is_array($value) && isset($value['path'])) {
-                return;
-            }
+            $this->validateFiles($attribute, $value, $fail, function ($file) use ($attribute, $fail) {
+                $validator = Validator::make(
+                    [$attribute => $file],
+                    [$attribute => 'image']
+                );
 
-            if (! $value) {
-                return;
-            }
-
-            // For multiple files
-            if ($this->multiple && is_array($value)) {
-                foreach ($value as $item) {
-                    if (is_array($item) && isset($item['path'])) {
-                        continue; // Skip metadata
-                    }
-                    if (!($item instanceof \Illuminate\Http\UploadedFile) || !$item->isValid()) {
-                        $fail("The $attribute must be a valid image file.");
-                        return;
-                    }
-                    if (!in_array($item->getMimeType(), ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'])) {
-                        $fail("The $attribute must be an image.");
-                        return;
-                    }
+                if ($validator->fails()) {
+                    $fail($validator->errors()->first($attribute));
                 }
-                return;
-            }
-
-            // For single file
-            if (!($value instanceof \Illuminate\Http\UploadedFile) || !$value->isValid()) {
-                $fail("The $attribute must be a valid image file.");
-                return;
-            }
-            if (!in_array($value->getMimeType(), ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'])) {
-                $fail("The $attribute must be an image.");
-            }
+            });
         };
 
         return $this;
@@ -305,7 +246,7 @@ class FileUpload extends Field
         }
 
         return implode(',', array_map(
-            fn($type) => '.' . ltrim($type, '.'),
+            fn ($type) => '.'.ltrim($type, '.'),
             $this->acceptedFileTypes
         ));
     }
@@ -320,5 +261,34 @@ class FileUpload extends Field
         }
 
         return $file->store($directory, $disk);
+    }
+
+    protected function validateFiles(string $attribute, mixed $value, callable $fail, callable $callback): void
+    {
+        // Skip validation for metadata objects (existing files)
+        if (is_array($value) && isset($value['path'])) {
+            return;
+        }
+
+        if (! $value) {
+            return;
+        }
+
+        $items = ($this->multiple && is_array($value)) ? $value : [$value];
+
+        foreach ($items as $item) {
+            // Skip metadata
+            if (is_array($item) && isset($item['path'])) {
+                continue;
+            }
+
+            if (! ($item instanceof UploadedFile)) {
+                $fail("The $attribute must be a file.");
+
+                return;
+            }
+
+            $callback($item);
+        }
     }
 }
