@@ -23,10 +23,28 @@ type HewcodeContext = {
   setHewcode: (hewcode: Hewcode) => void;
 };
 
-const HewcodeContext = createContext(null);
+const HewcodeContext = createContext<HewcodeContext | null>(null);
 
 export function HewcodeProvider({ children, initialHewcode }) {
-  const [hewcode, setHewcode] = useState(initialHewcode);
+  const [hewcode, setHewcodeState] = useState(initialHewcode);
+
+  const setHewcode = (newState) => {
+    setHewcodeState((prev) => {
+      const next = typeof newState === 'function' ? newState(prev) : newState;
+
+      if (prev?.icons || next?.icons) {
+        return {
+          ...next,
+          icons: {
+            ...(prev?.icons || {}),
+            ...(next?.icons || {}),
+          },
+        };
+      }
+
+      return next;
+    });
+  };
 
   return <HewcodeContext.Provider value={{ hewcode, setHewcode }}>{children}</HewcodeContext.Provider>;
 }
