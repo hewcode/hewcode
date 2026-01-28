@@ -1,4 +1,5 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, ReactNode, useContext } from 'react';
+import { useHewcode } from './hewcode-context';
 
 interface LocaleData {
   messages: Record<string, string>;
@@ -17,17 +18,19 @@ interface LocaleProviderProps {
   locale: LocaleData | any; // Allow any to handle Inertia props
 }
 
-export function LocaleProvider({ children, locale }: LocaleProviderProps) {
+export function LocaleProvider({ children }: LocaleProviderProps) {
+  const locale = useHewcode().hewcode?.locale;
+
+  if (!locale) {
+    throw new Error('Locale data is not available in Hewcode context');
+  }
+
   const value = {
     messages: locale.messages,
     locale: locale.lang,
   };
 
-  return (
-    <LocaleContext.Provider value={value}>
-      {children}
-    </LocaleContext.Provider>
-  );
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
 
 export function useLocaleContext() {

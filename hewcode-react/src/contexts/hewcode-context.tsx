@@ -3,6 +3,9 @@ import type { NavItem } from '../types';
 
 type Hewcode = {
   routes: Record<string, string>;
+  locale: Record<string, unknown>;
+  icons: Record<string, string>;
+  toasts: any[];
   panel: {
     name: string;
     title: string | null;

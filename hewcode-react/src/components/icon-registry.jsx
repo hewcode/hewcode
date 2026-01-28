@@ -1,3 +1,5 @@
+import { useHewcode } from '../contexts/hewcode-context.tsx';
+
 /**
  * SVG Sprite Registry Component
  *
@@ -7,7 +9,9 @@
  *
  * @param {Object.<string, string>} icons - Map of icon names to SVG strings
  */
-export function IconRegistry({ icons = {} }) {
+export function IconRegistry() {
+  const { icons } = useHewcode().hewcode;
+
   if (!icons || Object.keys(icons).length === 0) {
     return null;
   }
@@ -52,7 +56,7 @@ export function Icon({ icon, fallbackComponent: FallbackComponent, className = '
       <svg
         width={iconSize}
         height={iconSize}
-        className={className || "inline-block !size-auto flex-shrink-0"}
+        className={className || 'inline-block !size-auto flex-shrink-0'}
         style={{ width: iconSize, height: iconSize }}
         fill="none"
         stroke="currentColor"
@@ -74,7 +78,7 @@ export function Icon({ icon, fallbackComponent: FallbackComponent, className = '
       <svg
         width={iconSize}
         height={iconSize}
-        className={className || "inline-block !size-auto flex-shrink-0"}
+        className={className || 'inline-block !size-auto flex-shrink-0'}
         style={{ width: iconSize, height: iconSize }}
         fill="none"
         stroke="currentColor"

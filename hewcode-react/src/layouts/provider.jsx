@@ -11,10 +11,10 @@ export default function Provider({ children, ...props }) {
 
   return (
     <HewcodeProvider initialHewcode={hewcode}>
-      <LocaleProvider locale={hewcode.locale}>
+      <LocaleProvider>
         <ModalProvider>
-          <IconRegistry icons={hewcode?.icons || {}} />
-          <App toasts={hewcode.toasts}>{children}</App>
+          <IconRegistry />
+          <App>{children}</App>
           <ModalRenderer />
           <Toaster closeButton richColors />
         </ModalProvider>
