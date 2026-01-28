@@ -26,6 +26,8 @@
     "./lib/*": "./src/lib/*",
     "./pages": "./src/pages",
     "./pages/*": "./src/pages/*",
+    "./styles": "./src/styles",
+    "./styles/*": "./src/styles/*",
     "./vite": "./vite/index.js",
     "./vite/*": "./vite/*"
   },
