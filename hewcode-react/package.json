@@ -1,6 +1,6 @@
 {
   "name": "@hewcode/react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React components for Hewcode",
   "main": "src/index.js",
   "module": "src/index.js",
