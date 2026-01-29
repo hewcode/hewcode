@@ -15,6 +15,10 @@ Hewcode requires the following:
 
 ## Installation
 
+:::warning
+First, make sure you have completed the [Inertia setup](https://inertiajs.com/docs).
+:::
+
 Install the Laravel package via Composer:
 
 ```bash
@@ -85,6 +89,12 @@ Finally, add the global styles to your application's CSS file (typically `resour
 
 This import should be placed at the top of your CSS file, before any custom styles.
 
+## Next Steps
+
+- **[Lists](./listings)**: Build record listings with sorting, filtering, and pagination among other features.
+- **[Forms](./forms)**: Create forms for creating and editing records with validation and custom fields.
+- **[Panels](./panels)**: Quickly build dashboard panels.
+
 ## Locale
 
 Hewcode automatically checks `__('app.models.{model}.columns.{column}')` for column labels. So you should prepare an `app.php` language file. Example:
@@ -103,9 +113,3 @@ return [
 ```
 
 See [Automatic Locale Labels](./auto-localization) for more details.
-
-## Next Steps
-
-- **[Lists](./listings)**: Build record listings with sorting, filtering, and pagination among other features.
-- **[Forms](./forms)**: Create forms for creating and editing records with validation and custom fields.
-- **[Panels](./panels)**: Quickly build dashboard panels.
