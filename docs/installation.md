@@ -59,6 +59,32 @@ createInertiaApp({
 });
 ```
 
+Install the React vite plugin if you haven't already:
+
+```bash
+npm install --save-dev @vitejs/plugin-react
+```
+
+Then, configure Vite to use the React plugin by updating your `vite.config.ts` file:
+
+```ts
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: 'resources/js/app.tsx',
+            refresh: true,
+        }),
+        react(),
+        tailwindcss(),
+    ],
+});
+```
+
 Update your Blade template (typically `resources/views/app.blade.php`) to include Hewcode's page components in Vite's build process:
 
 ```php
@@ -88,6 +114,12 @@ Finally, add the global styles to your application's CSS file (typically `resour
 ```
 
 This import should be placed at the top of your CSS file, before any custom styles.
+
+If not already done, make sure the CSS file is imported in your main JavaScript/TypeScript entry file (typically `resources/js/app.js` or `resources/js/app.jsx`):
+
+```js
+import '../css/app.css';
+```
 
 ## Next Steps
 
