@@ -27,10 +27,35 @@ composer require hewcode/hewcode
 
 The package will automatically register its service provider.
 
-Next, Install the React package and set up the Inertia provider:
+## Automated Installation
+
+Run the install command to automatically configure your Laravel application:
 
 ```bash
-npm install @hewcode/react
+php artisan hew:install
+```
+
+This command will:
+- Update `resources/js/app.{tsx,ts,jsx,js}` to:
+  - Import the CSS file (`import '../css/app.css'`)
+  - Wrap your app with HewcodeProvider
+  - Configure page resolution for Hewcode pages
+- Update `vite.config.{ts,js}` to add the React plugin
+- Update `resources/views/app.blade.php` to include Vite directives
+- Update `resources/css/app.css` to import Hewcode styles
+- Install required npm packages (`@hewcode/react` and `@vitejs/plugin-react`)
+
+The command supports the following options:
+- `--force` - Skip confirmation prompts
+- `--dry-run` - Preview changes without modifying files
+- `--skip-npm` - Skip automatic npm package installation
+
+## Manual Installation
+
+Install the React package and set up the Inertia provider:
+
+```bash
+npm install @hewcode/react @vitejs/plugin-react
 ```
 
 Update your Inertia app setup (typically in `resources/js/app.tsx`) to wrap your app with the `HewcodeProvider`, and configure the `resolve` so that it can find both your app's pages and Hewcode's built-in pages:

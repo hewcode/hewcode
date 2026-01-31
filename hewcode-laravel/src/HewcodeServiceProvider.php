@@ -66,6 +66,7 @@ class HewcodeServiceProvider extends PackageServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                Console\Commands\InstallCommand::class,
                 Console\Commands\MakeResourceCommand::class,
                 Console\Commands\MakeListingCommand::class,
                 Console\Commands\MakeFormCommand::class,
