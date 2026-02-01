@@ -166,7 +166,7 @@ class InstallCommand extends Command
         $content = File::get($viteConfigPath);
 
         // Check if already updated
-        if (str_contains($content, "@vitejs/plugin-react")) {
+        if (str_contains($content, '@vitejs/plugin-react')) {
             $this->components->info("✓ {$fileName} already configured");
 
             return;
