@@ -114,4 +114,9 @@ return [
         'title' => 'Dashboard',
     ],
 
+    'file_upload' => [
+        'click_to_upload_or_drag_and_drop' => 'Click to upload or drag and drop',
+        'click_or_drag_to_replace' => 'Click or drag to replace',
+    ],
+
 ];
