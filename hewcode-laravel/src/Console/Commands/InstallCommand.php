@@ -118,9 +118,10 @@ class InstallCommand extends Command
         $extension = pathinfo($appFilePath, PATHINFO_EXTENSION);
 
         // Update resolve function
+        // Note: @hewcode/react pages are always .tsx regardless of user's app extension
         $content = preg_replace(
             '/resolve:\s*\(name\)\s*=>\s*resolvePageComponent\(\s*`\.\/pages\/\$\{name\}\.'.$extension.'`,\s*import\.meta\.glob\([\'"]\.\/pages\/\*\*\/\*\.'.$extension.'[\'"]\)\s*\)/s',
-            "resolve: (name) =>\n        resolvePageComponent([`./pages/\${name}.{$extension}`, `../../node_modules/@hewcode/react/src/pages/\${name}.{$extension}`], {\n            ...import.meta.glob('./pages/**/*.{$extension}'),\n            ...import.meta.glob('../../node_modules/@hewcode/react/src/pages/hewcode/**/*.{$extension}'),\n        })",
+            "resolve: (name) =>\n        resolvePageComponent([`./pages/\${name}.{$extension}`, `../../node_modules/@hewcode/react/src/pages/\${name}.tsx`], {\n            ...import.meta.glob('./pages/**/*.{$extension}'),\n            ...import.meta.glob('../../node_modules/@hewcode/react/src/pages/hewcode/**/*.tsx'),\n        })",
             $content
         );
 
@@ -233,12 +234,13 @@ class InstallCommand extends Command
         }
 
         // Replace @vite directive
+        // Note: Hewcode pages are always .tsx
         $viteDirective = <<<BLADE
 @vite([
     'resources/js/app.{$appFileExtension}',
     \Hewcode\Hewcode\Hewcode::resolvePageComponent([
         "resources/js/pages/{\$page['component']}.{$appFileExtension}",
-        "hewcode::pages/{\$page['component']}.{$appFileExtension}"
+        "hewcode::pages/{\$page['component']}.tsx"
     ])
 ])
 BLADE;
