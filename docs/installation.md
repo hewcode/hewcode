@@ -29,13 +29,37 @@ The package will automatically register its service provider.
 
 ## Automated Installation
 
-Run the install command to automatically configure your Laravel application:
+### Fresh Laravel Project (No Inertia)
+
+If you're starting fresh and don't have Inertia.js installed yet:
+
+```bash
+php artisan hew:install --with-inertia
+```
+
+This will install both Inertia.js and Hewcode in one command.
+
+### Existing Inertia Project
+
+If you already have Inertia.js set up:
 
 ```bash
 php artisan hew:install
 ```
 
-This command will:
+:::warning
+Hewcode requires Inertia.js to be installed. If Inertia is not detected, the command will prompt you to either run with `--with-inertia` or install Inertia manually first.
+:::
+
+### What the Command Does
+
+The install command will:
+- **If `--with-inertia` is used:**
+  - Install Inertia server-side package (`inertiajs/inertia-laravel`)
+  - Install Inertia client-side package (`@inertiajs/react`)
+  - Publish and register Inertia middleware
+  - Create `resources/views/app.blade.php` template
+  - Create `resources/js/app.tsx` with Inertia setup
 - Update `resources/js/app.{tsx,ts,jsx,js}` to:
   - Import the CSS file (`import '../css/app.css'`)
   - Wrap your app with HewcodeProvider
@@ -45,7 +69,9 @@ This command will:
 - Update `resources/css/app.css` to import Hewcode styles
 - Install required npm packages (`@hewcode/react` and `@vitejs/plugin-react`)
 
-The command supports the following options:
+### Available Options
+
+- `--with-inertia` - Install Inertia.js before installing Hewcode
 - `--force` - Skip confirmation prompts
 - `--dry-run` - Preview changes without modifying files
 - `--skip-npm` - Skip automatic npm package installation

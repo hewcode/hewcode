@@ -10,6 +10,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 class InstallCommand extends Command
 {
     protected $signature = 'hew:install
+                            {--with-inertia : Install Inertia.js first}
                             {--force : Overwrite existing files without confirmation}
                             {--dry-run : Show what would be changed without making changes}
                             {--skip-npm : Skip npm package installation}';
@@ -21,6 +22,22 @@ class InstallCommand extends Command
         if ($this->option('dry-run')) {
             $this->components->info('Running in dry-run mode - no files will be modified');
             $this->newLine();
+        }
+
+        // Check if Inertia should be installed first
+        if ($this->option('with-inertia')) {
+            $this->components->info('Installing Inertia.js...');
+            $this->installInertia();
+            $this->newLine();
+        } elseif (! $this->option('dry-run') && ! $this->isInertiaInstalled()) {
+            $this->components->error('Inertia.js is not installed!');
+            $this->components->warn('Hewcode requires Inertia.js to be installed first. You have two options:');
+            $this->components->bulletList([
+                'Run: php artisan hew:install --with-inertia (recommended)',
+                'Or manually install Inertia.js first: https://inertiajs.com/docs/v2/installation',
+            ]);
+
+            return self::FAILURE;
         }
 
         $this->components->info('Installing Hewcode...');
@@ -88,10 +105,12 @@ class InstallCommand extends Command
 
         // Add HewcodeProvider import
         if (! str_contains($content, "import HewcodeProvider from '@hewcode/react/layouts/provider'")) {
+            // Try to add after react or react-dom import
             $content = preg_replace(
-                "/(import.*?from\s+['\"]react['\"];?\n)/",
+                "/(import.*?from\s+['\"]react(-dom\/client)?['\"];?\n)/",
                 "$1import HewcodeProvider from '@hewcode/react/layouts/provider';\n",
-                $content
+                $content,
+                1
             );
         }
 
@@ -114,11 +133,9 @@ class InstallCommand extends Command
 
         if ($this->option('dry-run')) {
             $this->components->info("Would update: {$fileName}");
-        } elseif ($this->option('force') || $this->components->confirm("Update resources/js/{$fileName}?", true)) {
+        } else {
             File::put($appFilePath, $content);
             $this->components->info("✓ Updated {$fileName}");
-        } else {
-            $this->components->warn("Skipped {$fileName}");
         }
     }
 
@@ -170,13 +187,21 @@ class InstallCommand extends Command
             $content
         );
 
+        // Update input paths if app.js exists in config but actual file is different
+        $actualAppExtension = $this->findAppFileExtension();
+        if ($actualAppExtension && $actualAppExtension !== 'js') {
+            $content = preg_replace(
+                "/'resources\/js\/app\.js'/",
+                "'resources/js/app.{$actualAppExtension}'",
+                $content
+            );
+        }
+
         if ($this->option('dry-run')) {
             $this->components->info("Would update: {$fileName}");
-        } elseif ($this->option('force') || $this->components->confirm("Update {$fileName}?", true)) {
+        } else {
             File::put($viteConfigPath, $content);
             $this->components->info("✓ Updated {$fileName}");
-        } else {
-            $this->components->warn("Skipped {$fileName}");
         }
     }
 
@@ -226,11 +251,9 @@ BLADE;
 
         if ($this->option('dry-run')) {
             $this->components->info('Would update: app.blade.php');
-        } elseif ($this->option('force') || $this->components->confirm('Update resources/views/app.blade.php?', true)) {
+        } else {
             File::put($appBladePath, $content);
             $this->components->info('✓ Updated app.blade.php');
-        } else {
-            $this->components->warn('Skipped app.blade.php');
         }
     }
 
@@ -259,11 +282,9 @@ BLADE;
 
         if ($this->option('dry-run')) {
             $this->components->info('Would update: app.css');
-        } elseif ($this->option('force') || $this->components->confirm('Update resources/css/app.css?', true)) {
+        } else {
             File::put($appCssPath, $content);
             $this->components->info('✓ Updated app.css');
-        } else {
-            $this->components->warn('Skipped app.css');
         }
     }
 
@@ -335,6 +356,290 @@ BLADE;
                 $this->components->error('Failed to install npm packages');
                 $this->components->warn('Please run manually: npm install @hewcode/react @vitejs/plugin-react');
             }
+        }
+    }
+
+    protected function isInertiaInstalled(): bool
+    {
+        // Check if Inertia is in the app's composer.json (not just as a transitive dependency)
+        $composerJson = base_path('composer.json');
+        if (! File::exists($composerJson)) {
+            return false;
+        }
+
+        $composerData = json_decode(File::get($composerJson), true);
+
+        return isset($composerData['require']['inertiajs/inertia-laravel']);
+    }
+
+    protected function installInertia(): void
+    {
+        if ($this->option('dry-run')) {
+            $this->components->info('Would install Inertia.js (server and client)');
+
+            return;
+        }
+
+        // Install server-side package
+        $this->components->info('Installing Inertia server-side package...');
+        $this->executeCommand('composer require inertiajs/inertia-laravel');
+
+        // Publish middleware
+        $this->components->info('Publishing Inertia middleware...');
+        $this->executeCommand('php artisan inertia:middleware');
+
+        // Install client-side package
+        if (! $this->option('skip-npm')) {
+            $this->components->info('Installing Inertia client-side package...');
+            $this->executeNpmCommand('npm install @inertiajs/react');
+        }
+
+        // Create app.blade.php if it doesn't exist
+        $this->createAppBlade();
+
+        // Create app.tsx if it doesn't exist
+        $this->createAppFile();
+
+        // Register middleware
+        $this->registerInertiaMiddleware();
+
+        $this->components->info('✓ Inertia.js installed successfully');
+    }
+
+    protected function createAppBlade(): void
+    {
+        $appBladePath = resource_path('views/app.blade.php');
+
+        if (File::exists($appBladePath)) {
+            $this->components->info('✓ app.blade.php already exists');
+
+            return;
+        }
+
+        $appFileExtension = $this->findAppFileExtension() ?? 'tsx';
+
+        $template = <<<BLADE
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+
+        <!-- Scripts -->
+        @viteReactRefresh
+        @vite(['resources/js/app.{$appFileExtension}'])
+        @inertiaHead
+    </head>
+    <body class="font-sans antialiased">
+        @inertia
+    </body>
+</html>
+BLADE;
+
+        File::put($appBladePath, $template);
+        $this->components->info('✓ Created app.blade.php');
+    }
+
+    protected function createAppFile(): void
+    {
+        // Check if any app file already exists with Inertia setup
+        $possiblePaths = [
+            resource_path('js/app.tsx'),
+            resource_path('js/app.ts'),
+            resource_path('js/app.jsx'),
+            resource_path('js/app.js'),
+        ];
+
+        $fileToDelete = null;
+        foreach ($possiblePaths as $path) {
+            if (File::exists($path)) {
+                $content = File::get($path);
+                // Check if it already has Inertia setup
+                if (str_contains($content, 'createInertiaApp') || str_contains($content, '@inertiajs')) {
+                    $this->components->info('✓ '.basename($path).' already exists with Inertia setup');
+
+                    return;
+                }
+                // File exists but doesn't have Inertia - mark for deletion and recreate
+                $this->components->warn(basename($path).' exists but missing Inertia setup - recreating...');
+                $fileToDelete = $path;
+                break;
+            }
+        }
+
+        // Create resources/js directory if it doesn't exist
+        $jsDir = resource_path('js');
+        if (! File::exists($jsDir)) {
+            File::makeDirectory($jsDir, 0755, true);
+        }
+
+        // Determine which file extension to use (tsx for new projects, jsx otherwise)
+        // Use JSX extension since we're using JSX syntax
+        $useTypeScript = ! File::exists(resource_path('js/app.js')) && ! File::exists(resource_path('js/app.jsx'));
+        $appFilePath = $useTypeScript ? resource_path('js/app.tsx') : resource_path('js/app.jsx');
+        $extension = $useTypeScript ? 'tsx' : 'jsx';
+
+        // Delete the old file if it's being replaced
+        if ($fileToDelete && $fileToDelete !== $appFilePath && File::exists($fileToDelete)) {
+            File::delete($fileToDelete);
+            $this->components->info('✓ Deleted old '.basename($fileToDelete));
+        }
+
+        $template = <<<JAVASCRIPT
+import '../css/app.css';
+
+import { createInertiaApp } from '@inertiajs/react';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { createRoot } from 'react-dom/client';
+
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+createInertiaApp({
+    title: (title) => `\${title} - \${appName}`,
+    resolve: (name) =>
+        resolvePageComponent(
+            `./pages/\${name}.{$extension}`,
+            import.meta.glob('./pages/**/*.{$extension}')
+        ),
+    setup({ el, App, props }) {
+        const root = createRoot(el);
+
+        root.render(<App {...props} />);
+    },
+    progress: {
+        color: '#4B5563',
+    },
+});
+JAVASCRIPT;
+
+        File::put($appFilePath, $template);
+        $this->components->info('✓ Created '.basename($appFilePath));
+
+        // Create resources/css directory and app.css if needed
+        $cssDir = resource_path('css');
+        if (! File::exists($cssDir)) {
+            File::makeDirectory($cssDir, 0755, true);
+        }
+
+        $appCssPath = resource_path('css/app.css');
+        if (! File::exists($appCssPath)) {
+            File::put($appCssPath, '');
+            $this->components->info('✓ Created app.css');
+        }
+
+        // Create pages directory
+        $pagesDir = resource_path('js/pages');
+        if (! File::exists($pagesDir)) {
+            File::makeDirectory($pagesDir, 0755, true);
+            $this->components->info('✓ Created pages directory');
+        }
+    }
+
+    protected function registerInertiaMiddleware(): void
+    {
+        $bootstrapAppPath = base_path('bootstrap/app.php');
+
+        if (! File::exists($bootstrapAppPath)) {
+            $this->components->warn('bootstrap/app.php not found - skipping middleware registration');
+            $this->components->warn('Please manually add HandleInertiaRequests to your web middleware');
+
+            return;
+        }
+
+        $content = File::get($bootstrapAppPath);
+
+        // Check if middleware is already registered
+        if (str_contains($content, 'HandleInertiaRequests')) {
+            $this->components->info('✓ Inertia middleware already registered');
+
+            return;
+        }
+
+        // Look for an existing withMiddleware block and add to it
+        if (preg_match('/->withMiddleware\(function \(Middleware \$middleware\).*?\{(.*?)\}\)/s', $content, $matches)) {
+            // There's already a withMiddleware block, add our middleware to it
+            $middlewareCode = "\n        \$middleware->web(append: [\n            \\App\\Http\\Middleware\\HandleInertiaRequests::class,\n        ]);";
+
+            $content = preg_replace(
+                '/(->withMiddleware\(function \(Middleware \$middleware\).*?\{)/s',
+                "$1{$middlewareCode}",
+                $content,
+                1,
+                $count
+            );
+        } else {
+            // No withMiddleware block exists, add one after withRouting
+            $middlewareBlock = "\n    ->withMiddleware(function (Middleware \$middleware) {\n        \$middleware->web(append: [\n            \\App\\Http\\Middleware\\HandleInertiaRequests::class,\n        ]);\n    })";
+
+            $content = preg_replace(
+                '/(->withRouting\([^)]*\))/s',
+                "$1{$middlewareBlock}",
+                $content,
+                1,
+                $count
+            );
+        }
+
+        if (isset($count) && $count > 0) {
+            File::put($bootstrapAppPath, $content);
+            $this->components->info('✓ Registered Inertia middleware');
+        } else {
+            $this->components->warn('Could not automatically register Inertia middleware');
+            $this->components->warn('Please manually add HandleInertiaRequests to your web middleware in bootstrap/app.php');
+        }
+    }
+
+    protected function executeCommand(string $command): void
+    {
+        $process = proc_open(
+            $command,
+            [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ],
+            $pipes,
+            base_path()
+        );
+
+        if (is_resource($process)) {
+            fclose($pipes[0]);
+
+            while ($line = fgets($pipes[1])) {
+                $this->line('  '.trim($line));
+            }
+
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
+        }
+    }
+
+    protected function executeNpmCommand(string $command): void
+    {
+        $process = proc_open(
+            $command,
+            [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ],
+            $pipes,
+            base_path()
+        );
+
+        if (is_resource($process)) {
+            fclose($pipes[0]);
+
+            while ($line = fgets($pipes[1])) {
+                $this->line('  '.trim($line));
+            }
+
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
         }
     }
 
