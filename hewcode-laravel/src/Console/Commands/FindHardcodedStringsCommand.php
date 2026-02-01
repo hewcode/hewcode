@@ -77,7 +77,7 @@ class FindHardcodedStringsCommand extends Command
                 if (strlen($context) > 100) {
                     $context = substr($context, 0, 100).'...';
                 }
-                $this->line("    <fg=gray>→ ".htmlspecialchars($context).'</>');
+                $this->line('    <fg=gray>→ '.htmlspecialchars($context).'</>');
                 $this->newLine();
             }
         }
