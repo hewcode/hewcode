@@ -15,10 +15,6 @@ Hewcode requires the following:
 
 ## Installation
 
-:::warning
-First, make sure you have completed the [Inertia setup](https://inertiajs.com/docs).
-:::
-
 Install the Laravel package via Composer:
 
 ```bash
@@ -48,10 +44,12 @@ php artisan hew:install
 ```
 
 :::danger
-The install command modifies several files in your project. **Always review the changes** before committing them to version control. Consider running with `--dry-run` first to preview what will be changed, or ensure you have uncommitted changes backed up.
+Make sure to review the changes made by the installer before committing them.
 :::
 
 ## Manual Installation
+
+First, make sure you have completed the [Inertia setup](https://inertiajs.com/docs).
 
 Install the React package and set up the Inertia provider:
 
