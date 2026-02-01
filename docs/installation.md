@@ -47,34 +47,9 @@ If you already have Inertia.js set up:
 php artisan hew:install
 ```
 
-:::warning
-Hewcode requires Inertia.js to be installed. If Inertia is not detected, the command will prompt you to either run with `--with-inertia` or install Inertia manually first.
+:::danger
+The install command modifies several files in your project. **Always review the changes** before committing them to version control. Consider running with `--dry-run` first to preview what will be changed, or ensure you have uncommitted changes backed up.
 :::
-
-### What the Command Does
-
-The install command will:
-- **If `--with-inertia` is used:**
-  - Install Inertia server-side package (`inertiajs/inertia-laravel`)
-  - Install Inertia client-side package (`@inertiajs/react`)
-  - Publish and register Inertia middleware
-  - Create `resources/views/app.blade.php` template
-  - Create `resources/js/app.tsx` with Inertia setup
-- Update `resources/js/app.{tsx,ts,jsx,js}` to:
-  - Import the CSS file (`import '../css/app.css'`)
-  - Wrap your app with HewcodeProvider
-  - Configure page resolution for Hewcode pages
-- Update `vite.config.{ts,js}` to add the React plugin
-- Update `resources/views/app.blade.php` to include Vite directives
-- Update `resources/css/app.css` to import Hewcode styles
-- Install required npm packages (`@hewcode/react` and `@vitejs/plugin-react`)
-
-### Available Options
-
-- `--with-inertia` - Install Inertia.js before installing Hewcode
-- `--force` - Skip confirmation prompts
-- `--dry-run` - Preview changes without modifying files
-- `--skip-npm` - Skip automatic npm package installation
 
 ## Manual Installation
 

@@ -13,7 +13,8 @@ class InstallCommand extends Command
                             {--with-inertia : Install Inertia.js first}
                             {--force : Overwrite existing files without confirmation}
                             {--dry-run : Show what would be changed without making changes}
-                            {--skip-npm : Skip npm package installation}';
+                            {--skip-npm : Skip npm package installation}
+                            {--panel : Register Hewcode panel in AppServiceProvider}';
 
     protected $description = 'Install Hewcode Laravel package';
 
@@ -46,6 +47,7 @@ class InstallCommand extends Command
         $this->updateViteConfig();
         $this->updateAppBlade();
         $this->updateAppCss();
+        $this->registerPanel();
 
         if (! $this->option('dry-run')) {
             if (! $this->option('skip-npm')) {
@@ -287,6 +289,66 @@ BLADE;
         } else {
             File::put($appCssPath, $content);
             $this->components->info('✓ Updated app.css');
+        }
+    }
+
+    protected function registerPanel(): void
+    {
+        $providerPath = app_path('Providers/AppServiceProvider.php');
+
+        if (! File::exists($providerPath)) {
+            $this->components->warn('AppServiceProvider.php not found - skipping panel registration');
+
+            return;
+        }
+
+        $content = File::get($providerPath);
+
+        // Check if already registered
+        if (str_contains($content, 'Hewcode::panel()')) {
+            $this->components->info('✓ Hewcode panel already registered');
+
+            return;
+        }
+
+        if ($this->option('dry-run')) {
+            $this->components->info('Would register Hewcode panel in AppServiceProvider');
+
+            return;
+        }
+
+        // Prompt for confirmation unless --panel flag is passed
+        if (! $this->option('panel') && ! $this->components->confirm('Register Hewcode panel in AppServiceProvider?', false)) {
+            $this->components->warn('Skipped panel registration');
+
+            return;
+        }
+
+        // Add use statement if not present
+        if (! str_contains($content, 'use Hewcode\Hewcode\Hewcode;')) {
+            $content = preg_replace(
+                '/(namespace App\\\\Providers;)/',
+                "$1\n\nuse Hewcode\\Hewcode\\Hewcode;",
+                $content,
+                1
+            );
+        }
+
+        // Find the register method and add Hewcode::panel()
+        if (preg_match('/public function register\(\):\s*void\s*\{/', $content)) {
+            // Register method exists, add the call at the beginning
+            $content = preg_replace(
+                '/(public function register\(\):\s*void\s*\{)/',
+                "$1\n        Hewcode::panel();",
+                $content,
+                1
+            );
+
+            File::put($providerPath, $content);
+            $this->components->info('✓ Registered Hewcode panel in AppServiceProvider');
+        } else {
+            $this->components->warn('Could not find register() method in AppServiceProvider');
+            $this->components->warn('Please manually add Hewcode::panel() to your AppServiceProvider::register() method');
         }
     }
 
