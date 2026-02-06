@@ -3,7 +3,6 @@
 namespace Hewcode\Hewcode\Mcp\Tools;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
@@ -59,7 +58,7 @@ class ScaffoldCrudTool extends Tool
                 $migrationPath = $this->generateMigration($modelName, $tableName, $tableFields);
                 $createdFiles[] = $migrationPath;
             } catch (\Exception $e) {
-                return Response::error("Failed to generate migration: ".$e->getMessage());
+                return Response::error('Failed to generate migration: '.$e->getMessage());
             }
         }
 
@@ -69,7 +68,7 @@ class ScaffoldCrudTool extends Tool
                 $modelPath = $this->generateModel($modelName, $tableName, $tableFields);
                 $createdFiles[] = $modelPath;
             } catch (\Exception $e) {
-                return Response::error("Failed to generate model: ".$e->getMessage());
+                return Response::error('Failed to generate model: '.$e->getMessage());
             }
         }
 
@@ -95,7 +94,7 @@ class ScaffoldCrudTool extends Tool
                 $createdFiles[] = "app/Hewcode/Listings/{$modelName}Listing.php";
                 $createdFiles[] = "app/Hewcode/Forms/{$modelName}Form.php";
             } catch (\Exception $e) {
-                return Response::error("Failed to generate resource: ".$e->getMessage());
+                return Response::error('Failed to generate resource: '.$e->getMessage());
             }
         }
 
@@ -167,7 +166,7 @@ class ScaffoldCrudTool extends Tool
         // Check if migration already exists
         $existingMigrations = glob(database_path('migrations/*_'.$migrationName.'.php'));
         if (! empty($existingMigrations)) {
-            throw new \Exception("Migration already exists: ".basename($existingMigrations[0]));
+            throw new \Exception('Migration already exists: '.basename($existingMigrations[0]));
         }
 
         $fieldsCode = $this->generateMigrationFields($fields);

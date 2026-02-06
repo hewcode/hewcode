@@ -81,7 +81,7 @@ class CreateResourceTool extends Tool
                 $listingClass = "App\\Hewcode\\Listings\\{$listingName}";
                 $createdFiles[] = "app/Hewcode/Listings/{$listingName}.php";
             } catch (\Exception $e) {
-                return Response::error("Failed to generate listing: ".$e->getMessage());
+                return Response::error('Failed to generate listing: '.$e->getMessage());
             }
 
             // Generate FormDefinition
@@ -99,7 +99,7 @@ class CreateResourceTool extends Tool
                 $formClass = "App\\Hewcode\\Forms\\{$formName}";
                 $createdFiles[] = "app/Hewcode/Forms/{$formName}.php";
             } catch (\Exception $e) {
-                return Response::error("Failed to generate form: ".$e->getMessage());
+                return Response::error('Failed to generate form: '.$e->getMessage());
             }
         }
 
@@ -370,7 +370,7 @@ CODE;
             return '';
         }
 
-        $code = ["            ->filters(["];
+        $code = ['            ->filters(['];
         foreach ($filters as $filter) {
             $code[] = "                Lists\Filters\SelectFilter::make('{$filter}'),";
         }
@@ -385,7 +385,7 @@ CODE;
             return '';
         }
 
-        $code = ["            ->actions(["];
+        $code = ['            ->actions(['];
         foreach ($actions as $action) {
             $actionClass = match (strtolower($action)) {
                 'edit' => 'Actions\Eloquent\EditAction::make()',

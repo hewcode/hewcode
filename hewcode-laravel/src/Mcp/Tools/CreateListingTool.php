@@ -245,7 +245,7 @@ CODE;
             return '';
         }
 
-        $code = ["            ->filters(["];
+        $code = ['            ->filters(['];
 
         foreach ($filters as $filter) {
             $code[] = "                Lists\Filters\SelectFilter::make('{$filter}'),";
@@ -262,7 +262,7 @@ CODE;
             return '';
         }
 
-        $code = ["            ->actions(["];
+        $code = ['            ->actions(['];
 
         foreach ($actions as $action) {
             $actionClass = match (strtolower($action)) {
