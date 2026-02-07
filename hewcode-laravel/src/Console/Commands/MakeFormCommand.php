@@ -258,7 +258,7 @@ class MakeFormCommand extends GeneratorCommand
             $config = json_decode($configJson, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                $this->components->warn("Invalid JSON config: ".json_last_error_msg());
+                $this->components->warn('Invalid JSON config: '.json_last_error_msg());
 
                 return $stub;
             }
@@ -266,7 +266,7 @@ class MakeFormCommand extends GeneratorCommand
             $fields = $config['fields'] ?? [];
 
             if (empty($fields)) {
-                $this->components->warn("No fields found in config.");
+                $this->components->warn('No fields found in config.');
 
                 return $stub;
             }

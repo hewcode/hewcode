@@ -297,7 +297,7 @@ class MakeListingCommand extends GeneratorCommand
             $config = json_decode($configJson, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                $this->components->warn("Invalid JSON config: ".json_last_error_msg());
+                $this->components->warn('Invalid JSON config: '.json_last_error_msg());
 
                 return $stub;
             }
@@ -305,7 +305,7 @@ class MakeListingCommand extends GeneratorCommand
             $columns = $config['columns'] ?? [];
 
             if (empty($columns)) {
-                $this->components->warn("No columns found in config.");
+                $this->components->warn('No columns found in config.');
 
                 return $stub;
             }

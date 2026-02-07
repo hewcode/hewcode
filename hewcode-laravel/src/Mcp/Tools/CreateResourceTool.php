@@ -74,7 +74,7 @@ class CreateResourceTool extends Tool
 
                 $createdFiles[] = "app/Hewcode/Listings/{$listingName}.php";
             } catch (\Exception $e) {
-                return Response::error("Failed to generate listing: ".$e->getMessage());
+                return Response::error('Failed to generate listing: '.$e->getMessage());
             }
 
             // Generate FormDefinition
@@ -91,7 +91,7 @@ class CreateResourceTool extends Tool
 
                 $createdFiles[] = "app/Hewcode/Forms/{$formName}.php";
             } catch (\Exception $e) {
-                return Response::error("Failed to generate form: ".$e->getMessage());
+                return Response::error('Failed to generate form: '.$e->getMessage());
             }
         }
 

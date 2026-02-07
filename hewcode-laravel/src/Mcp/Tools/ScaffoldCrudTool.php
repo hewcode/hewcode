@@ -264,7 +264,7 @@ PHP;
         $exitCode = Artisan::call('make:model', ['name' => $modelName]);
 
         if ($exitCode !== 0) {
-            throw new \Exception("Failed to generate model using make:model command");
+            throw new \Exception('Failed to generate model using make:model command');
         }
 
         // Read the generated model file
@@ -284,7 +284,7 @@ PHP;
         // Add fillable and casts to the model
         // Replace the class body to include fillable and casts
         $content = preg_replace(
-            '/class\s+' . $modelName . '\s+extends\s+Model\s*\{/',
+            '/class\s+'.$modelName.'\s+extends\s+Model\s*\{/',
             "class {$modelName} extends Model\n{\n    protected \$fillable = [{$fillable}];{$castsCode}",
             $content
         );
