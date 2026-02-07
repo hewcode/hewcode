@@ -24,7 +24,7 @@ class CreateResourceTool extends Tool
         $validated = $request->validate([
             'name' => 'required|string',
             'model' => 'required|string',
-            'panels' => 'array',
+            'panels' => 'nullable|array',
             'panels.*' => 'string',
             'listing_config' => 'array',
             'form_config' => 'array',
@@ -34,7 +34,7 @@ class CreateResourceTool extends Tool
 
         $name = $validated['name'];
         $model = $validated['model'];
-        $panels = $validated['panels'] ?? ['admin'];
+        $panels = $validated['panels'] ?? null;
         $listingConfig = $validated['listing_config'] ?? [];
         $formConfig = $validated['form_config'] ?? [];
         $generateDefinitions = $validated['generate_definitions'] ?? false;
@@ -137,9 +137,8 @@ class CreateResourceTool extends Tool
                 ->required(),
 
             'panels' => $schema->array()
-                ->description('Array of panel names to assign this resource to (e.g., ["admin", "app"]). Defaults to ["admin"].')
-                ->items($schema->string())
-                ->default(['admin']),
+                ->description('Array of panel names to assign this resource to (e.g., ["admin", "app"]). If not specified, uses the default panel.')
+                ->items($schema->string()),
 
             'listing_config' => $schema->object()
                 ->description('Configuration for the listing (data table). Same parameters as create_listing tool.')
@@ -180,7 +179,7 @@ class CreateResourceTool extends Tool
         string $namespace,
         string $name,
         string $model,
-        array $panels,
+        ?array $panels,
         array $listingConfig,
         array $formConfig,
         ?string $listingClass,
@@ -212,7 +211,19 @@ class CreateResourceTool extends Tool
         $uses = $uses->unique()->sort()->values();
         $usesString = $uses->map(fn ($use) => "use {$use};")->implode("\n");
 
-        $panelsArray = collect($panels)->map(fn ($panel) => "'{$panel}'")->implode(', ');
+        // Only generate panels() method if panels are explicitly specified
+        $panelsMethod = '';
+        if ($panels !== null) {
+            $panelsArray = collect($panels)->map(fn ($panel) => "'{$panel}'")->implode(', ');
+            $panelsMethod = <<<PHP
+
+    public function panels(): array
+    {
+        return [{$panelsArray}];
+    }
+
+PHP;
+        }
 
         // Generate listing and form methods
         if ($listingClass && $formClass) {
@@ -250,12 +261,7 @@ namespace {$namespace};
 class {$name} extends Panel\Resource
 {
     protected string \$model = {$modelShortName}::class;
-
-    public function panels(): array
-    {
-        return [{$panelsArray}];
-    }
-
+{$panelsMethod}
     public function pages(): array
     {
         return [

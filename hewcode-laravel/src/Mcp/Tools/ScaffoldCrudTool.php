@@ -30,7 +30,7 @@ class ScaffoldCrudTool extends Tool
             'table_fields.*.default' => 'string',
             'table_fields.*.unique' => 'boolean',
             'table_fields.*.index' => 'boolean',
-            'panels' => 'array',
+            'panels' => 'nullable|array',
             'panels.*' => 'string',
             'generate_migration' => 'boolean',
             'generate_model' => 'boolean',
@@ -39,7 +39,7 @@ class ScaffoldCrudTool extends Tool
 
         $modelName = $validated['model_name'];
         $tableFields = $validated['table_fields'] ?? [];
-        $panels = $validated['panels'] ?? ['admin'];
+        $panels = $validated['panels'] ?? null;
         $generateMigration = $validated['generate_migration'] ?? true;
         $generateModel = $validated['generate_model'] ?? true;
         $generateResource = $validated['generate_resource'] ?? true;
@@ -137,9 +137,8 @@ class ScaffoldCrudTool extends Tool
                 ->required(),
 
             'panels' => $schema->array()
-                ->description('Array of panel names to assign the resource to (e.g., ["admin", "app"])')
-                ->items($schema->string())
-                ->default(['admin']),
+                ->description('Array of panel names to assign the resource to (e.g., ["admin", "app"]). If not specified, uses the default panel.')
+                ->items($schema->string()),
 
             'generate_migration' => $schema->boolean()
                 ->description('Whether to generate a migration file')
