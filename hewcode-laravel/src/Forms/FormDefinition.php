@@ -23,7 +23,7 @@ class FormDefinition extends Definition
         return $form;
     }
 
-    public function create(string $name = '', string $context = 'default'): Form
+    public function create(string $name = 'form', string $context = 'default'): Form
     {
         $form = Form::make()->name($name)->context($this->context);
 
