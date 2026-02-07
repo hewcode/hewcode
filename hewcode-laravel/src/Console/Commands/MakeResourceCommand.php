@@ -81,7 +81,10 @@ class MakeResourceCommand extends GeneratorCommand
         $stub = $this->replaceModel($stub);
         $stub = $this->replacePanels($stub);
 
-        if ($this->option('generate')) {
+        // Config takes precedence over generate
+        if ($this->option('config')) {
+            $stub = $this->generateSchemasFromConfig($stub);
+        } elseif ($this->option('generate')) {
             $stub = $this->generateSchemas($stub);
         }
 
@@ -334,6 +337,282 @@ class MakeResourceCommand extends GeneratorCommand
             ['model', 'm', InputOption::VALUE_OPTIONAL, 'The model that the resource applies to'],
             ['panels', 'p', InputOption::VALUE_OPTIONAL, 'Comma-separated list of panels this resource belongs to'],
             ['generate', 'g', InputOption::VALUE_NONE, 'Generate form and listing schemas based on model table columns'],
+            ['config', 'c', InputOption::VALUE_OPTIONAL, 'JSON configuration for detailed listing and form setup'],
         ];
+    }
+
+    /**
+     * Generate schemas from JSON config.
+     *
+     * @param  string  $stub
+     * @return string
+     */
+    protected function generateSchemasFromConfig($stub)
+    {
+        $configJson = $this->option('config');
+
+        if (! $configJson) {
+            return $stub;
+        }
+
+        try {
+            $config = json_decode($configJson, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->components->warn("Invalid JSON config: ".json_last_error_msg());
+
+                return $stub;
+            }
+
+            $model = $this->option('model');
+            if (! $model) {
+                $resourceName = class_basename($this->getNameInput());
+                $model = Str::singular(str_replace('Resource', '', $resourceName));
+            }
+            $modelShortName = class_basename($model);
+
+            // Generate form schema from config
+            if (isset($config['form']['fields'])) {
+                $formSchema = $this->generateFormSchemaFromConfig($config['form']['fields']);
+                $stub = str_replace('                Forms\Schema\TextInput::make(\'name\')
+                    ->required(),
+                // Add more form fields here', $formSchema, $stub);
+            }
+
+            // Generate listing schema from config
+            if (isset($config['listing'])) {
+                $listingSchema = $this->generateListingSchemaFromConfig(
+                    $modelShortName,
+                    $config['listing']
+                );
+                $stub = $this->replaceListingSchema($stub, $listingSchema);
+            }
+
+        } catch (\Exception $e) {
+            $this->components->warn("Could not generate schemas from config: {$e->getMessage()}");
+        }
+
+        return $stub;
+    }
+
+    /**
+     * Generate form fields from config.
+     */
+    protected function generateFormSchemaFromConfig(array $fields): string
+    {
+        $code = [];
+
+        foreach ($fields as $field) {
+            $name = $field['name'];
+            $type = $field['type'] ?? 'text_input';
+            $validation = $field['validation'] ?? [];
+
+            $fieldClass = match ($type) {
+                'text_input' => 'TextInput',
+                'textarea' => 'Textarea',
+                'select' => 'Select',
+                'date_time_picker' => 'DateTimePicker',
+                'file_upload' => 'FileUpload',
+                'toggle' => 'Toggle',
+                'key_value' => 'KeyValue',
+                default => 'TextInput',
+            };
+
+            $fieldCode = "Forms\\Schema\\{$fieldClass}::make('{$name}')";
+            $modifiers = [];
+
+            foreach ($validation as $rule) {
+                if ($rule === 'required') {
+                    $modifiers[] = '->required()';
+                } elseif (Str::startsWith($rule, 'max:')) {
+                    $max = Str::after($rule, 'max:');
+                    $modifiers[] = "->maxLength({$max})";
+                }
+            }
+
+            if (! empty($modifiers)) {
+                $fieldCode .= "\n                    ".implode("\n                    ", $modifiers);
+            }
+
+            $code[] = "                {$fieldCode},";
+        }
+
+        return implode("\n", $code);
+    }
+
+    /**
+     * Generate listing schema from config.
+     */
+    protected function generateListingSchemaFromConfig(string $modelShortName, array $config): array
+    {
+        $columns = $config['columns'] ?? [];
+        $filters = $config['filters'] ?? [];
+        $actions = $config['actions'] ?? ['edit', 'delete'];
+        $relationships = $config['relationships'] ?? [];
+
+        $columnsCode = $this->generateColumnsCodeFromConfig($columns);
+        $filtersCode = $this->generateFiltersCodeFromConfig($filters);
+        $actionsCode = $this->generateActionsCodeFromConfig($actions);
+        $relationshipsString = $this->generateRelationshipsString($relationships);
+
+        return [
+            'columns' => $columnsCode,
+            'filters' => $filtersCode,
+            'actions' => $actionsCode,
+            'relationships' => $relationshipsString,
+        ];
+    }
+
+    /**
+     * Generate columns code from config.
+     */
+    protected function generateColumnsCodeFromConfig(array $columns): string
+    {
+        $code = [];
+
+        foreach ($columns as $column) {
+            $name = $column['name'];
+            $type = $column['type'] ?? 'text';
+            $sortable = $column['sortable'] ?? false;
+            $searchable = $column['searchable'] ?? false;
+
+            $columnClass = match ($type) {
+                'image' => 'ImageColumn',
+                default => 'TextColumn',
+            };
+
+            $columnCode = "Lists\\Schema\\{$columnClass}::make('{$name}')";
+            $modifiers = [];
+
+            if ($sortable) {
+                $modifiers[] = '->sortable()';
+            }
+            if ($searchable) {
+                $modifiers[] = '->searchable()';
+            }
+            if ($type === 'badge') {
+                $modifiers[] = '->badge()';
+            }
+            if ($type === 'datetime') {
+                $modifiers[] = '->datetime()';
+            }
+            if ($type === 'date') {
+                $modifiers[] = '->date()';
+            }
+            if ($type === 'boolean') {
+                $modifiers[] = '->boolean()';
+            }
+
+            if (! empty($modifiers)) {
+                $columnCode .= "\n                    ".implode("\n                    ", $modifiers);
+            }
+
+            $code[] = "                {$columnCode},";
+        }
+
+        return implode("\n", $code);
+    }
+
+    /**
+     * Generate filters code from config.
+     */
+    protected function generateFiltersCodeFromConfig(array $filters): string
+    {
+        if (empty($filters)) {
+            return '';
+        }
+
+        $code = [];
+        foreach ($filters as $filter) {
+            $code[] = "                Lists\\Filters\\SelectFilter::make('{$filter}'),";
+        }
+
+        return implode("\n", $code);
+    }
+
+    /**
+     * Generate actions code from config.
+     */
+    protected function generateActionsCodeFromConfig(array $actions): string
+    {
+        $code = [];
+
+        foreach ($actions as $action) {
+            $actionClass = match (strtolower($action)) {
+                'edit' => 'Actions\Eloquent\EditAction::make()',
+                'delete' => 'Actions\Eloquent\DeleteAction::make()',
+                'restore' => 'Actions\Eloquent\RestoreAction::make()',
+                'view' => 'Actions\Eloquent\ViewAction::make()',
+                default => "Actions\\{$action}::make()",
+            };
+
+            $code[] = "                {$actionClass},";
+        }
+
+        return implode("\n", $code);
+    }
+
+    /**
+     * Generate relationships string.
+     */
+    protected function generateRelationshipsString(array $relationships): string
+    {
+        if (empty($relationships)) {
+            return '';
+        }
+
+        $quoted = array_map(fn ($rel) => "'{$rel}'", $relationships);
+
+        return '->with(['.implode(', ', $quoted).'])';
+    }
+
+    /**
+     * Replace listing schema in stub.
+     */
+    protected function replaceListingSchema(string $stub, array $listingData): string
+    {
+        $columnsCode = $listingData['columns'];
+        $filtersCode = $listingData['filters'];
+        $actionsCode = $listingData['actions'];
+        $relationshipsString = $listingData['relationships'];
+
+        // Build the full listing method replacement
+        $defaultColumns = '                Lists\Schema\TextColumn::make(\'id\')
+                    ->sortable(),
+                Lists\Schema\TextColumn::make(\'name\')
+                    ->sortable()
+                    ->searchable(),
+                Lists\Schema\TextColumn::make(\'created_at\')
+                    ->datetime()
+                    ->sortable(),';
+
+        $defaultActions = '            ])
+            ->actions([
+                Actions\Eloquent\EditAction::make(),
+                Actions\Eloquent\DeleteAction::make(),
+            ])';
+
+        // Replace columns
+        if ($columnsCode) {
+            $stub = str_replace($defaultColumns, $columnsCode, $stub);
+        }
+
+        // Replace actions and add filters if needed
+        if ($actionsCode || $filtersCode) {
+            $newActionsBlock = "            ])\n            ->actions([\n{$actionsCode}\n            ])";
+
+            if ($filtersCode) {
+                $newActionsBlock .= "\n            ->filters([\n{$filtersCode}\n            ])";
+            }
+
+            $stub = str_replace($defaultActions, $newActionsBlock, $stub);
+        }
+
+        // Add relationships to query
+        if ($relationshipsString) {
+            $stub = str_replace('{{ model }}::query()', "{{ model }}::query(){$relationshipsString}", $stub);
+        }
+
+        return $stub;
     }
 }

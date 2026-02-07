@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Mcp\Tools;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
@@ -26,7 +27,7 @@ class CreateFormTool extends Tool
             'model' => 'required|string',
             'fields' => 'array',
             'fields.*.name' => 'required|string',
-            'fields.*.type' => 'string|in:text_input,textarea,select,date_time_picker,file_upload',
+            'fields.*.type' => 'string|in:text_input,textarea,select,date_time_picker,file_upload,toggle,key_value',
             'fields.*.validation' => 'array',
             'fields.*.options' => 'array',
             'generate' => 'boolean',
@@ -42,8 +43,6 @@ class CreateFormTool extends Tool
             $name .= 'Form';
         }
 
-        // Build the class
-        $namespace = 'App\\Hewcode\\Forms';
         $path = app_path('Hewcode/Forms/'.$name.'.php');
 
         // Check if file exists
@@ -51,19 +50,28 @@ class CreateFormTool extends Tool
             return Response::error("Form already exists at {$path}. Use a different name or delete the existing file.");
         }
 
-        // Ensure directory exists
-        File::ensureDirectoryExists(dirname($path));
+        // Build command options
+        $commandOptions = [
+            'name' => $name,
+            '--model' => $model,
+        ];
 
-        // Generate the form class
-        $content = $this->generateFormClass(
-            $namespace,
-            $name,
-            $model,
-            $fields,
-            $generate
-        );
+        if ($generate) {
+            $commandOptions['--generate'] = true;
+        }
 
-        File::put($path, $content);
+        // Build config JSON if detailed config is provided
+        if (! empty($fields)) {
+            $config = ['fields' => $fields];
+            $commandOptions['--config'] = json_encode($config);
+        }
+
+        // Call hew:form command
+        $exitCode = Artisan::call('hew:form', $commandOptions);
+
+        if ($exitCode !== 0) {
+            return Response::error("Failed to generate form. Artisan command exited with code {$exitCode}.");
+        }
 
         return Response::text($this->successMessage($name, $model, $path));
     }
@@ -90,8 +98,8 @@ class CreateFormTool extends Tool
                             ->description('Field name (e.g., "title", "email", "status")')
                             ->required(),
                         'type' => $schema->string()
-                            ->enum(['text_input', 'textarea', 'select', 'date_time_picker', 'file_upload'])
-                            ->description('Field type: text_input, textarea, select, date_time_picker, or file_upload')
+                            ->enum(['text_input', 'textarea', 'select', 'date_time_picker', 'file_upload', 'toggle', 'key_value'])
+                            ->description('Field type: text_input, textarea, select, date_time_picker, file_upload, toggle, or key_value')
                             ->default('text_input'),
                         'validation' => $schema->array()
                             ->description('Laravel validation rules (e.g., ["required", "max:255", "email"])')
@@ -121,150 +129,6 @@ class CreateFormTool extends Tool
                 ->description('Auto-generate fields from model\'s database table schema')
                 ->default(false),
         ];
-    }
-
-    protected function generateFormClass(
-        string $namespace,
-        string $name,
-        string $model,
-        array $fields,
-        bool $generate
-    ): string {
-        $modelShortName = class_basename($model);
-        $modelClass = $model;
-
-        if (! Str::contains($model, '\\')) {
-            $modelClass = "App\\Models\\{$model}";
-        }
-
-        $uses = collect([
-            'Hewcode\Hewcode\Forms',
-            $modelClass,
-        ])->unique()->sort()->values();
-
-        $usesString = $uses->map(fn ($use) => "use {$use};")->implode("\n");
-        $fieldsCode = $this->generateFieldsCode($fields, $generate);
-
-        return <<<PHP
-<?php
-
-namespace {$namespace};
-
-{$usesString}
-
-class {$name} extends Forms\FormDefinition
-{
-    protected string \$model = {$modelShortName}::class;
-
-    public function default(Forms\Form \$form): Forms\Form
-    {
-        return \$form
-            ->visible(auth()->check())
-            ->schema([
-{$fieldsCode}
-            ]);
-    }
-}
-
-PHP;
-    }
-
-    protected function generateFieldsCode(array $fields, bool $generate): string
-    {
-        if (empty($fields) && ! $generate) {
-            // Minimal default fields
-            return <<<'CODE'
-                Forms\Schema\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-CODE;
-        }
-
-        $code = [];
-
-        foreach ($fields as $field) {
-            $name = $field['name'];
-            $type = $field['type'] ?? 'text_input';
-            $validation = $field['validation'] ?? [];
-            $options = $field['options'] ?? [];
-
-            $fieldClass = match ($type) {
-                'text_input' => 'TextInput',
-                'textarea' => 'Textarea',
-                'select' => 'Select',
-                'date_time_picker' => 'DateTimePicker',
-                'file_upload' => 'FileUpload',
-                default => 'TextInput',
-            };
-
-            $fieldCode = "Forms\Schema\\{$fieldClass}::make('{$name}')";
-
-            $modifiers = $this->generateFieldModifiers($type, $validation, $options);
-
-            if (! empty($modifiers)) {
-                $fieldCode .= "\n                    ".implode("\n                    ", $modifiers);
-            }
-
-            $code[] = "                {$fieldCode},";
-        }
-
-        return implode("\n", $code);
-    }
-
-    protected function generateFieldModifiers(string $type, array $validation, array $options): array
-    {
-        $modifiers = [];
-
-        // Add validation modifiers
-        foreach ($validation as $rule) {
-            if ($rule === 'required') {
-                $modifiers[] = '->required()';
-            } elseif (Str::startsWith($rule, 'max:')) {
-                $max = Str::after($rule, 'max:');
-                $modifiers[] = "->maxLength({$max})";
-            } elseif (Str::startsWith($rule, 'min:')) {
-                $min = Str::after($rule, 'min:');
-                $modifiers[] = "->minLength({$min})";
-            } elseif ($rule === 'email') {
-                $modifiers[] = '->email()';
-            } elseif ($rule === 'numeric') {
-                $modifiers[] = '->numeric()';
-            }
-        }
-
-        // Add type-specific modifiers
-        if ($type === 'select') {
-            if (! empty($options['enum'])) {
-                $modifiers[] = "->options({$options['enum']}::class)";
-            } elseif (! empty($options['relationship'])) {
-                $titleColumn = $options['title_column'] ?? 'name';
-                $modifiers[] = "->relationship('{$options['relationship']}', titleColumn: '{$titleColumn}')";
-
-                if (! empty($options['searchable'])) {
-                    $modifiers[] = '->searchable()';
-                }
-                if (! empty($options['preload'])) {
-                    $modifiers[] = '->preload()';
-                }
-            }
-
-            if (! empty($options['multiple'])) {
-                $modifiers[] = '->multiple()';
-            }
-        }
-
-        if ($type === 'textarea') {
-            $rows = $options['rows'] ?? 5;
-            $modifiers[] = "->rows({$rows})";
-        }
-
-        if ($type === 'file_upload') {
-            if (! empty($options['multiple'])) {
-                $modifiers[] = '->multiple()';
-            }
-        }
-
-        return $modifiers;
     }
 
     protected function successMessage(string $name, string $model, string $path): string

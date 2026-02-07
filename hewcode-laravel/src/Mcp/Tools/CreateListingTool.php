@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Mcp\Tools;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
@@ -26,7 +27,7 @@ class CreateListingTool extends Tool
             'model' => 'required|string',
             'columns' => 'array',
             'columns.*.name' => 'required|string',
-            'columns.*.type' => 'string|in:text,image,badge',
+            'columns.*.type' => 'string|in:text,image,badge,datetime,date,boolean',
             'columns.*.sortable' => 'boolean',
             'columns.*.searchable' => 'boolean',
             'filters' => 'array',
@@ -48,8 +49,6 @@ class CreateListingTool extends Tool
             $name .= 'Listing';
         }
 
-        // Build the class
-        $namespace = 'App\\Hewcode\\Listings';
         $path = app_path('Hewcode/Listings/'.$name.'.php');
 
         // Check if file exists
@@ -57,22 +56,28 @@ class CreateListingTool extends Tool
             return Response::error("Listing already exists at {$path}. Use a different name or delete the existing file.");
         }
 
-        // Ensure directory exists
-        File::ensureDirectoryExists(dirname($path));
+        // Build command options
+        $commandOptions = [
+            'name' => $name,
+            '--model' => $model,
+        ];
 
-        // Generate the listing class
-        $content = $this->generateListingClass(
-            $namespace,
-            $name,
-            $model,
-            $columns,
-            $filters,
-            $actions,
-            $relationships,
-            $generate
-        );
+        if ($generate) {
+            $commandOptions['--generate'] = true;
+        }
 
-        File::put($path, $content);
+        // Build config JSON if detailed config is provided
+        if (! empty($columns)) {
+            $config = ['columns' => $columns];
+            $commandOptions['--config'] = json_encode($config);
+        }
+
+        // Call hew:listing command
+        $exitCode = Artisan::call('hew:listing', $commandOptions);
+
+        if ($exitCode !== 0) {
+            return Response::error("Failed to generate listing. Artisan command exited with code {$exitCode}.");
+        }
 
         return Response::text($this->successMessage($name, $model, $path));
     }
@@ -92,203 +97,41 @@ class CreateListingTool extends Tool
                 ->required(),
 
             'columns' => $schema->array()
-                ->description('Array of column definitions. Each column represents a field to display in the table.')
+                ->description('Array of column definitions for the data table.')
                 ->items($schema->object()
                     ->properties([
                         'name' => $schema->string()
-                            ->description('Column field name (e.g., "title", "user.name" for relationships)')
+                            ->description('Column name (e.g., "title", "email", "created_at")')
                             ->required(),
                         'type' => $schema->string()
-                            ->enum(['text', 'image', 'badge'])
-                            ->description('Column type: text (default), image (for avatars/thumbnails), or badge (for status/tags)'),
+                            ->enum(['text', 'image', 'badge', 'datetime', 'date', 'boolean'])
+                            ->description('Column type: text, image, badge, datetime, date, or boolean')
+                            ->default('text'),
                         'sortable' => $schema->boolean()
-                            ->description('Whether this column can be sorted')
+                            ->description('Whether the column is sortable')
                             ->default(false),
                         'searchable' => $schema->boolean()
-                            ->description('Whether this column is searchable')
+                            ->description('Whether the column is searchable')
                             ->default(false),
                     ])
                 ),
 
             'filters' => $schema->array()
-                ->description('Array of filter names to add (e.g., ["status", "category"])')
+                ->description('Array of filter field names to add to the listing')
                 ->items($schema->string()),
 
             'actions' => $schema->array()
-                ->description('Array of action names to include (e.g., ["edit", "delete", "restore"])')
+                ->description('Array of action names (e.g., ["edit", "delete", "view"])')
                 ->items($schema->string()),
 
             'relationships' => $schema->array()
-                ->description('Array of relationship names to eager load (e.g., ["user", "category"])')
+                ->description('Array of relationships to eager load (e.g., ["author", "category"])')
                 ->items($schema->string()),
 
             'generate' => $schema->boolean()
                 ->description('Auto-generate columns from model\'s database table schema')
                 ->default(false),
         ];
-    }
-
-    protected function generateListingClass(
-        string $namespace,
-        string $name,
-        string $model,
-        array $columns,
-        array $filters,
-        array $actions,
-        array $relationships,
-        bool $generate
-    ): string {
-        $modelShortName = class_basename($model);
-        $modelClass = $model;
-
-        if (! Str::contains($model, '\\')) {
-            $modelClass = "App\\Models\\{$model}";
-        }
-
-        $uses = collect([
-            'Hewcode\Hewcode\Actions',
-            'Hewcode\Hewcode\Lists',
-            $modelClass,
-        ])->unique()->sort()->values();
-
-        $usesString = $uses->map(fn ($use) => "use {$use};")->implode("\n");
-
-        $columnsCode = $this->generateColumnsCode($columns, $generate);
-        $filtersCode = $this->generateFiltersCode($filters);
-        $actionsCode = $this->generateActionsCode($actions);
-        $relationshipsString = $this->generateRelationshipsString($relationships);
-
-        return <<<PHP
-<?php
-
-namespace {$namespace};
-
-{$usesString}
-
-class {$name} extends Lists\ListingDefinition
-{
-    protected string \$model = {$modelShortName}::class;
-
-    public function default(Lists\Listing \$listing): Lists\Listing
-    {
-        return \$listing
-            ->visible(auth()->check())
-            ->query({$modelShortName}::query(){$relationshipsString})
-            ->columns([
-{$columnsCode}
-            ])
-{$actionsCode}{$filtersCode}
-            ->defaultSort('created_at', 'desc')
-            ->perPage(15);
-    }
-}
-
-PHP;
-    }
-
-    protected function generateColumnsCode(array $columns, bool $generate): string
-    {
-        if (empty($columns) && ! $generate) {
-            // Minimal default columns
-            return <<<'CODE'
-                Lists\Schema\TextColumn::make('id')
-                    ->sortable(),
-                Lists\Schema\TextColumn::make('created_at')
-                    ->datetime()
-                    ->sortable(),
-CODE;
-        }
-
-        $code = [];
-
-        foreach ($columns as $column) {
-            $name = $column['name'];
-            $type = $column['type'] ?? 'text';
-            $sortable = $column['sortable'] ?? false;
-            $searchable = $column['searchable'] ?? false;
-
-            $columnClass = match ($type) {
-                'image' => 'ImageColumn',
-                'badge' => 'TextColumn', // Text column with badge modifier
-                default => 'TextColumn',
-            };
-
-            $columnCode = "Lists\Schema\\{$columnClass}::make('{$name}')";
-
-            $modifiers = [];
-            if ($sortable) {
-                $modifiers[] = '->sortable()';
-            }
-            if ($searchable) {
-                $modifiers[] = '->searchable()';
-            }
-            if ($type === 'badge') {
-                $modifiers[] = '->badge()';
-            }
-            if ($type === 'image') {
-                $modifiers[] = '->size(48)';
-            }
-
-            if (! empty($modifiers)) {
-                $columnCode .= "\n                    ".implode("\n                    ", $modifiers);
-            }
-
-            $code[] = "                {$columnCode},";
-        }
-
-        return implode("\n", $code);
-    }
-
-    protected function generateFiltersCode(array $filters): string
-    {
-        if (empty($filters)) {
-            return '';
-        }
-
-        $code = ['            ->filters(['];
-
-        foreach ($filters as $filter) {
-            $code[] = "                Lists\Filters\SelectFilter::make('{$filter}'),";
-        }
-
-        $code[] = '            ])';
-
-        return "\n".implode("\n", $code);
-    }
-
-    protected function generateActionsCode(array $actions): string
-    {
-        if (empty($actions)) {
-            return '';
-        }
-
-        $code = ['            ->actions(['];
-
-        foreach ($actions as $action) {
-            $actionClass = match (strtolower($action)) {
-                'edit' => 'Actions\Eloquent\EditAction::make()',
-                'delete' => 'Actions\Eloquent\DeleteAction::make()',
-                'restore' => 'Actions\Eloquent\RestoreAction::make()',
-                default => "Actions\Action::make('{$action}')",
-            };
-
-            $code[] = "                {$actionClass},";
-        }
-
-        $code[] = '            ])';
-
-        return "\n".implode("\n", $code);
-    }
-
-    protected function generateRelationshipsString(array $relationships): string
-    {
-        if (empty($relationships)) {
-            return '';
-        }
-
-        $quoted = array_map(fn ($rel) => "'{$rel}'", $relationships);
-
-        return '->with(['.implode(', ', $quoted).'])';
     }
 
     protected function successMessage(string $name, string $model, string $path): string
@@ -304,25 +147,26 @@ Next steps:
    use App\Hewcode\Listings\\{$name};
 
    #[Lists\Expose]
-   public function index(): Lists\Listing
+   public function listing(): Lists\Listing
    {
-       return {$name}::make();
+       return {$name}::make('listing');
    }
 
 2. Register the controller method in your Inertia page props:
 
-   Props\Props::for(\$this)->components(['index'])
+   Props\Props::for(\$this)
+       ->components(['listing'])
 
-3. Use the Listing component in your frontend:
+3. Use the DataTable component in your frontend:
 
-   import Listing from '@hewcode/react/components/data-table/Listing';
+   import DataTable from '@hewcode/react/components/listing/DataTable';
 
-   const { index } = usePage().props;
-   return <Listing {...index} />;
+   const { listing } = usePage().props;
+   return <DataTable {...listing} />;
 
 4. Customize columns, filters, and actions in {$relativePath}
 
-Note: Labels will auto-generate from locale files (app.{model}.columns.field_name).
+Note: Column labels will auto-generate from locale files (app.{model}.columns.column_name).
 Remember to set proper visibility/authorization checks if needed.
 EOT;
     }

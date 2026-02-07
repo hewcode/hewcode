@@ -62,7 +62,7 @@ class MakeFormCommand extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\\Hewcode\\Resources';
+        return $rootNamespace.'\\Hewcode\\Forms';
     }
 
     /**
@@ -80,7 +80,10 @@ class MakeFormCommand extends GeneratorCommand
 
         $stub = $this->replaceModel($stub);
 
-        if ($this->option('generate')) {
+        // Config takes precedence over generate
+        if ($this->option('config')) {
+            $stub = $this->generateFormSchemaFromConfig($stub);
+        } elseif ($this->option('generate')) {
             $stub = $this->generateFormSchema($stub);
         }
 
@@ -233,6 +236,95 @@ class MakeFormCommand extends GeneratorCommand
         return [
             ['model', 'm', InputOption::VALUE_OPTIONAL, 'The model that the form applies to'],
             ['generate', 'g', InputOption::VALUE_NONE, 'Generate form fields based on model table columns'],
+            ['config', 'c', InputOption::VALUE_OPTIONAL, 'JSON configuration for detailed field definitions'],
         ];
+    }
+
+    /**
+     * Generate form schema from JSON config.
+     *
+     * @param  string  $stub
+     * @return string
+     */
+    protected function generateFormSchemaFromConfig($stub)
+    {
+        $configJson = $this->option('config');
+
+        if (! $configJson) {
+            return $stub;
+        }
+
+        try {
+            $config = json_decode($configJson, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->components->warn("Invalid JSON config: ".json_last_error_msg());
+
+                return $stub;
+            }
+
+            $fields = $config['fields'] ?? [];
+
+            if (empty($fields)) {
+                $this->components->warn("No fields found in config.");
+
+                return $stub;
+            }
+
+            $formSchema = $this->generateFieldsFromConfig($fields);
+            $stub = str_replace('                Forms\Schema\TextInput::make(\'name\')
+                    ->required(),
+                // Add more form fields here', $formSchema, $stub);
+
+        } catch (\Exception $e) {
+            $this->components->warn("Could not generate schema from config: {$e->getMessage()}");
+        }
+
+        return $stub;
+    }
+
+    /**
+     * Generate form fields from config array.
+     */
+    protected function generateFieldsFromConfig(array $fields): string
+    {
+        $code = [];
+
+        foreach ($fields as $field) {
+            $name = $field['name'];
+            $type = $field['type'] ?? 'text_input';
+            $validation = $field['validation'] ?? [];
+
+            $fieldClass = match ($type) {
+                'text_input' => 'TextInput',
+                'textarea' => 'Textarea',
+                'select' => 'Select',
+                'date_time_picker' => 'DateTimePicker',
+                'file_upload' => 'FileUpload',
+                'toggle' => 'Toggle',
+                'key_value' => 'KeyValue',
+                default => 'TextInput',
+            };
+
+            $fieldCode = "Forms\\Schema\\{$fieldClass}::make('{$name}')";
+            $modifiers = [];
+
+            foreach ($validation as $rule) {
+                if ($rule === 'required') {
+                    $modifiers[] = '->required()';
+                } elseif (Str::startsWith($rule, 'max:')) {
+                    $max = Str::after($rule, 'max:');
+                    $modifiers[] = "->maxLength({$max})";
+                }
+            }
+
+            if (! empty($modifiers)) {
+                $fieldCode .= "\n                    ".implode("\n                    ", $modifiers);
+            }
+
+            $code[] = "                {$fieldCode},";
+        }
+
+        return implode("\n", $code);
     }
 }

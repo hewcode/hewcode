@@ -62,7 +62,7 @@ class MakeListingCommand extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\\Hewcode\\Resources';
+        return $rootNamespace.'\\Hewcode\\Listings';
     }
 
     /**
@@ -81,7 +81,10 @@ class MakeListingCommand extends GeneratorCommand
         $stub = $this->replaceModel($stub);
         $stub = $this->replaceForm($stub);
 
-        if ($this->option('generate')) {
+        // Config takes precedence over generate
+        if ($this->option('config')) {
+            $stub = $this->generateListingSchemaFromConfig($stub);
+        } elseif ($this->option('generate')) {
             $stub = $this->generateListingSchema($stub);
         }
 
@@ -272,6 +275,105 @@ class MakeListingCommand extends GeneratorCommand
             ['model', 'm', InputOption::VALUE_OPTIONAL, 'The model that the listing applies to'],
             ['form', 'f', InputOption::VALUE_OPTIONAL, 'The form definition class to associate with this listing'],
             ['generate', 'g', InputOption::VALUE_NONE, 'Generate listing columns based on model table columns'],
+            ['config', 'c', InputOption::VALUE_OPTIONAL, 'JSON configuration for detailed column, filter, and action definitions'],
         ];
+    }
+
+    /**
+     * Generate listing schema from JSON config.
+     *
+     * @param  string  $stub
+     * @return string
+     */
+    protected function generateListingSchemaFromConfig($stub)
+    {
+        $configJson = $this->option('config');
+
+        if (! $configJson) {
+            return $stub;
+        }
+
+        try {
+            $config = json_decode($configJson, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->components->warn("Invalid JSON config: ".json_last_error_msg());
+
+                return $stub;
+            }
+
+            $columns = $config['columns'] ?? [];
+
+            if (empty($columns)) {
+                $this->components->warn("No columns found in config.");
+
+                return $stub;
+            }
+
+            $listingSchema = $this->generateColumnsFromConfig($columns);
+            $stub = str_replace('                Lists\Schema\TextColumn::make(\'id\')
+                    ->sortable(),
+                Lists\Schema\TextColumn::make(\'name\')
+                    ->sortable()
+                    ->searchable(),
+                Lists\Schema\TextColumn::make(\'created_at\')
+                    ->datetime()
+                    ->sortable(),', $listingSchema, $stub);
+
+        } catch (\Exception $e) {
+            $this->components->warn("Could not generate schema from config: {$e->getMessage()}");
+        }
+
+        return $stub;
+    }
+
+    /**
+     * Generate columns from config array.
+     */
+    protected function generateColumnsFromConfig(array $columns): string
+    {
+        $code = [];
+
+        foreach ($columns as $column) {
+            $name = $column['name'];
+            $type = $column['type'] ?? 'text';
+            $sortable = $column['sortable'] ?? false;
+            $searchable = $column['searchable'] ?? false;
+
+            $columnClass = match ($type) {
+                'image' => 'ImageColumn',
+                default => 'TextColumn',
+            };
+
+            $columnCode = "Lists\\Schema\\{$columnClass}::make('{$name}')";
+            $modifiers = [];
+
+            if ($sortable) {
+                $modifiers[] = '->sortable()';
+            }
+            if ($searchable) {
+                $modifiers[] = '->searchable()';
+            }
+            if ($type === 'badge') {
+                $modifiers[] = '->badge()';
+            }
+            if ($type === 'datetime') {
+                $modifiers[] = '->datetime()';
+            }
+            if ($type === 'date') {
+                $modifiers[] = '->date()';
+            }
+            if ($type === 'boolean') {
+                $modifiers[] = '->boolean()';
+            }
+
+            if (! empty($modifiers)) {
+                $columnCode .= "\n                    ".implode("\n                    ", $modifiers);
+            }
+
+            $code[] = "                {$columnCode},";
+        }
+
+        return implode("\n", $code);
     }
 }

@@ -253,7 +253,6 @@ PHP;
 
     protected function generateModel(string $modelName, string $tableName, array $fields): string
     {
-        $namespace = 'App\\Models';
         $modelPath = app_path("Models/{$modelName}.php");
 
         // Check if model already exists
@@ -261,8 +260,15 @@ PHP;
             throw new \Exception("Model already exists: {$modelPath}");
         }
 
-        // Ensure directory exists
-        File::ensureDirectoryExists(dirname($modelPath));
+        // Use Laravel's make:model command
+        $exitCode = Artisan::call('make:model', ['name' => $modelName]);
+
+        if ($exitCode !== 0) {
+            throw new \Exception("Failed to generate model using make:model command");
+        }
+
+        // Read the generated model file
+        $content = File::get($modelPath);
 
         // Build fillable array
         $fillable = collect($fields)
@@ -275,19 +281,13 @@ PHP;
         $casts = $this->generateModelCasts($fields);
         $castsCode = $casts ? "\n\n    protected array \$casts = [\n{$casts}\n    ];" : '';
 
-        $content = <<<PHP
-<?php
-
-namespace {$namespace};
-
-use Illuminate\Database\Eloquent\Model;
-
-class {$modelName} extends Model
-{
-    protected \$fillable = [{$fillable}];{$castsCode}
-}
-
-PHP;
+        // Add fillable and casts to the model
+        // Replace the class body to include fillable and casts
+        $content = preg_replace(
+            '/class\s+' . $modelName . '\s+extends\s+Model\s*\{/',
+            "class {$modelName} extends Model\n{\n    protected \$fillable = [{$fillable}];{$castsCode}",
+            $content
+        );
 
         File::put($modelPath, $content);
 
@@ -444,10 +444,10 @@ PHP;
         return ['fields' => $formFields];
     }
 
-    protected function successMessage(string $modelName, string $tableName, array $createdFiles, array $panels): string
+    protected function successMessage(string $modelName, string $tableName, array $createdFiles, ?array $panels): string
     {
         $filesSection = collect($createdFiles)->map(fn ($file) => "  ✓ {$file}")->implode("\n");
-        $panelsString = implode(', ', $panels);
+        $panelsString = $panels ? implode(', ', $panels) : 'app';
 
         return <<<EOT
 🎉 Successfully scaffolded complete CRUD for {$modelName}!

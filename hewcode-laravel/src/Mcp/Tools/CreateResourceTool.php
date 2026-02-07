@@ -3,6 +3,7 @@
 namespace Hewcode\Hewcode\Mcp\Tools;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
@@ -45,7 +46,6 @@ class CreateResourceTool extends Tool
             $name .= 'Resource';
         }
 
-        $namespace = 'App\\Hewcode\\Resources';
         $path = app_path('Hewcode/Resources/'.$name.'.php');
 
         // Check if file exists
@@ -53,15 +53,9 @@ class CreateResourceTool extends Tool
             return Response::error("Resource already exists at {$path}. Use a different name or delete the existing file.");
         }
 
-        // Ensure directory exists
-        File::ensureDirectoryExists(dirname($path));
-
         $createdFiles = [];
 
         // Optionally generate separate definitions
-        $listingClass = null;
-        $formClass = null;
-
         if ($generateDefinitions) {
             // Generate ListingDefinition
             $listingName = str_replace('Resource', 'Listing', $name);
@@ -78,10 +72,9 @@ class CreateResourceTool extends Tool
                     'generate' => $generate,
                 ]));
 
-                $listingClass = "App\\Hewcode\\Listings\\{$listingName}";
                 $createdFiles[] = "app/Hewcode/Listings/{$listingName}.php";
             } catch (\Exception $e) {
-                return Response::error('Failed to generate listing: '.$e->getMessage());
+                return Response::error("Failed to generate listing: ".$e->getMessage());
             }
 
             // Generate FormDefinition
@@ -96,27 +89,45 @@ class CreateResourceTool extends Tool
                     'generate' => $generate,
                 ]));
 
-                $formClass = "App\\Hewcode\\Forms\\{$formName}";
                 $createdFiles[] = "app/Hewcode/Forms/{$formName}.php";
             } catch (\Exception $e) {
-                return Response::error('Failed to generate form: '.$e->getMessage());
+                return Response::error("Failed to generate form: ".$e->getMessage());
             }
         }
 
-        // Generate the resource class
-        $content = $this->generateResourceClass(
-            $namespace,
-            $name,
-            $model,
-            $panels,
-            $listingConfig,
-            $formConfig,
-            $listingClass,
-            $formClass,
-            $generate
-        );
+        // Build command options
+        $commandOptions = [
+            'name' => $name,
+            '--model' => $model,
+        ];
 
-        File::put($path, $content);
+        if ($panels) {
+            $commandOptions['--panels'] = implode(',', $panels);
+        }
+
+        if ($generate) {
+            $commandOptions['--generate'] = true;
+        }
+
+        // Build config JSON if detailed config is provided
+        if (! empty($listingConfig) || ! empty($formConfig)) {
+            $config = [];
+            if (! empty($listingConfig)) {
+                $config['listing'] = $listingConfig;
+            }
+            if (! empty($formConfig)) {
+                $config['form'] = $formConfig;
+            }
+            $commandOptions['--config'] = json_encode($config);
+        }
+
+        // Call hew:resource command
+        $exitCode = Artisan::call('hew:resource', $commandOptions);
+
+        if ($exitCode !== 0) {
+            return Response::error("Failed to generate resource. Artisan command exited with code {$exitCode}.");
+        }
+
         $createdFiles[] = str_replace(base_path().'/', '', $path);
 
         return Response::text($this->successMessage($name, $model, $createdFiles, $generateDefinitions));
@@ -173,295 +184,6 @@ class CreateResourceTool extends Tool
                 ->description('Auto-generate columns and fields from model\'s database table schema')
                 ->default(false),
         ];
-    }
-
-    protected function generateResourceClass(
-        string $namespace,
-        string $name,
-        string $model,
-        ?array $panels,
-        array $listingConfig,
-        array $formConfig,
-        ?string $listingClass,
-        ?string $formClass,
-        bool $generate
-    ): string {
-        $modelShortName = class_basename($model);
-        $modelClass = $model;
-
-        if (! Str::contains($model, '\\')) {
-            $modelClass = "App\\Models\\{$model}";
-        }
-
-        $uses = collect([
-            'Hewcode\Hewcode\Actions',
-            'Hewcode\Hewcode\Forms',
-            'Hewcode\Hewcode\Lists',
-            'Hewcode\Hewcode\Panel',
-            $modelClass,
-        ]);
-
-        if ($listingClass) {
-            $uses->push($listingClass);
-        }
-        if ($formClass) {
-            $uses->push($formClass);
-        }
-
-        $uses = $uses->unique()->sort()->values();
-        $usesString = $uses->map(fn ($use) => "use {$use};")->implode("\n");
-
-        // Only generate panels() method if panels are explicitly specified
-        $panelsMethod = '';
-        if ($panels !== null) {
-            $panelsArray = collect($panels)->map(fn ($panel) => "'{$panel}'")->implode(', ');
-            $panelsMethod = <<<PHP
-
-    public function panels(): array
-    {
-        return [{$panelsArray}];
-    }
-
-PHP;
-        }
-
-        // Generate listing and form methods
-        if ($listingClass && $formClass) {
-            $listingShortName = class_basename($listingClass);
-            $formShortName = class_basename($formClass);
-
-            $listingMethod = <<<PHP
-
-    public function listing(Lists\Listing \$listing): Lists\Listing
-    {
-        return {$listingShortName}::make('listing');
-    }
-PHP;
-
-            $formMethod = <<<PHP
-
-    public function form(Forms\Form \$form): Forms\Form
-    {
-        return {$formShortName}::make();
-    }
-PHP;
-        } else {
-            // Generate inline listing and form
-            $listingMethod = $this->generateInlineListingMethod($modelShortName, $listingConfig, $generate);
-            $formMethod = $this->generateInlineFormMethod($modelShortName, $formConfig, $generate);
-        }
-
-        return <<<PHP
-<?php
-
-namespace {$namespace};
-
-{$usesString}
-
-class {$name} extends Panel\Resource
-{
-    protected string \$model = {$modelShortName}::class;
-{$panelsMethod}
-    public function pages(): array
-    {
-        return [
-            Panel\Controllers\Resources\IndexController::page(),
-            Panel\Controllers\Resources\CreateController::page(),
-            Panel\Controllers\Resources\EditController::page(),
-        ];
-    }
-{$listingMethod}
-{$formMethod}
-}
-
-PHP;
-    }
-
-    protected function generateInlineListingMethod(string $modelShortName, array $config, bool $generate): string
-    {
-        $columns = $config['columns'] ?? [];
-        $filters = $config['filters'] ?? [];
-        $actions = $config['actions'] ?? ['edit', 'delete'];
-        $relationships = $config['relationships'] ?? [];
-
-        $columnsCode = $this->generateColumnsCode($columns, $generate);
-        $filtersCode = $this->generateFiltersCode($filters);
-        $actionsCode = $this->generateActionsCode($actions);
-        $relationshipsString = $this->generateRelationshipsString($relationships);
-
-        return <<<PHP
-
-    public function listing(Lists\Listing \$listing): Lists\Listing
-    {
-        return \$listing
-            ->visible(auth()->check())
-            ->query({$modelShortName}::query(){$relationshipsString})
-            ->columns([
-{$columnsCode}
-            ])
-{$actionsCode}{$filtersCode}
-            ->defaultSort('created_at', 'desc');
-    }
-PHP;
-    }
-
-    protected function generateInlineFormMethod(string $modelShortName, array $config, bool $generate): string
-    {
-        $fields = $config['fields'] ?? [];
-        $fieldsCode = $this->generateFieldsCode($fields, $generate);
-
-        return <<<PHP
-
-    public function form(Forms\Form \$form): Forms\Form
-    {
-        return \$form
-            ->visible(auth()->check())
-            ->schema([
-{$fieldsCode}
-            ]);
-    }
-PHP;
-    }
-
-    protected function generateColumnsCode(array $columns, bool $generate): string
-    {
-        if (empty($columns) && ! $generate) {
-            return <<<'CODE'
-                Lists\Schema\TextColumn::make('id')
-                    ->sortable(),
-                Lists\Schema\TextColumn::make('created_at')
-                    ->datetime()
-                    ->sortable(),
-CODE;
-        }
-
-        $code = [];
-        foreach ($columns as $column) {
-            $name = $column['name'];
-            $type = $column['type'] ?? 'text';
-            $sortable = $column['sortable'] ?? false;
-            $searchable = $column['searchable'] ?? false;
-
-            $columnClass = match ($type) {
-                'image' => 'ImageColumn',
-                default => 'TextColumn',
-            };
-
-            $columnCode = "Lists\Schema\\{$columnClass}::make('{$name}')";
-            $modifiers = [];
-
-            if ($sortable) {
-                $modifiers[] = '->sortable()';
-            }
-            if ($searchable) {
-                $modifiers[] = '->searchable()';
-            }
-            if ($type === 'badge') {
-                $modifiers[] = '->badge()';
-            }
-
-            if (! empty($modifiers)) {
-                $columnCode .= "\n                    ".implode("\n                    ", $modifiers);
-            }
-
-            $code[] = "                {$columnCode},";
-        }
-
-        return implode("\n", $code);
-    }
-
-    protected function generateFiltersCode(array $filters): string
-    {
-        if (empty($filters)) {
-            return '';
-        }
-
-        $code = ['            ->filters(['];
-        foreach ($filters as $filter) {
-            $code[] = "                Lists\Filters\SelectFilter::make('{$filter}'),";
-        }
-        $code[] = '            ])';
-
-        return "\n".implode("\n", $code);
-    }
-
-    protected function generateActionsCode(array $actions): string
-    {
-        if (empty($actions)) {
-            return '';
-        }
-
-        $code = ['            ->actions(['];
-        foreach ($actions as $action) {
-            $actionClass = match (strtolower($action)) {
-                'edit' => 'Actions\Eloquent\EditAction::make()',
-                'delete' => 'Actions\Eloquent\DeleteAction::make()',
-                'restore' => 'Actions\Eloquent\RestoreAction::make()',
-                default => "Actions\Action::make('{$action}')",
-            };
-            $code[] = "                {$actionClass},";
-        }
-        $code[] = '            ])';
-
-        return "\n".implode("\n", $code);
-    }
-
-    protected function generateRelationshipsString(array $relationships): string
-    {
-        if (empty($relationships)) {
-            return '';
-        }
-
-        $quoted = array_map(fn ($rel) => "'{$rel}'", $relationships);
-
-        return '->with(['.implode(', ', $quoted).'])';
-    }
-
-    protected function generateFieldsCode(array $fields, bool $generate): string
-    {
-        if (empty($fields) && ! $generate) {
-            return <<<'CODE'
-                Forms\Schema\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-CODE;
-        }
-
-        $code = [];
-        foreach ($fields as $field) {
-            $name = $field['name'];
-            $type = $field['type'] ?? 'text_input';
-            $validation = $field['validation'] ?? [];
-
-            $fieldClass = match ($type) {
-                'text_input' => 'TextInput',
-                'textarea' => 'Textarea',
-                'select' => 'Select',
-                'date_time_picker' => 'DateTimePicker',
-                'file_upload' => 'FileUpload',
-                default => 'TextInput',
-            };
-
-            $fieldCode = "Forms\Schema\\{$fieldClass}::make('{$name}')";
-            $modifiers = [];
-
-            foreach ($validation as $rule) {
-                if ($rule === 'required') {
-                    $modifiers[] = '->required()';
-                } elseif (Str::startsWith($rule, 'max:')) {
-                    $max = Str::after($rule, 'max:');
-                    $modifiers[] = "->maxLength({$max})";
-                }
-            }
-
-            if (! empty($modifiers)) {
-                $fieldCode .= "\n                    ".implode("\n                    ", $modifiers);
-            }
-
-            $code[] = "                {$fieldCode},";
-        }
-
-        return implode("\n", $code);
     }
 
     protected function successMessage(string $name, string $model, array $createdFiles, bool $generatedDefinitions): string
